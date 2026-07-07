@@ -882,6 +882,102 @@ impl TablePattern {
     }
 }
 
+// ------------------------------------------------ Python-callback detection
+
+impl CellPredicate {
+    pub fn has_py(&self) -> bool {
+        matches!(self, CellPredicate::External { .. } | CellPredicate::Custom { .. })
+    }
+}
+
+impl FilterCond {
+    pub fn has_py(&self) -> bool {
+        let term = |t: &FilterTerm| {
+            matches!(t, FilterTerm::External { .. } | FilterTerm::Custom { .. })
+        };
+        match self {
+            FilterCond::Bare(t) => term(t),
+            FilterCond::And(ts) => ts.iter().any(term),
+            FilterCond::Or(gs) => gs.iter().any(|g| g.iter().any(term)),
+            FilterCond::Custom { .. } => true,
+        }
+    }
+}
+
+impl Extractor {
+    pub fn has_py(&self) -> bool {
+        match self {
+            Extractor::Custom { .. } => true,
+            Extractor::Chain(steps) => steps.iter().any(|s| s.has_py()),
+            _ => false,
+        }
+    }
+}
+
+impl ActionSpec {
+    pub fn has_py(&self) -> bool {
+        self.providers.iter().any(|p| {
+            p.filter_condition.as_ref().map(|c| c.has_py()).unwrap_or(false)
+        })
+    }
+}
+
+impl AtomicSpec {
+    pub fn has_py(&self) -> bool {
+        self.extractor.as_ref().map(|x| x.has_py()).unwrap_or(false)
+            || self.actions.iter().any(|a| a.has_py())
+    }
+}
+
+impl ContentSpec {
+    pub fn has_py(&self) -> bool {
+        match self {
+            ContentSpec::Atomic(a) => a.has_py(),
+            ContentSpec::Delimited(d) => d.atom.has_py(),
+            ContentSpec::Compound(c) => c.segments.iter().any(|s| s.spec.has_py()),
+            ContentSpec::Conditional(c) => {
+                c.condition.has_py() || c.positive.has_py() || c.negative.has_py()
+            }
+        }
+    }
+}
+
+impl TablePattern {
+    /// True if evaluating this pattern may call back into Python
+    /// (External/Custom predicates or extractors) — in that case the GIL
+    /// must be held during matching.
+    pub fn has_py_callbacks(&self) -> bool {
+        let cond = |c: &Option<CellPredicate>| c.as_ref().map(|c| c.has_py()).unwrap_or(false);
+        if cond(&self.condition) {
+            return true;
+        }
+        for st in &self.subtable_patterns {
+            if cond(&st.condition) {
+                return true;
+            }
+            for row in &st.row_patterns {
+                if cond(&row.condition) {
+                    return true;
+                }
+                for sr in &row.subrow_patterns {
+                    if cond(&sr.condition) {
+                        return true;
+                    }
+                    for cell in &sr.cell_patterns {
+                        if cond(&cell.condition) {
+                            return true;
+                        }
+                        if cell.content_spec.as_ref().map(|c| c.has_py()).unwrap_or(false) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        false
+    }
+}
+
 fn actions_of(cs: &ContentSpec, out: &mut Vec<ActionSpec>) {
     match cs {
         ContentSpec::Atomic(a) => out.extend(a.actions.iter().cloned()),

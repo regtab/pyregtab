@@ -2082,6 +2082,28 @@ pub struct PySubrowPattern {
 
 #[pymethods]
 impl PySubrowPattern {
+    #[new]
+    #[pyo3(signature = (condition=None, quantifier=None, cell_patterns=vec![]))]
+    fn new(
+        condition: Option<&Bound<'_, PyAny>>,
+        quantifier: Option<PyQuantifier>,
+        cell_patterns: Vec<PyCellPattern>,
+    ) -> PyResult<Self> {
+        let cond = match condition {
+            Some(c) if !c.is_none() => Some(extract_cell_predicate(c)?),
+            _ => None,
+        };
+        Ok(PySubrowPattern {
+            core: Arc::new(
+                sp::SubrowPattern::new(
+                    cond,
+                    quantifier.map(|q| q.core).unwrap_or(sp::Quantifier::ONE),
+                    cell_patterns.into_iter().map(|c| c.core).collect(),
+                )
+                .map_err(core_err)?,
+            ),
+        })
+    }
     /// `of(cells...)`, `of(q, cells...)`
     #[staticmethod]
     #[pyo3(signature = (*args))]
@@ -2131,6 +2153,28 @@ pub struct PyRowPattern {
 
 #[pymethods]
 impl PyRowPattern {
+    #[new]
+    #[pyo3(signature = (condition=None, quantifier=None, subrow_patterns=vec![]))]
+    fn new(
+        condition: Option<&Bound<'_, PyAny>>,
+        quantifier: Option<PyQuantifier>,
+        subrow_patterns: Vec<PySubrowPattern>,
+    ) -> PyResult<Self> {
+        let cond = match condition {
+            Some(c) if !c.is_none() => Some(extract_cell_predicate(c)?),
+            _ => None,
+        };
+        Ok(PyRowPattern {
+            core: Arc::new(
+                sp::RowPattern::new(
+                    cond,
+                    quantifier.map(|q| q.core).unwrap_or(sp::Quantifier::ONE),
+                    subrow_patterns.into_iter().map(|s| s.core).collect(),
+                )
+                .map_err(core_err)?,
+            ),
+        })
+    }
     /// `of(cells...)`, `of(q, cells...)`, `of(q, subrows...)`, `of(cond, q, cells...)`
     #[staticmethod]
     #[pyo3(signature = (*args))]
@@ -2198,6 +2242,28 @@ pub struct PySubtablePattern {
 
 #[pymethods]
 impl PySubtablePattern {
+    #[new]
+    #[pyo3(signature = (condition=None, quantifier=None, row_patterns=vec![]))]
+    fn new(
+        condition: Option<&Bound<'_, PyAny>>,
+        quantifier: Option<PyQuantifier>,
+        row_patterns: Vec<PyRowPattern>,
+    ) -> PyResult<Self> {
+        let cond = match condition {
+            Some(c) if !c.is_none() => Some(extract_cell_predicate(c)?),
+            _ => None,
+        };
+        Ok(PySubtablePattern {
+            core: Arc::new(
+                sp::SubtablePattern::new(
+                    cond,
+                    quantifier.map(|q| q.core).unwrap_or(sp::Quantifier::ONE),
+                    row_patterns.into_iter().map(|r| r.core).collect(),
+                )
+                .map_err(core_err)?,
+            ),
+        })
+    }
     /// `of(rows...)`, `of(q, rows...)`
     #[staticmethod]
     #[pyo3(signature = (*args))]
@@ -2265,6 +2331,30 @@ fn extract_transformation(obj: &Bound<'_, PyAny>) -> PyResult<sp::Transformation
 
 #[pymethods]
 impl PyTablePattern {
+    #[new]
+    #[pyo3(signature = (condition=None, subtable_patterns=vec![], transformations=vec![]))]
+    fn new(
+        condition: Option<&Bound<'_, PyAny>>,
+        subtable_patterns: Vec<PySubtablePattern>,
+        transformations: Vec<Bound<'_, PyAny>>,
+    ) -> PyResult<Self> {
+        let cond = match condition {
+            Some(c) if !c.is_none() => Some(extract_cell_predicate(c)?),
+            _ => None,
+        };
+        let mut transforms = Vec::new();
+        for t in &transformations {
+            transforms.push(extract_transformation(t)?);
+        }
+        Ok(PyTablePattern {
+            core: sp::TablePattern::new(
+                cond,
+                subtable_patterns.into_iter().map(|s| s.core).collect(),
+                transforms,
+            )
+            .map_err(core_err)?,
+        })
+    }
     #[staticmethod]
     #[pyo3(signature = (*subtables))]
     fn of(subtables: &Bound<'_, PyTuple>) -> PyResult<Self> {
@@ -2512,6 +2602,49 @@ impl PyAtpMatcher {
         syntax: &Bound<'_, PyTableSyntax>,
         context_items: Option<Vec<PyContextDerivedItem>>,
     ) -> PyResult<Option<PyInterpretableTable>> {
+        let ctx: Vec<CtxItem> = context_items
+            .unwrap_or_default()
+            .into_iter()
+            .map(|c| c.core)
+            .collect();
+
+        if !atp.core.has_py_callbacks() {
+            // Fast path: no Python callbacks in the pattern — run the whole
+            // match on a private copy of the syntax core with the GIL
+            // released, then write the matched structure back.
+            let mut core = syntax.borrow().core.clone();
+            let pattern = atp.core.clone();
+            let outcome: CoreResult<Option<(SyntaxCore, Option<SemanticsCore>)>> =
+                py.allow_threads(move || {
+                    let result = {
+                        let env = EvalEnv { syntax: &core, py_table: None };
+                        matcher::syntax_match(&pattern, &core, &env)?
+                    };
+                    let Some(result) = result else {
+                        return Ok(None);
+                    };
+                    matcher::apply_structure(&mut core, &result)?;
+                    let env = EvalEnv { syntax: &core, py_table: None };
+                    match matcher::construct_semantics(&result.pairs, ctx, &core, &env) {
+                        Ok(sem) => Ok(Some((core, Some(sem)))),
+                        // structure changes survive a MatchException, as in Java
+                        Err(matcher::SemErr::Match(_)) => Ok(Some((core, None))),
+                        Err(matcher::SemErr::Other(e)) => Err(e),
+                    }
+                });
+            return match outcome.map_err(core_err)? {
+                None => Ok(None),
+                Some((core, sem)) => {
+                    syntax.borrow_mut().core = core;
+                    Ok(sem.map(|sem| PyInterpretableTable {
+                        table: syntax.clone().unbind(),
+                        sem: Arc::new(sem),
+                    }))
+                }
+            };
+        }
+
+        // Slow path: Python callbacks participate — keep the GIL.
         let table_any: Py<PyAny> = syntax.clone().unbind().into_any();
         // Phase 1: syntactic matching (immutable borrow)
         let result = {
@@ -2528,11 +2661,6 @@ impl PyAtpMatcher {
             matcher::apply_structure(&mut s.core, &result).map_err(core_err)?;
         }
         // Phase 3: semantic construction (immutable borrow)
-        let ctx: Vec<CtxItem> = context_items
-            .unwrap_or_default()
-            .into_iter()
-            .map(|c| c.core)
-            .collect();
         let sem = {
             let s = syntax.borrow();
             let env = EvalEnv { syntax: &s.core, py_table: Some(&table_any) };
@@ -2542,7 +2670,6 @@ impl PyAtpMatcher {
                 Err(matcher::SemErr::Other(e)) => return Err(core_err(e)),
             }
         };
-        let _ = py;
         Ok(sem.map(|sem| PyInterpretableTable {
             table: syntax.clone().unbind(),
             sem: Arc::new(sem),
@@ -2625,6 +2752,15 @@ impl PyTableInterpreter {
             transformations: self.transformations.clone(),
             anonymous_attribute_template: self.template.clone(),
         };
+        if self.missing.is_none() && !table.sem.has_py_callbacks() {
+            // Fast path: pure-native interpretation with the GIL released.
+            let core = table.table.bind(py).borrow().core.clone();
+            let sem = table.sem.clone();
+            let rs = py
+                .allow_threads(move || crate::interp::interpret(&cfg, &core, &sem, None))
+                .map_err(core_err)?;
+            return Ok(PyRecordset { core: rs });
+        }
         let table_any: Py<PyAny> = table.table.clone_ref(py).into_any();
         let s = table.table.bind(py).borrow();
         let rs = crate::interp::interpret(&cfg, &s.core, &table.sem, Some(&table_any))

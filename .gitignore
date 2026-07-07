@@ -224,3 +224,4 @@ __pycache__/
 *.pyd
 /dist/
 .pytest_cache/
+site/

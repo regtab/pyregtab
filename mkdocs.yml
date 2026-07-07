@@ -1,0 +1,46 @@
+# Configuration for the project documentation site
+site_name: pyRegTab
+site_description: Pattern-driven data extraction from tables — Python port of jRegTab with a native Rust core
+site_url: https://regtab.github.io/pyregtab/
+repo_url: https://github.com/regtab/pyregtab
+
+theme:
+  name: material
+  language: en
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - tables
+
+nav:
+  - Home: index.md
+  - Getting started: getting-started.md
+  - RTL reference: rtl-reference.md
+  - Formal model:
+      - ITM: model/itm.md
+      - ATP: model/atp.md
+  - Architecture: architecture.md
+  - API reference: api.md

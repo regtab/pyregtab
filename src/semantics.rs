@@ -72,6 +72,17 @@ pub struct SemanticsCore {
 }
 
 impl SemanticsCore {
+    /// True if interpreting may call back into Python (Custom/External
+    /// filter conditions inside instantiated providers).
+    pub fn has_py_callbacks(&self) -> bool {
+        self.actions.iter().any(|a| {
+            a.providers.iter().any(|p| match p {
+                ProviderInst::Cell { cond, .. } => cond.has_py(),
+                ProviderInst::Ctx { .. } => false,
+            })
+        })
+    }
+
     pub fn item_str(&self, id: ItemId) -> &str {
         match id {
             ItemId::Cell(i) => &self.cell_items[i].s,

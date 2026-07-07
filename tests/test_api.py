@@ -156,6 +156,24 @@ def test_custom_cell_predicate_matching():
     assert items[0].cell.text == "keep"
 
 
+def test_parallel_matching_releases_gil():
+    """Batch scenario (plan §4.5): matching/interpretation of pure-native
+    patterns runs correctly from a thread pool (GIL released inside)."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    p = rtl_compile("[ [VAL : ST*->REC] [VAL] ]\n[ [] [VAL] ]")
+
+    def work(i):
+        t = make_table([[f"a{i}", "b"], ["", f"c{i}"]])
+        itm = AtpMatcher.match(p, t)
+        rs = TableInterpreter().interpret(itm)
+        return rs[0][rs.schema.attributes[0]]
+
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        results = list(ex.map(work, range(64)))
+    assert results == [f"a{i}" for i in range(64)]
+
+
 def test_serializer_and_repr():
     p = rtl_compile("[ [VAL : ST*->REC] [VAL] ]")
     from pyregtab import AtpToRtlSerializer

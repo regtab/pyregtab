@@ -101,17 +101,26 @@ Rust (`pyregtab._core`, built with [PyO3](https://pyo3.rs) and
 
 ## Testing
 
-`pytest tests` runs:
+`pytest tests` runs (1 878 tests):
 
 - the full benchmark suite — tasks 001–150 (Foofah, RegTab, Baikal),
-  every fixture variant, via RTL patterns (fixtures are copied verbatim
-  from jRegTab into `tests/fixtures/tasks`);
-- ATP-built ports of selected tasks (acceptance test of the spec API);
+  every fixture variant, **both** via RTL patterns and via ATP patterns
+  built with the Python spec API (1 500 task variants in total; fixtures
+  are copied verbatim from jRegTab into `tests/fixtures/tasks`, ATP
+  builders are mechanically translated from the Java tests by
+  `tools/translate_atp.py`);
 - the RTL conformance corpus (positive canonical forms, fixed points,
   negative rejections);
 - RTL↔ATP round-trip for tasks 001–050;
 - API unit tests (syntax layer, extractors, EXT bindings, custom
-  predicates, transformations, interpreter options).
+  predicates, transformations, interpreter options, GIL-released batch
+  matching from a thread pool).
+
+`cargo test` additionally runs the conformance corpus and an end-to-end
+smoke test against the native core alone. Differential testing against the
+Java reference (`tools/differential.py` + `tools/RecordsetDumpMain.java`)
+compares recordsets cell-by-cell on all 750 task variants — zero
+mismatches against jRegTab v0.3.0.
 
 ## Development
 

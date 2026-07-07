@@ -9,6 +9,8 @@ pub mod rtl;
 pub mod semantics;
 pub mod spec;
 pub mod syntax;
+#[cfg(test)]
+mod tests;
 pub mod util;
 
 use pyo3::prelude::*;
