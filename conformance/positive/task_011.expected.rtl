@@ -1,0 +1,1 @@
+<ANCH(2)> [ [] [ VAL ]+ ] [ [ VAL ] [ BLANK? SKIP | VAL : (SR, SC)->REC(2) ]+ ]+

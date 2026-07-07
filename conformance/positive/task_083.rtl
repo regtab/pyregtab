@@ -1,0 +1,3 @@
+  [          [ATTR]+ ]
+{ [ COL->AVP [VAL: (RT*, BW)->REC][VAL]+ ]
+  [          [VAL: 'D'->AVP ][]+ ] }+

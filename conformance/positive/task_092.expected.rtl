@@ -1,0 +1,1 @@
+[ [ VAL ] [ VAL : ((ROW & C+1..)*, LT)->REC ] { [ !BLANK? VAL ]+ [ BLANK ]? }+ ]+

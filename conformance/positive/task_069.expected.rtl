@@ -1,0 +1,1 @@
+[ { [ ATTR : SR->AVP, BW*->REC ] [ VAL #'1' : SR->AVP, BW*->REC, (ROW & #'1')*->JOIN ] [ VAL #'2' : SR->AVP, BW*->REC, (ROW & #'2')*->JOIN ] }* ] [ { [ ATTR : SR->AVP ] [ VAL : SR->AVP ]{2} }* ]*

@@ -1,0 +1,1 @@
+{ [ [ VAL : ST*->REC ] [ BLANK? SKIP | VAL ]+ ] [ [ BLANK? SKIP | VAL ]+ ]{4} }+

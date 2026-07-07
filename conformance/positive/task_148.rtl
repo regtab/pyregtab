@@ -1,0 +1,3 @@
+  [ [ATTR=UC]+ ]
+{ [ [VAL : 'LOCATION'->AVP] []+ ]
+  [ COL->AVP [VAL : (ROW*,ST)->REC] [!BLANK ? VAL]+ ]+ }+

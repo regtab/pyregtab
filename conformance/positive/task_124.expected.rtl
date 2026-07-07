@@ -1,0 +1,1 @@
+[ [] [ VAL = SUBSTR(0,4) : 'YEAR'->AVP ]{6} []{2} ] [ [] [ VAL : 'MONTH'->AVP ]{6} []{2} ] [ [ VAL : 'INDICATOR'->AVP ] [ VAL : 'MIN'->AVP "-" VAL : 'MAX'->AVP "\n" VAL = TRIM : 'AVE'->AVP, (CL*, ROW, COL{2})->REC "(" VAL : 'IN_NORTHWESTERN_SECTION'->AVP ")" ]{6} []{2} ]+

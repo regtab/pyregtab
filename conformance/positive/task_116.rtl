@@ -1,0 +1,15 @@
+$V1=[VAL: -AV->PREFIX(', ')]
+$V2=[VAL: 'VALUE'->AVP, (ROW, COL&R1..3*, -AV&#'IND')->REC]
+[ []+ ]
+[ [] [VAL: 'TERRITORY'->AVP]+ ]
+[ [AUX]+ ]
+[ 'LOCATION'->AVP [] [$V1]{4} [VAL] []
+                     [VAL] [$V1] [VAL]
+                     [$V1] [VAL] []
+                     { [VAL] [$V1] [VAL] [] }? ]
+{ [ [VAL#'IND': 'INDICATOR'->AVP ',' VAL: 'UNIT'->AVP]+ ]
+  [ ['20\d\d' ? VAL: 'YEAR'->AVP]
+    { [$V2]{5} [] }{2}
+    { [$V2]{3} [] }?
+  ]+
+}+

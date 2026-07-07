@@ -1,0 +1,1 @@
+{ [ [ BLANK ]+ [ !BLANK? VAL #'H' ] [ BLANK? VAL #'H' : -(LT & !BLANK)->FILL | VAL #'H' ]+ ]+ } { [ [ "\D.*"? VAL #'S' ]+ [ "\d+"? VAL : ((COL & #'H')*, (ROW & #'S')*)->REC ]+ ] [ [ BLANK? VAL #'S' : SC->FILL ]+ [ "\D.*"? VAL #'S' ]+ [ "\d+"? VAL : ((COL & #'H')*, (ROW & #'S')*)->REC ]+ ]* }+

@@ -1,0 +1,40 @@
+Enterprise name,Year,Fuel type,Fuel consumption (tons of reference<br>fuel),Fuel characteristics,Fuel characteristics,"Emissions, thousand tons/year","Emissions, thousand tons/year","Emissions, thousand tons/year","Emissions, thousand tons/year","Emissions, thousand tons/year"
+,Year,Fuel type,Fuel consumption (tons of reference fuel),"Sulfur content Sr, %","Ash content Ar, %",Total,Solid,Sulfur dioxide,Nitrogen oxides,Other
+"Section No. 1 TPP-9, Angarsk",2012,coal,427267,1.44,19.1,24008,5286,15656,3058,0.007
+"Section No. 1 TPP-9, Angarsk",2012,fuel oil,515,1.16,0.068,24008,5286,15656,3058,0.009
+"Section No. 1 TPP-9, Angarsk",2013,coal,364780,1.3,21.2,19714,4526,12506,2675,0.007
+"Section No. 1 TPP-9, Angarsk",2013,fuel oil,321,1.21,0.065,19714,4526,12506,2675,0.007
+"Section No. 1 TPP-9, Angarsk",2014,coal,353196,1.06,17.8,17431,4221,10718,2486,0.005
+"Section No. 1 TPP-9, Angarsk",2014,fuel oil,264,1.13,0.053,17431,4221,10718,2486,0.006
+"Section No. 1 TPP-9, Angarsk",2015,coal,383133,1.19,18.2,18574,4343,11.78,2286,0.004
+"Section No. 1 TPP-9, Angarsk",2015,fuel oil,226,1.37,0.057,18574,4343,12.01,2286,0.005
+"Section No. 1 TPP-9, Angarsk",2016,coal,319345,1.25,18.6,15325,2945,9917,2458,0.005
+"Section No. 1 TPP-9, Angarsk",2016,fuel oil,264,1.32,0.076,15325,2945,9917,2458,0.006
+"Section No. 1 TPP-9, Angarsk",2017,coal,328922,1.36,14.2,17587,2703,12968,1911,0.005
+"Section No. 1 TPP-9, Angarsk",2017,fuel oil,173,1.1,0.064,17587,2703,12968,1911,0.005
+"Section No. 1 TPP-9, Angarsk",2018,coal,325044,1.44,13.0,17962,2829,13183,1946,0.004
+"Section No. 1 TPP-9, Angarsk",2018,fuel oil,169,1.33,0.081,17962,2829,13183,1946,0.004
+"TPP-9, Angarsk",2012,coal,1246657,1.31,15.1,60731,10208,43239,7264,0.02
+"TPP-9, Angarsk",2012,fuel oil,1599,1.6,0.046,60731,10208,43239,7264,0.02
+"TPP-9, Angarsk",2013,coal,1057479,1.2,14.8,50571,7759,36808,5982,0.023
+"TPP-9, Angarsk",2013,fuel oil,1193,1.4,0.040,50571,7759,36808,5982,0.023
+"TPP-9, Angarsk",2014,coal,966054,1.36,14.6,52784,7.80,39357,5415,0.035
+"TPP-9, Angarsk",2014,fuel oil,1071,1.4,0.049,52784,7.84,39357,5415,0.032
+"TPP-9, Angarsk",2015,coal,953085,1.4,14.3,50815,7545,37498,5.18,0.035
+"TPP-9, Angarsk",2015,fuel oil,1370,1.1,0.052,50815,7545,37498,6.46,0.032
+"TPP-9, Angarsk",2016,coal,1035518,1.34,14.7,49814,8706,34645,6434,0.033
+"TPP-9, Angarsk",2016,fuel oil,1582,1.1,0.06,49814,8706,34645,6434,0.033
+"TPP-9, Angarsk",2017,coal,1143389,1.13,15,51695,7.75,37263,5415,0.025
+"TPP-9, Angarsk",2017,fuel oil,1414,1.10,0.064,51695,10.03,37263,5415,0.030
+"TPP-9, Angarsk",2018,coal,1197954,1.19,13,57207,8414,43274,5492,0.029
+"TPP-9, Angarsk",2018,fuel oil,1545,1.45,0.072,57207,8414,43274,5492,0.027
+"TPP-10, Angarsk",2012,coal,1966232,1.4,17.0,97.39,15632,73062,15322,0.004
+"TPP-10, Angarsk",2012,fuel oil,2461,1.2,0.05,100.63,15632,73062,15322,0.004
+"TPP-10, Angarsk",2013,coal,1381671,1.05,17,76.19,10886,55506,9955,0.003
+"TPP-10, Angarsk",2013,fuel oil,2124,1.1,0.05,69.77,10886,55506,9955,0.003
+"TPP-10, Angarsk",2014,coal,858737,1.23,18.0,46291,6.5,32662,6926,0.003
+"TPP-10, Angarsk",2014,fuel oil,2288,1.2,0.05,46291,7.4,32662,6926,0.003
+"TPP-10, Angarsk",2015,coal,1008824,1.34,18.0,60.7,8005,41657,7995,0.048
+"TPP-10, Angarsk",2015,fuel oil,1755,0.9,0.05,53.3,8005,41657,7995,0.041
+"TPP-10, Angarsk",2016,coal,930112,1.04,17.1,46605,7039,28.88,6813,0.038
+"TPP-10, Angarsk",2016,fuel oil,2477,1.14,0.06,46605,7039,28.08,6813,0.037

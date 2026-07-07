@@ -1,0 +1,32 @@
+Indicators,Year,Angara River Source District,Angara River Source District,Angara River Source District,Background (South Baikal),Background (South Baikal),Background (South Baikal)
+,Year,min.,max.,avg.,min.,max.,avg.
+"pH, units",2017,8.70,7.43,8.18,,,
+"pH, units",2018,7.0,8.5,8.66,8.25,7.69,7.16
+Oxygen,2017,11.51,10.86,12.86,,,
+Oxygen,2018,9.84,12.42,10.47,10.45,12.14,9.92
+Suspended solids,2017,0,0.5,0.3,,,
+Suspended solids,2018,0.3,0.5,0.4,0.3,1.0,0.6
+Mineral substances,2017,97,98,97,,,
+Mineral substances,2018,97,98,97,96,98,97
+Silicon,2017,0.3,0.4,0.4,,,
+Silicon,2018,0.5,0.8,0.6,0.3,0.7,0.5
+Petroleum products,2017,0,0,0,,,
+Petroleum products,2018,0,0.01,0,0,0.01,0.01
+Sulfates,2017,4.6,5.2,4.6,,,
+Sulfates,2018,6.9,6.2,6.6,5.8,7,5.8
+Chlorides,2017,0.7,0.8,0.8,,,
+Chlorides,2018,0.7,0.7,0.7,0.8,0.9,0.8
+Total phosphorus,2017,0.013,0.020,0.014,,,
+Total phosphorus,2018,0.012,0.017,0.015,0.008,0.016,0.014
+Organic phosphorus,2017,0.01,0.018,0.016,,,
+Organic phosphorus,2018,0.006,0.015,0.008,0.004,0.011,0.008
+Mineral phosphorus,2017,0.001,0.002,0.001,,,
+Mineral phosphorus,2018,0.003,0.005,0.004,0.002,0.007,0.004
+Nitrite nitrogen,2017,0,0.001,0,,,
+Nitrite nitrogen,2018,0,0.001,0.001,0,0.003,0.001
+Nitrate nitrogen,2017,0.001,0.002,0.001,,,
+Nitrate nitrogen,2018,0.007,0.020,0.013,0.001,0.05,0.021
+Ammonium nitrogen,2017,0.002,0.008,0.005,,,
+Ammonium nitrogen,2018,0.004,0.010,0.007,0.002,0.013,0.008
+Organic carbon,2017,1.2,2.5,1.5,,,
+Organic carbon,2018,1.1,2.1,1.2,1.1,1.7,1.3

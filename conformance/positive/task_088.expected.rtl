@@ -1,0 +1,1 @@
+[ [ ATTR = SUBSTR(4,1) : ROW->AVP ] { [ !BLANK? VAL : ROW->AVP, BW*->REC ]+ [ BLANK ]? }+ ] [ [ ATTR = SUBSTR(4,1) : ROW->AVP ] { [ !BLANK? VAL : ROW->AVP ]+ [ BLANK ]? }+ ]+

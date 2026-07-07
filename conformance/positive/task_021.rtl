@@ -1,0 +1,1 @@
+{ [ [VAL=NORM : BW*->REC]+ ] [ [VAL=NORM]+ ]{2} }+

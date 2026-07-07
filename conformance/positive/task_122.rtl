@@ -1,0 +1,5 @@
+[ [] [VAL=SUBSTR(0,4): 'YEAR'->AVP]+ ]
+[ [] [VAL: 'MONTH'->AVP]+ ]
+{ [ [] ['\s*-?\s*' ? _ | VAL: 'MIN'->AVP '-' VAL: 'MAX'->AVP]{6} [] ]
+  [ [VAL: 'INDICATOR'->AVP]
+    ['\s*-?\s*' ? _ | VAL: 'AVE'->AVP, (ROW,-AV{2},COL{2})->REC]{6} [] ] }+

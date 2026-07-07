@@ -1,0 +1,32 @@
+Indicators,Year,Angara River Source District,Angara River Source District,Angara River Source District,Background (South Baikal),Background (South Baikal),Background (South Baikal)
+,Year,min.,max.,avg.,min.,max.,avg.
+"pH, units",2018,8.0,7.7,7.26,,,
+"pH, units",2019,6.96,7.80,8.34,6.51,7.73,6.62
+"Oxygen, mg/dm3",2018,10.36,9.79,9.45,,,
+"Oxygen, mg/dm3",2019,10.53,11.43,9.81,9.12,13.82,10.20
+"Suspended solids, mg/dm3",2018,0.3,0.5,0.4,,,
+"Suspended solids, mg/dm3",2019,0,1.7,0.5,0,2.2,0.6
+"Mineral substances, mg/dm3",2018,97,98,97,,,
+"Mineral substances, mg/dm3",2019,97,100,99,91,101,98
+"Silicon, mg/dm3",2018,0.4,0.7,0.7,,,
+"Silicon, mg/dm3",2019,0.4,1.3,0.6,0.2,1.0,0.5
+"Petroleum products, mg/dm3",2018,0,0.01,0,,,
+"Petroleum products, mg/dm3",2019,0,0.02,0.01,0,0.02,0.01
+"Sulfates, mg/dm3",2018,6.7,7.4,7.0,,,
+"Sulfates, mg/dm3",2019,5.5,7.7,6,4.1,8.4,6.8
+"Chlorides, mg/dm3",2018,0.7,0.9,0.7,,,
+"Chlorides, mg/dm3",2019,0.5,0.6,0.7,0.5,0.8,0.5
+"Total phosphorus, mg/dm3",2018,0.013,0.020,0.013,,,
+"Total phosphorus, mg/dm3",2019,0.008,0.02,0.011,0.007,0.027,0.014
+"Organic phosphorus, mg/dm3",2018,0.005,0.015,0.009,,,
+"Organic phosphorus, mg/dm3",2019,0.003,0.017,0.008,0.002,0.02,0.009
+"Mineral phosphorus, mg/dm3",2018,0.003,0.006,0.003,,,
+"Mineral phosphorus, mg/dm3",2019,0,0.010,0.003,0,0.012,0.003
+"Nitrite nitrogen, mg/dm3",2018,0,0.001,0.001,,,
+"Nitrite nitrogen, mg/dm3",2019,0,0.004,0.001,0,0.006,0.001
+"Nitrate nitrogen, mg/dm3",2018,0.006,0.024,0.014,,,
+"Nitrate nitrogen, mg/dm3",2019,0,0.131,0.087,0.001,0.131,0.068
+"Ammonium nitrogen, mg/dm3",2018,0.004,0.011,0.008,,,
+"Ammonium nitrogen, mg/dm3",2019,0,0.016,0.007,0,0.041,0.012
+"Organic carbon, mg/dm3",2018,1.2,1.9,1.2,,,
+"Organic carbon, mg/dm3",2019,1.4,2.1,1.5,1.5,2.2,1.8

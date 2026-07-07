@@ -1,0 +1,31 @@
+AVE,INDICATOR,MIN,MAX,YEAR,MONTH
+11.9,Dissolved oxygen,6.5,12.3,2014,March
+10,Dissolved oxygen,8.1,12.3,2014,September
+14.6,Dissolved oxygen,12.6,12.5,2015,March
+10.7,Dissolved oxygen,8.6,10.1,2015,September
+8.87,Dissolved oxygen,10.1,11.8,2016,March
+9.7,Dissolved oxygen,7,11.3,2016,September
+0.002,Phosphate phosphorus,<0.001,0.011,2014,March
+0.003,Phosphate phosphorus,<0.001,0.061,2014,September
+0.004,Phosphate phosphorus,0,0.027,2015,March
+0.003,Phosphate phosphorus,0,0.022,2015,September
+<0.001,Phosphate phosphorus,0,0.005,2016,March
+0.007,Phosphate phosphorus,0.002,0.025,2016,September
+1.2,"Organic acids, volatile",0,1.92,2014,March
+1.1,"Organic acids, volatile",0.17,3.82,2014,September
+1.9,"Organic acids, volatile",0,6.85,2015,March
+1.4,"Organic acids, volatile",0.40,4.44,2015,September
+1.11,"Organic acids, volatile",0.24,5.60,2016,March
+1.94,"Organic acids, volatile",0.31,4.0,2016,September
+1.4,"Organic acids, non-volatile",0,9.69,2014,March
+0.5,"Organic acids, non-volatile",0,1.88,2014,September
+1,"Organic acids, non-volatile",0,4.28,2015,March
+0.8,"Organic acids, non-volatile",0,5.61,2015,September
+0.95,"Organic acids, non-volatile",0,4.06,2016,March
+1.19,"Organic acids, non-volatile",0.20,5.05,2016,September
+0.001,Volatile phenols,0,0.006,2014,March
+0.001,Volatile phenols,0,0.002,2014,September
+0.001,Volatile phenols,0,0.002,2015,March
+<0.001,Volatile phenols,0,0.001,2015,September
+<0.001,Volatile phenols,0,0.003,2016,March
+0.001,Volatile phenols,0,0.003,2016,September

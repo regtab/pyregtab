@@ -1,0 +1,6 @@
+[ [ATTR=UC]+ ]
+[ COL->AVP
+  [BLANK ? VAL : -AV&!BLANK->FILL | VAL]{3}
+  [VAL]{3}
+  [VAL : (-LT{2},ROW{4})->REC]
+]+

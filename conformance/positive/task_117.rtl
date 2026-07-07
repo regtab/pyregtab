@@ -1,0 +1,6 @@
+[ []+ ]
+[ [] [ATTR] [VAL=SUBSTR(0,4): 'YEAR'->AVP]{5} [] ]
+[ [] [VAL: 'POLLUTANT'->AVP]
+  [VAL: 'EMISSION'->AVP, (ROW&C1,COL&R1,@'UNIT'='MLN M3')->REC]{5} [] ]
+[ [] [VAL: 'POLLUTANT'->AVP]
+  [VAL: 'EMISSION'->AVP, (ROW&C1,COL&R1,@'UNIT'='TONS')->REC]{5} [] ]+

@@ -1,0 +1,2 @@
+[ [] [VAL]+ ]
+[ { [VAL] [BLANK ? _ | VAL : (SR, SC)->REC(2)]+ } ]+

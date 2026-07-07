@@ -1,0 +1,1 @@
+[ []{2} [ VAL : 'MONTH'->AVP ]+ ] [ [] [ VAL : 'INDICATOR'->AVP ] [ "\s*-?\s*"? SKIP | VAL : 'AVE'->AVP, ((ROW & C1), COL)->REC ]+ ]+

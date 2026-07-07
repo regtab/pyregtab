@@ -1,0 +1,5 @@
+ST->AVP
+[ [ATTR]+ ]
+[ [VAL: COL*->REC]+ ]
+{ [ [ATTR]+ ]
+  [ [VAL]+ ] }+

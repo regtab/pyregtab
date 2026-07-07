@@ -1,0 +1,17 @@
+AVE,MIN,MAX,HYDROBIONT_GROUP,UNIT,YEAR
+412,131,1120,Bacterioplankton,"heterotroph abundance, cells/ml",2019
+643,193,1377,Bacterioplankton,"heterotroph abundance, cells/ml",2020
+1737.5,1053.7,2254.0,Phytoplankton,"abundance, thousand cells/l",2019
+881,602,1306;,Phytoplankton,"abundance, thousand cells/l",2020
+220.8,140.1,391.5,Biomass,mg/m3,2019
+550,83,4853,Biomass,mg/m3,2020
+24.3,6.4,47.5,Zooplankton,"abundance, thousand ind./m3",2019
+31.9,16.5,56.8;,Zooplankton,"abundance, thousand ind./m3",2020
+215.2,49.5,439.0,Biomass,mg/m3,2019
+101,47,246,Biomass,mg/m3,2020
+21.6,4.7,42.5,Bacteriobenthos,"heterotroph abundance, thousand cells/g",2019
+36,10,85,Bacteriobenthos,"heterotroph abundance, thousand cells/g",2020
+27297,1806,67214,Zoobenthos,"abundance, ind./m2",2019
+19.1,1,50.1;,Zoobenthos,"abundance, ind./m2",2020
+31.4,6.0,63.5,Biomass,g/m2,2019
+40.5,1,81.6,Biomass,g/m2,2020

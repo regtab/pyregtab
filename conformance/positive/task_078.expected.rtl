@@ -1,0 +1,1 @@
+[ [ ATTR : ROW->AVP ] [ VAL : ROW->AVP, BW*->REC ]+ ] [ [ ATTR : ROW->AVP ] [ VAL : ROW->AVP ]+ ]+

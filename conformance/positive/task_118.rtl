@@ -1,0 +1,5 @@
+[ []{2} [VAL: 'LOCATION'->AVP]+ ]
+[ []+ ]
+[ [~'\n' ? VAL: 'INDICATOR'->AVP '\n' VAL: 'OBSERVATION'->AVP | VAL: 'INDICATOR'->AVP]
+  [VAL: 'YEAR'->AVP] { [VAL: 'MIN'->AVP] [VAL: 'MAX'->AVP]
+  [BLANK ? _ | VAL: 'AVE'->AVP, (ROW{3},-LT{2},COL)->REC] }+ ]+

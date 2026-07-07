@@ -1,0 +1,3 @@
+[ [] [AUX]+ ]
+[ [VAL : ROW*->REC, BW&STR->JOIN(0), 'ID'->AVP]
+  {[ATTR : AV->PREFIX('_')] [VAL : SR->AVP]}+]+

@@ -1,0 +1,2 @@
+{ [ !BLANK? -LT->AVP [ATTR] [VAL: ROW*->REC] { [ATTR] [VAL] }+ ]+
+  [ [BLANK]+ ]? }+

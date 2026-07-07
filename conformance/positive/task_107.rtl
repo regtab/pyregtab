@@ -1,0 +1,6 @@
+$V=['\d+' ? VAL: (COL&#'H'*,ROW&#'S'*)->REC]
+[ [BLANK]+ [!BLANK ? VAL#'H'] [BLANK ? VAL#'H': -LT&!BLANK->FILL | VAL#'H']+ ]+
+{
+[ ['\D.*' ? VAL#'S']+ [$V]+ ]
+[ [BLANK ? VAL#'S': SC->FILL]+ ['\D.*' ? VAL#'S']+ [$V]+ ]*
+}+

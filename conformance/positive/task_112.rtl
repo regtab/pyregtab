@@ -1,0 +1,6 @@
+[ []{2} [VAL: 'LOCATION'->AVP]+ ]
+[ []+ ]
+[ [VAL: 'INDICATOR'->AVP ',' VAL=TRIM: 'UNIT'->AVP]
+  [VAL: 'YEAR'->AVP] { [VAL: 'MIN'->AVP] [VAL: 'MAX'->AVP]
+  [BLANK ? _ | VAL: 'AVE'->AVP, (ROW{3},-LT{2},COL)->REC] }+
+]+

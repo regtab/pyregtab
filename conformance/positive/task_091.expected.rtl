@@ -1,0 +1,1 @@
+{ [ !BLANK? [ ATTR : -LT->AVP ] [ VAL : -LT->AVP, ROW*->REC ] { [ ATTR : -LT->AVP ] [ VAL : -LT->AVP ] }+ ]+ [ [ BLANK ]+ ]? }+

@@ -1,0 +1,32 @@
+Indicators,Year,Selenga Shallows,Selenga Shallows,Selenga Shallows,Background (Central Baikal),Background (Central Baikal),Background (Central Baikal)
+,Year,min.,max.,avg.,min.,max.,avg.
+"pH, units",2018,8.70,7.48,7.85,,,
+"pH, units",2019,7.92,8.78,7.00,8.12,8.08,6.63
+"Oxygen, mg/dm3",2018,8.61,11.55,9.13,,,
+"Oxygen, mg/dm3",2019,8.01,10.01,8.38,10.27,12.68,9.90
+"Suspended solids, mg/dm3",2018,0.3,1.0,0.5,,,
+"Suspended solids, mg/dm3",2019,0,0.6,0.4,0,1.8,0.9
+"Mineral substances, mg/dm3",2018,96,97,96,,,
+"Mineral substances, mg/dm3",2019,92,103,98,85,101,98
+"Silicon, mg/dm3",2018,0.5,0.7,0.5,,,
+"Silicon, mg/dm3",2019,0.8,1.7,1,0.2,1.4,0.7
+"Petroleum products, mg/dm3",2018,0,0,0,,,
+"Petroleum products, mg/dm3",2019,0.01,0.03,0.02,0,0.03,0.01
+"Sulfates, mg/dm3",2018,6.2,6.1,6,,,
+"Sulfates, mg/dm3",2019,7.4,7.4,6.9,5.8,6.5,6.7
+"Chlorides, mg/dm3",2018,0.6,0.8,0.8,,,
+"Chlorides, mg/dm3",2019,0.6,0.6,0.6,0.6,0.7,0.6
+"Total phosphorus, mg/dm3",2018,0.006,0.026,0.012,,,
+"Total phosphorus, mg/dm3",2019,0.013,0.023,0.017,0.006,0.025,0.014
+"Organic phosphorus, mg/dm3",2018,0.004,0.013,0.009,,,
+"Organic phosphorus, mg/dm3",2019,0.001,0.018,0.008,0,0.02,0.006
+"Mineral phosphorus, mg/dm3",2018,0.002,0.02,0.004,,,
+"Mineral phosphorus, mg/dm3",2019,0,0.02,0.008,0,0.018,0.005
+"Nitrite nitrogen, mg/dm3",2018,0,0,0,,,
+"Nitrite nitrogen, mg/dm3",2019,0,0.003,0.001,0,0.013,0.002
+"Nitrate nitrogen, mg/dm3",2018,0.001,0.006,0.002,,,
+"Nitrate nitrogen, mg/dm3",2019,0,0.021,0.007,0,0.109,0.072
+"Ammonium nitrogen, mg/dm3",2018,0.008,0.018,0.009,,,
+"Ammonium nitrogen, mg/dm3",2019,0.007,0.028,0.012,0,0.037,0.011
+"Organic carbon, mg/dm3",2018,1.5,1.7,1.5,,,
+"Organic carbon, mg/dm3",2019,1.7,2.4,2,1.4,2.3,1.6

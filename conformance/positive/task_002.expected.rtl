@@ -1,0 +1,1 @@
+<ANCH(2)> { [ [ VAL = NORM ] [] ]{2} [ [ !BLANK? VAL : (SC{2}, SR)->REC(2) ] [ VAL ] ]+ [ [ BLANK ] [] ]? }+

@@ -1,0 +1,3 @@
+[ [ATTR '=' VAL: CL&P0->AVP, CL*->REC '
+' ATTR '=' VAL: CL&P2->AVP '
+' ATTR '=' VAL: CL&P4->AVP]+ ]+

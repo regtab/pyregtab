@@ -1,0 +1,13 @@
+AVE,MIN,MAX,INDICATOR,MONTH
+10.5,5.8,13.3,Dissolved oxygen,March
+7.8,5.4,10.2,Dissolved oxygen,September
+0.03,0,0.105,Mineral nitrogen,March
+0.02,0,0.134,Mineral nitrogen,September
+0.004,0,0.009,Phosphate phosphorus,March
+0.010,0.001,0.026,Phosphate phosphorus,September
+0.66,0,1.69,"Organic acids, volatile",March
+0.89,0.0,4.07,"Organic acids, volatile",September
+0.26,0,1.79,"Organic acids, non-volatile",March
+0.29,0,1.38,"Organic acids, non-volatile",September
+0,0,0.001,Volatile phenols,March
+0.001,0,0.003,Volatile phenols,September

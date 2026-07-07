@@ -1,0 +1,4 @@
+{ [ [~'Reported crime in'? VAL = REPL('Reported crime in', '').TRIM : ''->AVP, ST&C1*->REC] [] ]
+  [ []{2} ]
+  [ [ATTR] [VAL : SR->AVP] ]{5}
+  [ []{2} ]? }+

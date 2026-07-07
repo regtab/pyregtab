@@ -1,0 +1,76 @@
+EMISSION,POLLUTANT,YEAR,UNIT
+1.54,Wastewater discharged (million m3),2015,MLN M3
+1.57,Wastewater discharged (million m3),2016,MLN M3
+1.32,Wastewater discharged (million m3),2017,MLN M3
+1.36,Wastewater discharged (million m3),2018,MLN M3
+1.78,Wastewater discharged (million m3),2019,MLN M3
+12.13,"BODfull, tons",2015,TONS
+11.15,"BODfull, tons",2016,TONS
+11.19,"BODfull, tons",2017,TONS
+8.27,"BODfull, tons",2018,TONS
+6.72,"BODfull, tons",2019,TONS
+10.8,"Suspended solids, tons",2015,TONS
+9.45,"Suspended solids, tons",2016,TONS
+15.03,"Suspended solids, tons",2017,TONS
+16.53,"Suspended solids, tons",2018,TONS
+13.53,"Suspended solids, tons",2019,TONS
+0.06,"Petroleum products, tons",2015,TONS
+0.03,"Petroleum products, tons",2016,TONS
+0.04,"Petroleum products, tons",2017,TONS
+0.03,"Petroleum products, tons",2018,TONS
+0.03,"Petroleum products, tons",2019,TONS
+47.08,"Nitrate anion, tons",2015,TONS
+59.45,"Nitrate anion, tons",2016,TONS
+66.66,"Nitrate anion, tons",2017,TONS
+61.26,"Nitrate anion, tons",2018,TONS
+73.05,"Nitrate anion, tons",2019,TONS
+0.05,"Surfactants, tons",2015,TONS
+0.14,"Surfactants, tons",2016,TONS
+0.13,"Surfactants, tons",2017,TONS
+0.158),"Surfactants, tons",2018,TONS
+-2),"Surfactants, tons",2019,TONS
+-2),"Non-ionic surfactants, tons",2015,TONS
+-2),"Non-ionic surfactants, tons",2016,TONS
+-2),"Non-ionic surfactants, tons",2017,TONS
+-2),"Non-ionic surfactants, tons",2018,TONS
+0.08,"Non-ionic surfactants, tons",2019,TONS
+49.68,"Sulfates, tons",2015,TONS
+67.72,"Sulfates, tons",2016,TONS
+62.87,"Sulfates, tons",2017,TONS
+83.91,"Sulfates, tons",2018,TONS
+54.34,"Sulfates, tons",2019,TONS
+33.66,"Chlorides, tons",2015,TONS
+35.44,"Chlorides, tons",2016,TONS
+33.19,"Chlorides, tons",2017,TONS
+31.54,"Chlorides, tons",2018,TONS
+37.55,"Chlorides, tons",2019,TONS
+0.33,"Aluminum, tons",2015,TONS
+0.32,"Aluminum, tons",2016,TONS
+0.79,"Aluminum, tons",2017,TONS
+0.41,"Aluminum, tons",2018,TONS
+1.51,"Aluminum, tons",2019,TONS
+44.00,"COD, tons",2015,TONS
+33.03,"COD, tons",2016,TONS
+41.40,"COD, tons",2017,TONS
+22.54,"COD, tons",2018,TONS
+44.49,"COD, tons",2019,TONS
+0.69,"Ammonium nitrogen, tons",2015,TONS
+0.43,"Ammonium nitrogen, tons",2016,TONS
+0.66,"Ammonium nitrogen, tons",2017,TONS
+0.16,"Ammonium nitrogen, tons",2018,TONS
+-2),"Ammonium nitrogen, tons",2019,TONS
+-2),"Ammonium ion, tons",2015,TONS
+-2),"Ammonium ion, tons",2016,TONS
+-2),"Ammonium ion, tons",2017,TONS
+-2),"Ammonium ion, tons",2018,TONS
+0.36,"Ammonium ion, tons",2019,TONS
+2.04,"Phosphates, tons",2015,TONS
+2.77,"Phosphates, tons",2016,TONS
+0.91,"Phosphates, tons",2017,TONS
+0.92,"Phosphates, tons",2018,TONS
+0.55,"Phosphates, tons",2019,TONS
+0.20,"Nitrite anion, tons",2015,TONS
+0.14,"Nitrite anion, tons",2016,TONS
+0.25,"Nitrite anion, tons",2017,TONS
+0.19,"Nitrite anion, tons",2018,TONS
+0.21,"Nitrite anion, tons",2019,TONS

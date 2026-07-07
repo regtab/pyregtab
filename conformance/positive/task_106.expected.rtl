@@ -1,0 +1,1 @@
+[ [] [ VAL : 'MON'->AVP ]+ ] [ [ VAL : 'INDICATOR'->AVP "," VAL = TRIM : 'UNIT'->AVP ] [ VAL : 'MIN'->AVP, (CL*, ROW{2}, COL)->REC "-" VAL : 'MAX'->AVP "/" VAL : 'AVE'->AVP ]+ ]+

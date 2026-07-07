@@ -1,0 +1,3 @@
+  [ []         [VAL]+ ]
+{ [ [VAL]      [BLANK]+ ]
+  [ [VAL=TRIM] [!BLANK? VAL: (COL, ST&C0, ROW)->REC]+ ]+ }+

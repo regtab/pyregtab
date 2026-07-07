@@ -1,0 +1,2 @@
+[ [ATTR=UC]+ ]
+[ COL->AVP [VAL : ROW*->REC] [VAL]+ ]+

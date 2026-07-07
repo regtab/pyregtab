@@ -1,0 +1,2 @@
+[          [ATTR]+ ]
+[ COL->AVP [BLANK? _ | VAL: RT*->REC] [BLANK? _ | VAL]+ ]+

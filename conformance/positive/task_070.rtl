@@ -1,0 +1,2 @@
+[ [BLANK]+           [VAL#'H']+ ]+
+[ [!'\d+'? VAL#'S']+ ['\d+'? VAL: (COL&#'H'*, ROW&#'S'*)->REC]+ ]+

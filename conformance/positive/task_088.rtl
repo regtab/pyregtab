@@ -1,0 +1,3 @@
+ROW->AVP
+[ [ATTR=SUBSTR(4,1)] { [!BLANK? VAL: BW*->REC]+ [BLANK]? }+ ]
+[ [ATTR=SUBSTR(4,1)] { [!BLANK? VAL]+ [BLANK]? }+ ]+

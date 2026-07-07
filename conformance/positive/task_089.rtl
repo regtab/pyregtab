@@ -1,0 +1,6 @@
+COL->AVP
+  [ [ATTR]+ ]
+{ [ [VAL: RT*->REC] [VAL]+ ]
+  [ [BLANK]+ ] }+
+  [ [ATTR]+ ]
+  [ [VAL: RT*->REC] [VAL]+ ]+

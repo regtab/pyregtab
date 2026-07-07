@@ -1,0 +1,1 @@
+[ [] [ VAL : 'AIRLINE'->AVP ]+ ] [ [ VAL : 'AIRPORT'->AVP ] [ VAL : (COL, ROW, CL)->REC, 'ND'->AVP " " VAL : 'MON'->AVP ]+ ]+

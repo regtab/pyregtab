@@ -1,0 +1,1 @@
+{ [ { [ !BLANK? VAL : COL*->REC, (ROW & C+1.. & STR)*->JOIN(0) ]+ [ BLANK ]? }+ ] } { [ { [ !BLANK? VAL ]+ [ BLANK ]? }+ ]+ [ [ BLANK ]+ ]? }+

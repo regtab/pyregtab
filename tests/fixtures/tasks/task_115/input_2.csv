@@ -1,0 +1,100 @@
+Enterprise name,Year,Fuel type,Fuel consumption (tons of reference fuel),Fuel characteristics,Fuel characteristics,"Emissions, thousand tons/year","Emissions, thousand tons/year","Emissions, thousand tons/year","Emissions, thousand tons/year","Emissions, thousand tons/year"
+Enterprise name,Year,Fuel type,Fuel consumption (tons of reference fuel),"sulfur content Sr, %","ash content Ar, %",total,solid,sulfur dioxide,nitrogen oxides,other
+"Section No. 1 TPP-9, Angarsk",2016,coal,319345,1.33,15.8,15325,2945,9917,2458,0.005
+"Section No. 1 TPP-9, Angarsk",2016,fuel oil,264,1.42,0.058,15325,2945,9917,2458,0.005
+"Section No. 1 TPP-9, Angarsk",2017,coal,328922,1.57,12.9,17587,2703,12968,1911,0.006
+"Section No. 1 TPP-9, Angarsk",2017,fuel oil,173,1.2,0.059,17587,2703,12968,1911,0.005
+"Section No. 1 TPP-9, Angarsk",2018,coal,325044,1.66,12.3,17962,2829,13183,1946,0.004
+"Section No. 1 TPP-9, Angarsk",2018,fuel oil,169,1.47,0.086,17962,2829,13183,1946,0.004
+"Section No. 1 TPP-9, Angarsk",2019,coal,345542,1.6,11.8,19817,3492,13854,2466,0.005
+"Section No. 1 TPP-9, Angarsk",2019,fuel oil,200,1.39,0.071,19817,3492,13854,2466,0.005
+"Section No. 1 TPP-9, Angarsk",2020,coal,291709,1.65,13.0,17051,2521,12690,1835,0.005
+"Section No. 1 TPP-9, Angarsk",2020,fuel oil,216,1.50,0.06,17051,2521,12690,1835,0.005
+"Section No. 1 TPP-9, Angarsk",2021,coal,0,0,0,0,0,0,0,0
+"Section No. 1 TPP-9, Angarsk",2021,fuel oil,0,0,0,0,0,0,0,0
+"Section No. 1 TPP-9, Angarsk",2022,coal,0,0,0,0,0,0,0,0
+"Section No. 1 TPP-9, Angarsk",2022,fuel oil,0,0,0,0,0,0,0,0
+"TPP-9, Angarsk",2016,coal,1035518,1.12,13.6,49814,8706,34645,6434,0.033
+"TPP-9, Angarsk",2016,fuel oil,1582,1.5,0.08,49814,8706,34645,6434,0.028
+"TPP-9, Angarsk",2017,coal,1143389,1.33,15,51695,8990,37263,5415,0.029
+"TPP-9, Angarsk",2017,fuel oil,1414,1.25,0.071,51695,8990,37263,5415,0.026
+"TPP-9, Angarsk",2018,coal,1197954,1.28,13,57207,8414,43274,5492,0.028
+"TPP-9, Angarsk",2018,fuel oil,1545,1.37,0.062,57207,8414,43274,5492,0.028
+"TPP-9, Angarsk",2019,coal,1165470,1.0,11.4,55832,10479,39334,5977,0.046
+"TPP-9, Angarsk",2019,fuel oil,1731,1.24,0.075,55832,10479,39334,5977,0.047
+"TPP-9, Angarsk",2020,coal,1164229,1.2,12.7,51747,8321,37206,6173,0.048
+"TPP-9, Angarsk",2020,fuel oil,1488,1.77,0.08,51747,8321,37206,6173,0.043
+"TPP-9, Angarsk",2021,coal,1404918,0.94,16.7,61002,13317,40527,7109,0.042
+"TPP-9, Angarsk",2021,fuel oil,1609,1.4,0.070,61002,13317,40527,7109,0.048
+"TPP-9, Angarsk",2022,coal,1444918,0.80,17.6,61274,15488,37428,8305,0.052
+"TPP-9, Angarsk",2022,fuel oil,1946,1.6,0.8,61274,15488,37428,8305,0.052
+"TPP-10, Angarsk",2016,coal,930112,1.07,15.3,46605,7039,32710,6813,0.049
+"TPP-10, Angarsk",2016,fuel oil,2477,1.19,0.05,46605,7039,32710,6813,0.049
+"TPP-10, Angarsk",2017,coal,1153352,1.02,16.8,53952,8690,38693,6530,0.040
+"TPP-10, Angarsk",2017,fuel oil,2157,1.02,0.06,53952,8690,38693,6530,0.042
+"TPP-10, Angarsk",2018,coal,1518783,1.31,17.8,74259,11963,51407,10850,0.035
+"TPP-10, Angarsk",2018,fuel oil,2262,1.14,0.05,74259,11963,51407,10850,0.039
+"TPP-10, Angarsk",2019,coal,1394523,1.23,18.1,64869,11324,43699,9813,0.033
+"TPP-10, Angarsk",2019,fuel oil,1822,1.18,0.06,64869,11324,43699,9813,0.031
+"TPP-10, Angarsk",2020,coal,1196725,1.07,13.9,56269,9242,38271,8723,0.036
+"TPP-10, Angarsk",2020,fuel oil,2513,1.53,0.05,56269,9242,38271,8723,0.035
+"TPP-10, Angarsk",2021,coal,1164752,1.15,19.3,53121,10172,34007,8897,0.045
+"TPP-10, Angarsk",2021,fuel oil,2370,1.28,0.05,53121,10172,34007,8897,0.048
+"TPP-10, Angarsk",2022,coal,1712413,0.95,0.05,73455,14182,46514,12692,0.056
+"TPP-10, Angarsk",2022,fuel oil,2712,1.31,19.1,73455,14182,46514,12692,0.049
+"Novo-Irkutsk TPP, Irkutsk",2016,coal,1273485,1.26,13.4,54950,5181,41266,8400,0.118
+"Novo-Irkutsk TPP, Irkutsk",2016,fuel oil,2651,0.6,0.03,54950,5181,41266,8400,0.097
+"Novo-Irkutsk TPP, Irkutsk",2017,coal,1258065,1.19,14,53984,5097,40115,8652,0.111
+"Novo-Irkutsk TPP, Irkutsk",2017,fuel oil,2240,0.48,0.018,53984,5097,40115,8652,0.112
+"Novo-Irkutsk TPP, Irkutsk",2018,coal,1319605,1.3,16.6,55442,7206,40535,7645,0.054
+"Novo-Irkutsk TPP, Irkutsk",2018,fuel oil,2131,0.38,0.01,55442,7206,40535,7645,0.056
+"Novo-Irkutsk TPP, Irkutsk",2019,coal,1246672,1.24,15.1,54060,6706,39709,7563,0.090
+"Novo-Irkutsk TPP, Irkutsk",2019,fuel oil,1964,0.5,0.014,54060,6706,39709,7563,0.073
+"Novo-Irkutsk TPP, Irkutsk",2020,coal,1270340,1.36,14.7,57557,6125,44010,7302,0.114
+"Novo-Irkutsk TPP, Irkutsk",2020,fuel oil,1688,0.50,0.02,57557,6125,44010,7302,0.128
+"Novo-Irkutsk TPP, Irkutsk",2021,coal,1286090,1.01,13.13,47619,5782,35278,6455,0.114
+"Novo-Irkutsk TPP, Irkutsk",2021,fuel oil,2046,0.58,0.069,47619,5782,35278,6455,0.090
+"Novo-Irkutsk TPP, Irkutsk",2022,coal,1314829,1.01,17.8,52408,7102,37379,7824,0.097
+"Novo-Irkutsk TPP, Irkutsk",2022,fuel oil,2520,0.62,0.78,52408,7102,37379,7824,0.112
+"Shelekhov section of Novo-Irkutsk TPP, Shelekhov",2016,coal,125566,1.12,16.0,6363,1528,3946,0.958,0.040
+"Shelekhov section of Novo-Irkutsk TPP, Shelekhov",2016,fuel oil,107,1.04,0.05,6363,1528,3946,0.759,0.041
+"Shelekhov section of Novo-Irkutsk TPP, Shelekhov",2017,coal,120722,1.2,14.8,6662,1699,4203,0.607,0.056
+"Shelekhov section of Novo-Irkutsk TPP, Shelekhov",2017,fuel oil,137,1.09,0.05,6662,1699,4203,0.697,0.065
+"Shelekhov section of Novo-Irkutsk TPP, Shelekhov",2018,coal,124697,1.22,15.7,6640,1636,4272,0.684,0.023
+"Shelekhov section of Novo-Irkutsk TPP, Shelekhov",2018,fuel oil,172,1.34,0.05,6640,1636,4272,0.813,0.022
+"Shelekhov section of Novo-Irkutsk TPP, Shelekhov",2019,coal,120311,1.00,13.9,5751,1386,3742,0.678,0.031
+"Shelekhov section of Novo-Irkutsk TPP, Shelekhov",2019,fuel oil,118,0.98,0.06,5751,1386,3742,0.646,0.027
+"Shelekhov section of Novo-Irkutsk TPP, Shelekhov",2020,coal,114992,1.36,14.9,5777,1298,3896,0.612,0.033
+"Shelekhov section of Novo-Irkutsk TPP, Shelekhov",2020,fuel oil,126,1.34,0.05,5777,1298,3896,0.619,0.037
+"Shelekhov section of Novo-Irkutsk TPP, Shelekhov",2021,coal,119824,1.08,14.5,5637,1372,3631,0.544,0.023
+"Shelekhov section of Novo-Irkutsk TPP, Shelekhov",2021,fuel oil,133,1.32,0.05,5637,1372,3631,0.525,0.021
+"Shelekhov section of Novo-Irkutsk TPP, Shelekhov",2022,coal,122601,1.05,18.8,5723,1619,3424,0.711,0.030
+"Shelekhov section of Novo-Irkutsk TPP, Shelekhov",2022,fuel oil,192,1.24,0.05,5723,1619,3424,0.684,0.035
+"TPP-11, Usolye-Sibirskoye",2016,coal,418663,1.34,15.1,24658,5388,15929,3318,0.022
+"TPP-11, Usolye-Sibirskoye",2016,fuel oil,1201,0.93,0.084,24658,5388,15929,3318,0.025
+"TPP-11, Usolye-Sibirskoye",2017,coal,408322,1.3,13.7,22877,5771,14076,3007,0.020
+"TPP-11, Usolye-Sibirskoye",2017,fuel oil,1062,1.15,0.06,22877,5771,14076,3007,0.025
+"TPP-11, Usolye-Sibirskoye",2018,coal,461757,1.5,15.1,25797,5475,17379,2921,0.023
+"TPP-11, Usolye-Sibirskoye",2018,fuel oil,762,1.1,0.057,25797,5475,17379,2921,0.019
+"TPP-11, Usolye-Sibirskoye",2019,coal,371176,1.09,13.6,18950,3587,12789,2567,0.008
+"TPP-11, Usolye-Sibirskoye",2019,fuel oil,788,1.04,0.05,18950,3587,12789,2567,0.007
+"TPP-11, Usolye-Sibirskoye",2020,coal,396232,1.32,15.2,19668,3499,13594,2568,0.007
+"TPP-11, Usolye-Sibirskoye",2020,fuel oil,544,1.26,0.08,19668,3499,13594,2568,0.007
+"TPP-11, Usolye-Sibirskoye",2021,coal,340706,1.04,18.3,16121,3286,10210,2616,0.010
+"TPP-11, Usolye-Sibirskoye",2021,fuel oil,740,1.25,0.065,16121,3286,10210,2616,0.010
+"TPP-11, Usolye-Sibirskoye",2022,coal,441998,0.93,15.5,18794,4431,11176,3179,0.008
+"TPP-11, Usolye-Sibirskoye",2022,fuel oil,693,1.07,0.056,18794,4431,11176,3179,0.008
+"TPP-12, Cheremkhovo",2016,coal,68642,0.98,18.2,3558,0.740,2065,0.521,0.044
+"TPP-12, Cheremkhovo",,coal,,,,,,,,
+"TPP-12, Cheremkhovo",2017,coal,67613,1.01,19.4,3551,0.859,2169,0.458,0.032
+"TPP-12, Cheremkhovo",,coal,,,,,,,,
+"TPP-12, Cheremkhovo",2018,coal,69052,0.86,20.0,2846,0.781,1582,0.342,0.007
+"TPP-12, Cheremkhovo",,coal,,,,,,,,
+"TPP-12, Cheremkhovo",2019,coal,64830,0.56,19,1944,0.698,0.969,0.330,0.007
+"TPP-12, Cheremkhovo",,coal,,,,,,,,
+"TPP-12, Cheremkhovo",2020,coal,62771,0.57,22,2078,0.732,0.930,0.404,0.016
+"TPP-12, Cheremkhovo",,coal,,,,,,,,
+"TPP-12, Cheremkhovo",2021,coal,67588,0.6,17.60,2148,0.925,0.739,0.309,0.018
+"TPP-12, Cheremkhovo",,coal,,,,,,,,
+"TPP-12, Cheremkhovo",2022,coal,65122,0.60,20.3,2278,0.789,1094,0.279,0.005
+"TPP-12, Cheremkhovo",,coal,,,,,,,,

@@ -216,3 +216,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# build artifacts
+/target/
+/.venv/
+__pycache__/
+*.pyd
+/dist/
+.pytest_cache/

@@ -1,0 +1,3 @@
+[ [VAL: R2&C1->REC ] [VAL]             [VAL]             ]
+[ []                 [VAL: R0&C2->REC] []                ]
+[ []                 [VAL]             [VAL: R0&C1->REC] ]

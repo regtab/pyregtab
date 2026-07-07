@@ -1,0 +1,46 @@
+AVE,INDICATOR,YEAR,MAX,MIN,LOCATION
+7.74,"pH, units",2017,7.30,7.56,Selenga Shallows
+7.57,"pH, units",2018,7.86,8.44,Selenga Shallows
+6.96,"pH, units",2018,7.62,8.34,Background (Central Baikal)
+12.24,Oxygen,2017,12.63,12.57,Selenga Shallows
+9.97,Oxygen,2018,12.12,9.30,Selenga Shallows
+9.79,Oxygen,2018,12.6,9.11,Background (Central Baikal)
+0.5,Suspended solids,2017,1,0,Selenga Shallows
+0.5,Suspended solids,2018,1.0,0.3,Selenga Shallows
+0.5,Suspended solids,2018,1.1,0.3,Background (Central Baikal)
+99,Mineral substances,2017,100,97,Selenga Shallows
+96,Mineral substances,2018,97,96,Selenga Shallows
+96,Mineral substances,2018,97,95,Background (Central Baikal)
+0.4,Silicon,2017,0.4,0.3,Selenga Shallows
+0.6,Silicon,2018,0.9,0.5,Selenga Shallows
+0.5,Silicon,2018,0.8,0.2,Background (Central Baikal)
+0,Petroleum products,2017,0,0,Selenga Shallows
+0,Petroleum products,2018,0,0,Selenga Shallows
+0.01,Petroleum products,2018,0.01,0.01,Background (Central Baikal)
+4.6,Sulfates,2017,5.4,4.9,Selenga Shallows
+6,Sulfates,2018,5.9,5.7,Selenga Shallows
+5.9,Sulfates,2018,7.5,5.6,Background (Central Baikal)
+0.6,Chlorides,2017,1,0.6,Selenga Shallows
+0.7,Chlorides,2018,0.9,0.5,Selenga Shallows
+0.8,Chlorides,2018,0.7,0.8,Background (Central Baikal)
+0.013,Total phosphorus,2017,0.026,0.005,Selenga Shallows
+0.010,Total phosphorus,2018,0.028,0.006,Selenga Shallows
+0.016,Total phosphorus,2018,0.016,0.012,Background (Central Baikal)
+0.010,Organic phosphorus,2017,0.02,0.003,Selenga Shallows
+0.009,Organic phosphorus,2018,0.013,0.004,Selenga Shallows
+0.012,Organic phosphorus,2018,0.013,0.007,Background (Central Baikal)
+0.003,Mineral phosphorus,2017,0.010,0,Selenga Shallows
+0.005,Mineral phosphorus,2018,0.02,0.002,Selenga Shallows
+0.004,Mineral phosphorus,2018,0.004,0.003,Background (Central Baikal)
+0,Nitrite nitrogen,2017,0,0,Selenga Shallows
+0,Nitrite nitrogen,2018,0,0,Selenga Shallows
+0.002,Nitrite nitrogen,2018,0.003,0,Background (Central Baikal)
+0.003,Nitrate nitrogen,2017,0.004,0.002,Selenga Shallows
+0.002,Nitrate nitrogen,2018,0.005,0.001,Selenga Shallows
+0.02,Nitrate nitrogen,2018,0.058,0.001,Background (Central Baikal)
+0.012,Ammonium nitrogen,2017,0.024,0,Selenga Shallows
+0.011,Ammonium nitrogen,2018,0.017,0.008,Selenga Shallows
+0.005,Ammonium nitrogen,2018,0.01,0.001,Background (Central Baikal)
+1.6,Organic carbon,2017,1.8,1.1,Selenga Shallows
+1.4,Organic carbon,2018,2.0,1.3,Selenga Shallows
+1.4,Organic carbon,2018,1.7,1.4,Background (Central Baikal)

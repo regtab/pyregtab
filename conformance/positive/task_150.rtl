@@ -1,0 +1,2 @@
+[ [ATTR] [VAL : 'YEAR'->AVP]+ ]
+[ [VAL : 'LOCATION'->AVP] [VAL : ST->AVP, (ROW,COL)->REC]+ ]+

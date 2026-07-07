@@ -1,0 +1,1 @@
+[ [ VAL : (ROW & #'ODD')*->REC ] [ VAL : (ROW & #'EVEN')*->REC ] { [ VAL #'ODD' ] [ VAL #'EVEN' ] }+ ]+

@@ -1,0 +1,32 @@
+Indicators,Year,BAM District,BAM District,BAM District,Background (North Baikal),Background (North Baikal),Background (North Baikal)
+,Year,min.,max.,avg.,min.,max.,avg.
+"pH, units",2018,8.1,9.07,6.75,,,
+"pH, units",2019,8.03,8.82,8.51,6.89,8.06,7.85
+"Oxygen, mg/dm3",2018,8.95,10.48,10.65,,,
+"Oxygen, mg/dm3",2019,7.06,14.34,9.82,8.60,10.61,9.80
+"Suspended solids, mg/dm3",2018,0,2.4,0.7,,,
+"Suspended solids, mg/dm3",2019,0,4.3,0.7,0,1.4,0.4
+"Mineral substances, mg/dm3",2018,67,99,91,,,
+"Mineral substances, mg/dm3",2019,38,101,95,91,101,98
+"Silicon, mg/dm3",2018,0.4,1.5,0.9,,,
+"Silicon, mg/dm3",2019,0.3,1.7,1.0,0.3,1.7,0.7
+"Petroleum products, mg/dm3",2018,0,0.02,0.01,,,
+"Petroleum products, mg/dm3",2019,0,0.02,0.01,0,0.02,0.01
+"Sulfates, mg/dm3",2018,4.1,7.5,6.6,,,
+"Sulfates, mg/dm3",2019,5.0,8.5,6.1,5.3,5.7,6
+"Chlorides, mg/dm3",2018,0.4,1.0,0.8,,,
+"Chlorides, mg/dm3",2019,0.5,0.6,0.6,0.5,0.8,0.5
+"Total phosphorus, mg/dm3",2018,0.004,0.029,0.013,,,
+"Total phosphorus, mg/dm3",2019,0.006,0.03,0.014,0.007,0.025,0.016
+"Organic phosphorus, mg/dm3",2018,0.001,0.021,0.01,,,
+"Organic phosphorus, mg/dm3",2019,0.001,0.021,0.011,0.005,0.028,0.017
+"Mineral phosphorus, mg/dm3",2018,0.002,0.019,0.005,,,
+"Mineral phosphorus, mg/dm3",2019,0,0.015,0.003,0,0.008,0.002
+"Nitrite nitrogen, mg/dm3",2018,0,0.006,0.001,,,
+"Nitrite nitrogen, mg/dm3",2019,0,0.010,0.001,0,0.004,0.001
+"Nitrate nitrogen, mg/dm3",2018,0,0.032,0.011,,,
+"Nitrate nitrogen, mg/dm3",2019,0,0.151,0.045,0,0.134,0.066
+"Ammonium nitrogen, mg/dm3",2018,0,0.015,0.007,,,
+"Ammonium nitrogen, mg/dm3",2019,0,0.036,0.011,0,0.029,0.008
+"Organic carbon, mg/dm3",2018,1.2,3.0,1.7,,,
+"Organic carbon, mg/dm3",2019,1.3,3.1,2,1.2,2.6,1.7

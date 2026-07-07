@@ -1,0 +1,1 @@
+[ [ ATTR ]+ ] [ [ BLANK? VAL : COL->AVP, RT*->REC, -(AV & !BLANK)->FILL | VAL : COL->AVP, RT*->REC ] [ BLANK? VAL : COL->AVP, -(AV & !BLANK)->FILL | VAL : COL->AVP ]+ ]+

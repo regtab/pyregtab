@@ -1,0 +1,1 @@
+{ [ [ ATTR : CL->AVP "=" VAL : CL->AVP, BW*->REC ]+ ] [ [ ATTR : CL->AVP "=" VAL : CL->AVP ]+ ]{2} }+

@@ -1,0 +1,4 @@
+  [ [] [VAL : 'MONTH'->AVP]+ ]
+  [ [] [VAL : 'DAY'->AVP]+ ]
+{ [ [VAL : 'LOCATION'->AVP] []+ ]
+  [ [VAL : 'INDICATOR'->AVP] [!BLANK ? VAL : 'DATA'->AVP, (ROW,COL{2},ST)->REC]+ ]+ }+

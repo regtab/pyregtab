@@ -1,0 +1,8 @@
+AVE,MIN,MAX,INDICATOR
+0.27,0.07,0.90,"Organic nitrogen, %"
+1.77,0.90,2.48,"Organic carbon, %"
+4.20,1.64,7.17,"Sulfide sulfur, mg/kg"
+0.63,0.12,0.95,"Easily hydrolyzable carbohydrates (EHC), %"
+1.43,0.92,2.08,"Hardly hydrolyzable carbohydrates (HHC), %"
+2.03,1.44,2.44,"Lignin-humus complex (LHC), %"
+70,55,85,"HHC+LHC / Total organic matter, %"

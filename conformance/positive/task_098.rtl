@@ -1,0 +1,2 @@
+[ []                                    []    [ATTR]+ ]
+[ [VAL: RT*->REC, (BW&STR)*->JOIN(0,1)] [VAL] [VAL: COL->AVP]{2} [VAL]+ ]+

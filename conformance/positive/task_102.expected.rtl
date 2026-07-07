@@ -1,0 +1,1 @@
+{ [ [ ATTR ] []+ ] } { [ [ !BLANK? VAL : COL->AVP, ST*->REC ] { [ BLANK? SKIP | ATTR ] [ BLANK? SKIP | VAL : SR->AVP ] }+ ] [ [ BLANK ] { [ BLANK? SKIP | ATTR ] [ BLANK? SKIP | VAL : SR->AVP ] }+ ]+ }+

@@ -1,0 +1,4 @@
+[ [ATTR=UC]{3} [VAL : 'INDICATOR'->AVP]+ ]
+[ []{3} [VAL : 'YEAR'->AVP]+ ]
+[ [BLANK ? VAL : -AV&!BLANK->FILL, COL->AVP | VAL : COL->AVP]{2}
+  [VAL : COL->AVP] [VAL : 'DATA'->AVP, (ROW{3},COL{2})->REC]{5} []+ ]+

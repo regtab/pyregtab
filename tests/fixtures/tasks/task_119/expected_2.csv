@@ -1,0 +1,46 @@
+AVE,INDICATOR,YEAR,MAX,MIN,LOCATION
+8.18,"pH, units",2017,7.43,8.70,Angara River Source District
+8.66,"pH, units",2018,8.5,7.0,Angara River Source District
+7.16,"pH, units",2018,7.69,8.25,Background (South Baikal)
+12.86,Oxygen,2017,10.86,11.51,Angara River Source District
+10.47,Oxygen,2018,12.42,9.84,Angara River Source District
+9.92,Oxygen,2018,12.14,10.45,Background (South Baikal)
+0.3,Suspended solids,2017,0.5,0,Angara River Source District
+0.4,Suspended solids,2018,0.5,0.3,Angara River Source District
+0.6,Suspended solids,2018,1.0,0.3,Background (South Baikal)
+97,Mineral substances,2017,98,97,Angara River Source District
+97,Mineral substances,2018,98,97,Angara River Source District
+97,Mineral substances,2018,98,96,Background (South Baikal)
+0.4,Silicon,2017,0.4,0.3,Angara River Source District
+0.6,Silicon,2018,0.8,0.5,Angara River Source District
+0.5,Silicon,2018,0.7,0.3,Background (South Baikal)
+0,Petroleum products,2017,0,0,Angara River Source District
+0,Petroleum products,2018,0.01,0,Angara River Source District
+0.01,Petroleum products,2018,0.01,0,Background (South Baikal)
+4.6,Sulfates,2017,5.2,4.6,Angara River Source District
+6.6,Sulfates,2018,6.2,6.9,Angara River Source District
+5.8,Sulfates,2018,7,5.8,Background (South Baikal)
+0.8,Chlorides,2017,0.8,0.7,Angara River Source District
+0.7,Chlorides,2018,0.7,0.7,Angara River Source District
+0.8,Chlorides,2018,0.9,0.8,Background (South Baikal)
+0.014,Total phosphorus,2017,0.020,0.013,Angara River Source District
+0.015,Total phosphorus,2018,0.017,0.012,Angara River Source District
+0.014,Total phosphorus,2018,0.016,0.008,Background (South Baikal)
+0.016,Organic phosphorus,2017,0.018,0.01,Angara River Source District
+0.008,Organic phosphorus,2018,0.015,0.006,Angara River Source District
+0.008,Organic phosphorus,2018,0.011,0.004,Background (South Baikal)
+0.001,Mineral phosphorus,2017,0.002,0.001,Angara River Source District
+0.004,Mineral phosphorus,2018,0.005,0.003,Angara River Source District
+0.004,Mineral phosphorus,2018,0.007,0.002,Background (South Baikal)
+0,Nitrite nitrogen,2017,0.001,0,Angara River Source District
+0.001,Nitrite nitrogen,2018,0.001,0,Angara River Source District
+0.001,Nitrite nitrogen,2018,0.003,0,Background (South Baikal)
+0.001,Nitrate nitrogen,2017,0.002,0.001,Angara River Source District
+0.013,Nitrate nitrogen,2018,0.020,0.007,Angara River Source District
+0.021,Nitrate nitrogen,2018,0.05,0.001,Background (South Baikal)
+0.005,Ammonium nitrogen,2017,0.008,0.002,Angara River Source District
+0.007,Ammonium nitrogen,2018,0.010,0.004,Angara River Source District
+0.008,Ammonium nitrogen,2018,0.013,0.002,Background (South Baikal)
+1.5,Organic carbon,2017,2.5,1.2,Angara River Source District
+1.2,Organic carbon,2018,2.1,1.1,Angara River Source District
+1.3,Organic carbon,2018,1.7,1.1,Background (South Baikal)

@@ -1,0 +1,1 @@
+[ [] [ VAL : 'ZONE'->AVP, COL*->REC ]+ ] [ [ ATTR = UC ] [ VAL : ROW->AVP ]+ ]+

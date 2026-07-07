@@ -1,0 +1,7 @@
+[ [] [VAL=SUBSTR(0,4): 'YEAR'->AVP]{4} [] ]
+[ []+ ]
+[ [VAL: 'INDICATOR'->AVP]
+  { ['\s*-?\s*' ? _ | VAL: 'MPC_MIN'->AVP '-' VAL: 'MPC_MAX'->AVP]
+    [VAL: 'AVE'->AVP, (ROW,-LT{2},COL,@'UNIT'='MG/DM3')->REC] }{2}
+  []
+]+

@@ -1,0 +1,6 @@
+  [ [ATTR=UC]{2} [VAL : 'YEAR'->AVP]+ ]
+{ [ [VAL#'LOC' : 'LOCATION'->AVP] []+ ]
+  [ COL->AVP
+    [BLANK ? VAL : -AV&!BLANK->FILL | VAL]
+    [!BLANK ? VAL]
+    [VAL : 'DATA'->AVP, (ROW{2},COL)->REC]{3} ]+ }+

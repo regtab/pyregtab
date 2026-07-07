@@ -1,0 +1,46 @@
+AVE,INDICATOR,YEAR,MAX,MIN,LOCATION
+7.21,"pH, units",2017,7.35,7.84,Kultuk-Slyudyanka District
+7.41,"pH, units",2018,6.89,8.33,Kultuk-Slyudyanka District
+6.95,"pH, units",2018,8.96,7.68,Background (South Baikal)
+10.38,Oxygen,2017,11.40,11.95,Kultuk-Slyudyanka District
+11.39,Oxygen,2018,12.29,11.04,Kultuk-Slyudyanka District
+12.70,Oxygen,2018,10.61,12.00,Background (South Baikal)
+0.3,Suspended solids,2017,0.8,0,Kultuk-Slyudyanka District
+0.5,Suspended solids,2018,0.9,0.5,Kultuk-Slyudyanka District
+0.7,Suspended solids,2018,1.0,0.3,Background (South Baikal)
+96,Mineral substances,2017,98,94,Kultuk-Slyudyanka District
+98,Mineral substances,2018,100,97,Kultuk-Slyudyanka District
+97,Mineral substances,2018,98,96,Background (South Baikal)
+0.2,Silicon,2017,0.3,0.1,Kultuk-Slyudyanka District
+0.4,Silicon,2018,0.4,0.4,Kultuk-Slyudyanka District
+0.5,Silicon,2018,0.7,0.3,Background (South Baikal)
+0.01,Petroleum products,2017,0.01,0,Kultuk-Slyudyanka District
+0,Petroleum products,2018,0.01,0,Kultuk-Slyudyanka District
+0.01,Petroleum products,2018,0.01,0,Background (South Baikal)
+6.3,Sulfates,2017,6.2,5.6,Kultuk-Slyudyanka District
+6,Sulfates,2018,7.6,5.9,Kultuk-Slyudyanka District
+5.9,Sulfates,2018,7,5.7,Background (South Baikal)
+0.7,Chlorides,2017,0.8,0.4,Kultuk-Slyudyanka District
+0.8,Chlorides,2018,0.9,0.7,Kultuk-Slyudyanka District
+0.8,Chlorides,2018,0.9,0.8,Background (South Baikal)
+0.015,Total phosphorus,2017,0.03,0.007,Kultuk-Slyudyanka District
+0.01,Total phosphorus,2018,0.019,0.007,Kultuk-Slyudyanka District
+0.014,Total phosphorus,2018,0.015,0.010,Background (South Baikal)
+0.015,Organic phosphorus,2017,0.025,0.002,Kultuk-Slyudyanka District
+0.007,Organic phosphorus,2018,0.014,0,Kultuk-Slyudyanka District
+0.009,Organic phosphorus,2018,0.012,0.004,Background (South Baikal)
+0.004,Mineral phosphorus,2017,0.005,0.001,Kultuk-Slyudyanka District
+0.004,Mineral phosphorus,2018,0.007,0,Kultuk-Slyudyanka District
+0.004,Mineral phosphorus,2018,0.006,0.002,Background (South Baikal)
+0.001,Nitrite nitrogen,2017,0.002,0,Kultuk-Slyudyanka District
+0,Nitrite nitrogen,2018,0,0,Kultuk-Slyudyanka District
+0.001,Nitrite nitrogen,2018,0.003,0,Background (South Baikal)
+0.048,Nitrate nitrogen,2017,0.067,0.025,Kultuk-Slyudyanka District
+0.039,Nitrate nitrogen,2018,0.07,0.024,Kultuk-Slyudyanka District
+0.024,Nitrate nitrogen,2018,0.05,0.001,Background (South Baikal)
+0.007,Ammonium nitrogen,2017,0.016,0.001,Kultuk-Slyudyanka District
+0.009,Ammonium nitrogen,2018,0.024,0,Kultuk-Slyudyanka District
+0.006,Ammonium nitrogen,2018,0.012,0.002,Background (South Baikal)
+1.2,Organic carbon,2017,1.7,1.1,Kultuk-Slyudyanka District
+1.2,Organic carbon,2018,1.4,0.9,Kultuk-Slyudyanka District
+1.2,Organic carbon,2018,1.6,1.0,Background (South Baikal)

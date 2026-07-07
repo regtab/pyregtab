@@ -1,0 +1,6 @@
+[ []+ ]
+[ []{2} [VAL=SUBSTR(0,4): 'YEAR'->AVP]{2} [] ]
+[ [VAL: 'POLLUTANT'->AVP] [VAL: 'MPC'->AVP]
+  [~'*' ? _ | VAL: 'MPC_EXCEEDING_FREQUENCY'->AVP, (ROW{2},ROW&C4,COL&R1)->REC]{2}
+  []
+]+

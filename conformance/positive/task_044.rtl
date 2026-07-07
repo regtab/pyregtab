@@ -1,0 +1,2 @@
+{ [ [!BLANK? VAL : SR->REC] [!BLANK? VAL] [BLANK] ]+
+  [ [BLANK]{2} [!BLANK? VAL "," VAL : CL*->REC] ]? }+

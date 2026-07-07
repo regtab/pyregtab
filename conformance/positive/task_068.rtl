@@ -1,0 +1,2 @@
+[ [BLANK] [VAL #'HEAD']+ ]+
+[ [!BLANK? VAL] [VAL: (COL&#'HEAD'*, ROW)->REC]+ ]+

@@ -1,0 +1,17 @@
+AVE,MIN,MAX,HYDROBIONT_GROUP,UNIT,YEAR
+54,31,80,Bacterioplankton,heterotroph abundance cells/ml,2018
+207,41,1200,Bacterioplankton,heterotroph abundance cells/ml,2017
+975,657,1377,Phytoplankton,abundance thousand cells/l,2018
+1123,474,1591,Phytoplankton,abundance thousand cells/l,2017
+85,60,159,Biomass,mg/m3,2018
+214,87,321,Biomass,mg/m3,2017
+33,16,57,Zooplankton,"abundance, thousand ind./m3",2018
+19.5,10,30.5,Zooplankton,"abundance, thousand ind./m3",2017
+662,231,1674,Biomass,mg/m3,2018
+246,82,411,Biomass,mg/m3,2017
+63,32,110,Bacteriobenthos,"heterotroph abundance, thousand cells/g",2018
+35.5,10,81,Bacteriobenthos,"heterotroph abundance, thousand cells/g",2017
+17517,4280,28080,Zoobenthos,"abundance, ind./m2",2018
+18027,2280,21760,Zoobenthos,"abundance, ind./m2",2017
+13,2,21,Biomass,g/m2,2018
+15.1,5.9,32.9,Biomass,g/m2,2017

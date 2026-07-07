@@ -1,0 +1,106 @@
+EMISSION,POLLUTANT,YEAR,UNIT
+1.70,Wastewater discharged (million m3),2014,MLN M3
+1.85,Wastewater discharged (million m3),2015,MLN M3
+1.93,Wastewater discharged (million m3),2016,MLN M3
+1.22,Wastewater discharged (million m3),2017,MLN M3
+1.60,Wastewater discharged (million m3),2018,MLN M3
+9.73,BODfull,2014,TONS
+14.23,BODfull,2015,TONS
+8.06,BODfull,2016,TONS
+11.76,BODfull,2017,TONS
+8.91,BODfull,2018,TONS
+5.76,Suspended solids,2014,TONS
+9.6,Suspended solids,2015,TONS
+8.93,Suspended solids,2016,TONS
+19.35,Suspended solids,2017,TONS
+10.82,Suspended solids,2018,TONS
+0.09,Petroleum products,2014,TONS
+0.05,Petroleum products,2015,TONS
+0.03,Petroleum products,2016,TONS
+0.05,Petroleum products,2017,TONS
+0.03,Petroleum products,2018,TONS
+-,Sulfate lignin,2014,TONS
+-,Sulfate lignin,2015,TONS
+-,Sulfate lignin,2016,TONS
+"",Sulfate lignin,2017,TONS
+-,Sulfate lignin,2018,TONS
+-,Formaldehyde,2014,TONS
+-,Formaldehyde,2015,TONS
+-,Formaldehyde,2016,TONS
+"",Formaldehyde,2017,TONS
+-,Formaldehyde,2018,TONS
+-,Light tall oil,2014,TONS
+-,Light tall oil,2015,TONS
+-,Light tall oil,2016,TONS
+"",Light tall oil,2017,TONS
+-,Light tall oil,2018,TONS
+-,Methanol,2014,TONS
+-,Methanol,2015,TONS
+-,Methanol,2016,TONS
+"",Methanol,2017,TONS
+-,Methanol,2018,TONS
+29.36,Nitrate anion,2014,TONS
+47.89,Nitrate anion,2015,TONS
+73.43,Nitrate anion,2016,TONS
+76.00,Nitrate anion,2017,TONS
+65.43,Nitrate anion,2018,TONS
+0.06,Surfactants,2014,TONS
+0.06,Surfactants,2015,TONS
+0.13,Surfactants,2016,TONS
+0.14,Surfactants,2017,TONS
+0.18,Surfactants,2018,TONS
+3.09,Sulfates,2014,TONS
+59.10,Sulfates,2015,TONS
+67.84,Sulfates,2016,TONS
+61.87,Sulfates,2017,TONS
+81.18,Sulfates,2018,TONS
+-,Turpentine,2014,TONS
+-,Turpentine,2015,TONS
+-,Turpentine,2016,TONS
+-,Turpentine,2017,TONS
+-,Turpentine,2018,TONS
+29.75,Chlorides,2014,TONS
+34.10,Chlorides,2015,TONS
+24.98,Chlorides,2016,TONS
+34.53,Chlorides,2017,TONS
+36.54,Chlorides,2018,TONS
+0.003,Aluminum,2014,TONS
+0.22,Aluminum,2015,TONS
+0.31,Aluminum,2016,TONS
+0.61,Aluminum,2017,TONS
+0.40,Aluminum,2018,TONS
+-,Phenol,2014,TONS
+-,Phenol,2015,TONS
+-,Phenol,2016,TONS
+-,Phenol,2017,TONS
+-,Phenol,2018,TONS
+34.42,COD,2014,TONS
+31.40,COD,2015,TONS
+28.92,COD,2016,TONS
+40.41,COD,2017,TONS
+25.37,COD,2018,TONS
+-,Chloroform,2014,TONS
+-,Chloroform,2015,TONS
+-,Chloroform,2016,TONS
+-,Chloroform,2017,TONS
+-,Chloroform,2018,TONS
+1.03,Ammonium nitrogen,2014,TONS
+0.67,Ammonium nitrogen,2015,TONS
+0.39,Ammonium nitrogen,2016,TONS
+0.80,Ammonium nitrogen,2017,TONS
+0.20,Ammonium nitrogen,2018,TONS
+1.5,Phosphates,2014,TONS
+2.86,Phosphates,2015,TONS
+3.42,Phosphates,2016,TONS
+0.75,Phosphates,2017,TONS
+0.84,Phosphates,2018,TONS
+0.12,Nitrite anion,2014,TONS
+0.13,Nitrite anion,2015,TONS
+0.19,Nitrite anion,2016,TONS
+0.24,Nitrite anion,2017,TONS
+0.23,Nitrite anion,2018,TONS
+26.17,Chlorides,2014,TONS
+33.91,Chlorides,2015,TONS
+23.57,Chlorides,2016,TONS
+43.94,Chlorides,2017,TONS
+35.45,Chlorides,2018,TONS

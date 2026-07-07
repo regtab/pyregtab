@@ -1,0 +1,3 @@
+  [ [] [VAL : 'YEAR'->AVP]+ ]
+{ [ [VAL : 'LOCATION'->AVP] []+ ]
+  [ [VAL : 'INDICATOR'->AVP] [!BLANK ? VAL : 'DATA'->AVP, (ROW,COL,ST)->REC]+ ]+ }+

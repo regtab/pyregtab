@@ -1,0 +1,2 @@
+{ [ [~'*Company' ? VAL = REPL('\*', '') : BW*->REC] ]
+  [ [!~'*Company' ? VAL] ]+ }+

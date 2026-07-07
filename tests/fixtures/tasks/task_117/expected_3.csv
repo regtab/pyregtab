@@ -1,0 +1,81 @@
+EMISSION,POLLUTANT,YEAR,UNIT
+1.31,"Wastewater discharged, million m3",2018,MLN M3
+1.37,"Wastewater discharged, million m3",2019,MLN M3
+1.76,"Wastewater discharged, million m3",2020,MLN M3
+2.36,"Wastewater discharged, million m3",2021,MLN M3
+1.74,"Wastewater discharged, million m3",2022,MLN M3
+9.06,"BODfull, tons",2018,TONS
+7.75,"BODfull, tons",2019,TONS
+7.42,"BODfull, tons",2020,TONS
+4.14,"BODfull, tons",2021,TONS
+5.17,"BODfull, tons",2022,TONS
+16.12,"Suspended solids, tons",2018,TONS
+12.98,"Suspended solids, tons",2019,TONS
+11.45,"Suspended solids, tons",2020,TONS
+6.50,"Suspended solids, tons",2021,TONS
+15.22,"Suspended solids, tons",2022,TONS
+0.03,"Petroleum products, tons",2018,TONS
+0.03,"Petroleum products, tons",2019,TONS
+0.04,"Petroleum products, tons",2020,TONS
+0.02,"Petroleum products, tons",2021,TONS
+0.10,"Petroleum products, tons",2022,TONS
+64.64,"Nitrate anion, tons",2018,TONS
+68.08,"Nitrate anion, tons",2019,TONS
+67.45,"Nitrate anion, tons",2020,TONS
+50.70,"Nitrate anion, tons",2021,TONS
+20.75,"Nitrate anion, tons",2022,TONS
+0.14,"Surfactants, tons",2018,TONS
+-,"Surfactants, tons",2019,TONS
+-,"Surfactants, tons",2020,TONS
+-,"Surfactants, tons",2021,TONS
+-,"Surfactants, tons",2022,TONS
+-,"Non-ionic surfactants, tons",2018,TONS
+0.09,"Non-ionic surfactants, tons",2019,TONS
+0.08,"Non-ionic surfactants, tons",2020,TONS
+0,"Non-ionic surfactants, tons",2021,TONS
+-,"Non-ionic surfactants, tons",2022,TONS
+-,Cationic surfactants,2018,TONS
+-,Cationic surfactants,2019,TONS
+-,Cationic surfactants,2020,TONS
+0.06,Cationic surfactants,2021,TONS
+0.12,Cationic surfactants,2022,TONS
+70.82,"Sulfate anion, tons",2018,TONS
+60.37,"Sulfate anion, tons",2019,TONS
+71.90,"Sulfate anion, tons",2020,TONS
+45.76,"Sulfate anion, tons",2021,TONS
+47.95,"Sulfate anion, tons",2022,TONS
+31.37,"Chloride anion, tons",2018,TONS
+42.82,"Chloride anion, tons",2019,TONS
+35.31,"Chloride anion, tons",2020,TONS
+39.27,"Chloride anion, tons",2021,TONS
+45.44,"Chloride anion, tons",2022,TONS
+0.41,"Aluminum, tons",2018,TONS
+1.55,"Aluminum, tons",2019,TONS
+0.97,"Aluminum, tons",2020,TONS
+0.06,"Aluminum, tons",2021,TONS
+0.14,"Aluminum, tons",2022,TONS
+22.67,"COD, tons",2018,TONS
+43.19,"COD, tons",2019,TONS
+36.40,"COD, tons",2020,TONS
+20.30,"COD, tons",2021,TONS
+33.96,"COD, tons",2022,TONS
+0.14,"Ammonium nitrogen, tons",2018,TONS
+-,"Ammonium nitrogen, tons",2019,TONS
+-,"Ammonium nitrogen, tons",2020,TONS
+-,"Ammonium nitrogen, tons",2021,TONS
+-,"Ammonium nitrogen, tons",2022,TONS
+-,"Ammonium ion, tons",2018,TONS
+0.37,"Ammonium ion, tons",2019,TONS
+0.65,"Ammonium ion, tons",2020,TONS
+0.77,"Ammonium ion, tons",2021,TONS
+0.95,"Ammonium ion, tons",2022,TONS
+0.98,"Phosphates, tons",2018,TONS
+0.54,"Phosphates, tons",2019,TONS
+0.67,"Phosphates, tons",2020,TONS
+1.36,"Phosphates, tons",2021,TONS
+1.19,"Phosphates, tons",2022,TONS
+0.25,"Nitrite anion, tons",2018,TONS
+0.24,"Nitrite anion, tons",2019,TONS
+0.31,"Nitrite anion, tons",2020,TONS
+0.50,"Nitrite anion, tons",2021,TONS
+0.49,"Nitrite anion, tons",2022,TONS

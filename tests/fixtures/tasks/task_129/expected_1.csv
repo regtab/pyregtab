@@ -1,0 +1,17 @@
+AVE,MIN,MAX,HYDROBIONT_GROUP,UNIT,YEAR
+167,31,465,Bacterioplankton,"heterotroph abundance, cells/ml",2015
+1382,377,1968,Bacterioplankton,"heterotroph abundance, cells/ml",2016
+1259,543,4293,Phytoplankton,"abundance, thousand cells/l",2015
+1129,309,2336,Phytoplankton,"abundance, thousand cells/l",2016
+512,76,2468,Biomass,mg/m3,2015
+334,115,594,Biomass,mg/m3,2016
+4,0.3,6,Zooplankton,"abundance, thousand ind./m3",2015
+6,3,16,Zooplankton,"abundance, thousand ind./m3",2016
+38,2,81,Biomass,mg/m3,2015
+99,46,529,Biomass,mg/m3,2016
+23,12,37,Bacteriobenthos,"heterotroph abundance, thousand cells/g",2015
+46,19,95,Bacteriobenthos,"heterotroph abundance, thousand cells/g",2016
+8638,1000,31400,Zoobenthos,"abundance, ind./m2",2015
+24370,12680,49520,Zoobenthos,"abundance, ind./m2",2016
+12,0.5,35,Biomass,g/m2,2015
+32,10,71,Biomass,g/m2,2016

@@ -1,0 +1,3 @@
+ROW->AVP
+[ [ATTR] [VAL: BW*->REC]+ ]
+[ [ATTR] [VAL]+ ]+

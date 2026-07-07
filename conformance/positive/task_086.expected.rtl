@@ -1,0 +1,1 @@
+{ [ [ ATTR ]{3} ] } { [ [ VAL : COL->AVP, (RT*, (R+1 & C2))->REC ] [ VAL : COL->AVP ]{2} ] [ []{2} [ VAL : 'CtxAttr'->AVP ] ] }+

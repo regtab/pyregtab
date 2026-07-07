@@ -1,0 +1,2 @@
+{ [ [!BLANK? VAL : ''->FILL, (CL, RT)->REC "" VAL] [!BLANK? VAL] ]?
+  [ [!BLANK? VAL : (RT, '')->REC] [BLANK] ]? }+

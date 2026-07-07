@@ -1,0 +1,2 @@
+[ -COL->AVP [VAL: RT*->REC] [VAL]* ]+
+[           [ATTR]+ ]

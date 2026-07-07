@@ -1,0 +1,1 @@
+{ [ [ ATTR "=" VAL : ST*->REC, CL->AVP ] ] [ [ ATTR "=" VAL : CL->AVP ] ]{15} }+

@@ -1,0 +1,3 @@
+[ [ATTR] []+ ]
+{ [ [!BLANK? VAL: COL->AVP, ST*->REC] { [BLANK ? _ | ATTR] [BLANK ? _ | VAL: SR->AVP] }+ ]
+  [ [BLANK]                          { [BLANK ? _ | ATTR] [BLANK ? _ | VAL: SR->AVP] }+ ]+ }+

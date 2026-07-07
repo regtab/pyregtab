@@ -1,0 +1,2 @@
+{ [ [VAL : ST*->REC] [BLANK ? _ | VAL]+ ]
+  [ [BLANK ? _ | VAL]+ ]{4} }+

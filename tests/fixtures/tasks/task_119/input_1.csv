@@ -1,0 +1,32 @@
+Indicators,Year,Kultuk-Slyudyanka District,Kultuk-Slyudyanka District,Kultuk-Slyudyanka District,Background (South Baikal),Background (South Baikal),Background (South Baikal)
+,Year,min.,max.,avg.,min.,max.,avg.
+"pH, units",2017,7.84,7.35,7.21,,,
+"pH, units",2018,8.33,6.89,7.41,7.68,8.96,6.95
+Oxygen,2017,11.95,11.40,10.38,87,,
+Oxygen,2018,11.04,12.29,11.39,12.00,10.61,12.70
+Suspended solids,2017,0,0.8,0.3,,,
+Suspended solids,2018,0.5,0.9,0.5,0.3,1.0,0.7
+Mineral substances,2017,94,98,96,,,
+Mineral substances,2018,97,100,98,96,98,97
+Silicon,2017,0.1,0.3,0.2,,,
+Silicon,2018,0.4,0.4,0.4,0.3,0.7,0.5
+Petroleum products,2017,0,0.01,0.01,,,
+Petroleum products,2018,0,0.01,0,0,0.01,0.01
+Sulfates,2017,5.6,6.2,6.3,,,
+Sulfates,2018,5.9,7.6,6,5.7,7,5.9
+Chlorides,2017,0.4,0.8,0.7,,,
+Chlorides,2018,0.7,0.9,0.8,0.8,0.9,0.8
+Total phosphorus,2017,0.007,0.03,0.015,,,
+Total phosphorus,2018,0.007,0.019,0.01,0.010,0.015,0.014
+Organic phosphorus,2017,0.002,0.025,0.015,,,
+Organic phosphorus,2018,0,0.014,0.007,0.004,0.012,0.009
+Mineral phosphorus,2017,0.001,0.005,0.004,,,
+Mineral phosphorus,2018,0,0.007,0.004,0.002,0.006,0.004
+Nitrite nitrogen,2017,0,0.002,0.001,,,
+Nitrite nitrogen,2018,0,0,0,0,0.003,0.001
+Nitrate nitrogen,2017,0.025,0.067,0.048,,,
+Nitrate nitrogen,2018,0.024,0.07,0.039,0.001,0.05,0.024
+Ammonium nitrogen,2017,0.001,0.016,0.007,,,
+Ammonium nitrogen,2018,0,0.024,0.009,0.002,0.012,0.006
+Organic carbon,2017,1.1,1.7,1.2,,,
+Organic carbon,2018,0.9,1.4,1.2,1.0,1.6,1.2

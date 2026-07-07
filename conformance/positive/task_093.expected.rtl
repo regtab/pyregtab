@@ -1,0 +1,1 @@
+{ [ { [ !BLANK? ATTR ]+ [ BLANK ]? }+ ] [ { [ !BLANK? VAL : SC->AVP, RT*->REC ] [ !BLANK? VAL : SC->AVP ]+ [ BLANK ]? }+ ]+ [ [ BLANK ]+ ]? }+

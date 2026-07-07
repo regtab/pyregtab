@@ -1,0 +1,18 @@
+[package]
+name = "pyregtab"
+version = "0.1.0"
+edition = "2021"
+description = "Native core of pyRegTab: RTL compiler, ATP matcher and table interpreter"
+license = "Apache-2.0"
+
+[lib]
+name = "pyregtab"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+pyo3 = { version = "0.23", features = ["abi3-py310"] }
+regex = "1"
+indexmap = "2"
+
+[profile.release]
+lto = true
