@@ -11,7 +11,7 @@ and interprets the match into a relational **recordset**:
 TableSyntax → RtlCompiler/TablePattern → AtpMatcher → TableInterpreter → Recordset
 ```
 
-**pyRegTab 0.1.x ≙ jRegTab 0.1.2** (same API, same semantics, same test
+**pyRegTab 0.1.x ≙ jRegTab 0.3.0** (same API, same semantics, same test
 corpus).
 
 ## Installation
