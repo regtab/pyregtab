@@ -11,9 +11,9 @@ and interprets the match into a relational **recordset**:
 TableSyntax → RtlCompiler/TablePattern → AtpMatcher → TableInterpreter → Recordset
 ```
 
-**pyRegTab 0.1.x ≙ jRegTab 0.4.0** (same API, same semantics, same test
-corpus). **0.2.0** adds the embedded RTL DSL (`pyregtab.dsl`), mirroring
-jRegTab's `ru.icc.regtab.dsl`.
+**pyRegTab 0.2.0 ≙ jRegTab 0.4.0** (same API, same semantics, same test
+corpus), including the embedded RTL DSL `pyregtab.dsl` — a port of jRegTab's
+`ru.icc.regtab.dsl` (added upstream in jRegTab 0.3.0).
 
 ## Installation
 
