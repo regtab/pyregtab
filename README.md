@@ -12,7 +12,8 @@ TableSyntax → RtlCompiler/TablePattern → AtpMatcher → TableInterpreter →
 ```
 
 **pyRegTab 0.1.x ≙ jRegTab 0.4.0** (same API, same semantics, same test
-corpus).
+corpus). **0.2.0** adds the embedded RTL DSL (`pyregtab.dsl`), mirroring
+jRegTab's `ru.icc.regtab.dsl`.
 
 ## Installation
 
@@ -52,6 +53,9 @@ Patterns can also be built without RTL, via the fluent spec API
 snake_case method names), and serialized back to RTL with
 `AtpToRtlSerializer.serialize(pattern)`.
 
+For a terser, RTL-like way to build patterns in code, use the **embedded RTL**
+DSL (`pyregtab.dsl`) — see [Embedded RTL](#embedded-rtl) below.
+
 Named Python predicates are attached to RTL via `EXT('name')`:
 
 ```python
@@ -62,6 +66,32 @@ p = RtlCompiler.compile(
     Bindings.of().cell("isTotal", lambda cell: cell.text.startswith("Total")),
 )
 ```
+
+## Embedded RTL
+
+The `pyregtab.dsl` module is a fluent DSL that reads almost like RTL but is
+ordinary Python — with IDE completion, structural typing, pattern composition
+via plain variables, and Python callables as escape-hatch constraints. It builds
+the **same `TablePattern`** objects as the compiler (verified byte-for-byte
+against `RtlCompiler.compile` for a representative set of tasks in
+`tests/test_dsl.py`).
+
+```python
+from pyregtab.dsl import *
+
+# RTL: { [ [VAL : ST*->REC] [VAL]{2} []+ ]
+#        [ []               [VAL]{4} []+ ] }+
+p = table(
+    subtable(
+        row(cell(VAL, rec(ST.unbounded())), cell(VAL).exactly(2), skip().one_or_more()),
+        row(skip(),                         cell(VAL).exactly(4), skip().one_or_more()),
+    ).one_or_more())
+```
+
+Method names are snake_case (`.one_or_more()`, `.and_()`, `.split_by()`); the
+vocabulary constants (`VAL`, `ST`, `COL`, `C(n)`, …) match RTL. See the
+[Embedded RTL guide](docs/embedded-rtl.md) for the full mapping and the
+`where(...)` escape hatch.
 
 ## API mapping (Java → Python)
 
@@ -104,7 +134,7 @@ Rust (`pyregtab._core`, built with [PyO3](https://pyo3.rs) and
 
 ## Testing
 
-`pytest tests` runs (1 878 tests):
+`pytest tests` runs (1 904 tests):
 
 - the full benchmark suite — tasks 001–150 (Foofah, RegTab, Baikal),
   every fixture variant, **both** via RTL patterns and via ATP patterns
@@ -112,6 +142,9 @@ Rust (`pyregtab._core`, built with [PyO3](https://pyo3.rs) and
   are copied verbatim from jRegTab into `tests/fixtures/tasks`, ATP
   builders are mechanically translated from the Java tests by
   `tools/translate_atp.py`);
+- embedded RTL DSL parity — 26 representative tasks/constructs built with
+  `pyregtab.dsl` produce byte-identical ATP to `RtlCompiler.compile`
+  (`tests/test_dsl.py`);
 - the RTL conformance corpus (positive canonical forms, fixed points,
   negative rejections);
 - RTL↔ATP round-trip for tasks 001–050;

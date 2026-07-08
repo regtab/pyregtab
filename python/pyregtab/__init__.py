@@ -71,7 +71,9 @@ from pyregtab._core import (
     UNBOUNDED,
 )
 
-__version__ = "0.1.0"
+from pyregtab import dsl
+
+__version__ = "0.2.0"
 
 __all__ = [
     "TableSyntax", "Cell", "Row", "Subrow", "Subtable", "GridPosition",
@@ -89,5 +91,5 @@ __all__ = [
     "WhitespaceNormalization", "AnchorAttributeAtPosition",
     "DelimitedFieldSplit", "FieldSplitting", "SchemaReordering", "Bindings",
     "RtlCompiler", "AtpToRtlSerializer", "RtlCompileError", "compile",
-    "UNBOUNDED",
+    "UNBOUNDED", "dsl",
 ]

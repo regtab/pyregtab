@@ -101,6 +101,16 @@ cell predicates receive a `Cell`, item filters receive
 predicates cannot be serialized back to RTL (as in Java) and disable the
 GIL-release fast path.
 
+## Embedded RTL DSL
+
+`pyregtab.dsl` is a fluent, RTL-like layer over the ATP factories above:
+`table/subtable/row/subrow/cell`, atoms `val/attr/aux`, actions `rec/avp/join/
+fill/prefix/suffix`, provider constants (`ST`, `COL`, `C(n)`, …) with
+`.and_()/.or_()/.card()/.unbounded()` and traversal methods, and `where(...)`
+Python-callable escape hatches. It builds ordinary `TablePattern` objects,
+byte-identical to `RtlCompiler.compile` for lambda-free patterns. See the
+[Embedded RTL guide](embedded-rtl.md).
+
 ## Recordset transformations
 
 `WhitespaceNormalization()`, `AnchorAttributeAtPosition(pos)`,
