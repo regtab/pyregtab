@@ -150,6 +150,7 @@ for record in rs.records:
 ## What's next
 
 - [RTL reference](rtl-reference.md) — complete syntax for the RTL DSL.
+- [Embedded RTL](embedded-rtl.md) — build the same patterns fluently in Python (`pyregtab.dsl`).
 - [ITM](model/itm.md) — syntactic and semantic layers, working state, table interpretation.
 - [ATP](model/atp.md) — pattern hierarchy, content specs, matching algorithm.
 - [API reference](api.md) — public classes and methods.

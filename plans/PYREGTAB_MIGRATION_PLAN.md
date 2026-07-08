@@ -450,10 +450,13 @@ conformance-корпус зелёный в обоих проектах**.
    пара с каноническими формами + 15 негативных кейсов, включая `EXT`), контракт
    в `conformance/README.md`, CI-job `conformance`. Для pyRegTab: пин на commit
    jregtab, копия корпуса, pytest-аналог `RtlConformanceTest` (фаза 5).
-8. **Embedded DSL в pyRegTab** — РЕШЕНО (2026-07-06): после релиза pyregtab 0.1
-   добавить зеркальный embedded-DSL (аналог jregtab `plans/RTL_EMBEDDED_DSL.md`,
-   пакет `pyregtab.dsl`); эскейп-хэтч — Python-callable; перегрузка операторов
-   в Python позволяет синтаксис ещё ближе к RTL (например, настоящие `+`/`*`
-   квантификаторы) — отдельная дизайн-фаза. Учесть также расширение RTL
-   привязками `EXT('name')` (этап A плана RTL_EMBEDDED_DSL) в рукописном парсере
-   и в conformance-корпусе.
+8. **Embedded DSL в pyRegTab** — РЕАЛИЗОВАНО (0.2.0): пакет `pyregtab.dsl` —
+   чистый Python-слой поверх ATP-фабрик (без изменений Rust-ядра), зеркалящий
+   jregtab `ru.icc.regtab.dsl`; snake_case (`.one_or_more()`, `.and_()`,
+   `.split_by()`); эскейп-хэтч `where(...)` через `CellPredicate.custom` /
+   `FilterTerm.custom`. Паритет проверяется в `tests/test_dsl.py` (26
+   задач/конструкций дают байт-в-байт те же ATP, что `RtlCompiler.compile`);
+   план — `plans/EMBEDDED_RTL_DSL.md`. Привязки `EXT('name')` (этап A) уже были
+   в 0.1 (`Bindings`, `RtlCompiler.compile(rtl, bindings)`). Отложено на будущее:
+   перегрузка операторов Python (`+`/`*` квантификаторы) и корпусный
+   DSL-генератор в `tools/translate_atp.py --dsl`.
