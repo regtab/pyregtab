@@ -109,4 +109,4 @@ Requires **Python 3.10+**; binary wheels for Windows, Linux, and macOS.
 ---
 
 !!! note "Status"
-    Current release: **0.1.0** (feature parity with jRegTab 0.3.0) · License: **Apache-2.0** · [PyPI](https://pypi.org/project/pyregtab/) · [GitHub](https://github.com/regtab/pyregtab)
+    Current release: **0.1.0** (feature parity with jRegTab 0.4.0) · License: **Apache-2.0** · [PyPI](https://pypi.org/project/pyregtab/) · [GitHub](https://github.com/regtab/pyregtab)

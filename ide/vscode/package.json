@@ -1,0 +1,45 @@
+{
+  "name": "rtl-language",
+  "displayName": "RTL (Regular Table Language)",
+  "description": "Syntax highlighting for RTL — the Regular Table Language of the RegTab project — in .rtl files and inside Python string literals passed to RtlCompiler.compile(...).",
+  "version": "0.1.0",
+  "publisher": "regtab",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/regtab/pyregtab.git",
+    "directory": "ide/vscode"
+  },
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "rtl",
+        "aliases": ["RTL", "Regular Table Language"],
+        "extensions": [".rtl"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "rtl",
+        "scopeName": "source.rtl",
+        "path": "./syntaxes/rtl.tmLanguage.json"
+      },
+      {
+        "scopeName": "inline.rtl-python",
+        "path": "./syntaxes/rtl-python-injection.tmLanguage.json",
+        "injectTo": ["source.python"],
+        "embeddedLanguages": {
+          "meta.embedded.block.rtl": "rtl",
+          "meta.embedded.line.rtl": "rtl"
+        }
+      }
+    ]
+  }
+}

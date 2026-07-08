@@ -1,2 +1,3 @@
 conformance/** -text
 tests/fixtures/** -text
+grammar/RTL.g4 -text

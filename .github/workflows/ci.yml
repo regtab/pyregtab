@@ -7,6 +7,23 @@ on:
   pull_request:
 
 jobs:
+  grammar-sync:
+    # The normative RTL grammar (grammar/RTL.g4) is a pinned copy of the
+    # jRegTab grammar; verify it has not drifted (plan §5.2).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check grammar is in sync with the pinned upstream
+        env:
+          # Optional: a read token for the (private) jregtab repo enables the
+          # byte-for-byte upstream cross-check; without it, only the offline
+          # hash check runs.
+          JREGTAB_TOKEN: ${{ secrets.JREGTAB_TOKEN }}
+        run: python tools/check_grammar_sync.py
+
   test:
     strategy:
       fail-fast: false

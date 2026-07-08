@@ -225,3 +225,6 @@ __pycache__/
 /dist/
 .pytest_cache/
 site/
+
+# ANTLR IDE plugin scratch output (pyRegTab uses a hand-written Rust parser)
+.antlr/

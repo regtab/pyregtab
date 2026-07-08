@@ -39,6 +39,7 @@ nav:
   - Home: index.md
   - Getting started: getting-started.md
   - RTL reference: rtl-reference.md
+  - IDE support: ide-support.md
   - Formal model:
       - ITM: model/itm.md
       - ATP: model/atp.md

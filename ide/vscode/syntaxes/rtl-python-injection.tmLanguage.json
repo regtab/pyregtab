@@ -1,0 +1,86 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "RTL in Python strings",
+  "scopeName": "inline.rtl-python",
+  "injectionSelector": "L:source.python -comment -string",
+  "patterns": [
+    { "include": "#compile-triple-double" },
+    { "include": "#compile-triple-single" },
+    { "include": "#compile-single-double" },
+    { "include": "#compile-single-single" }
+  ],
+  "repository": {
+    "compile-triple-double": {
+      "comment": "RtlCompiler.compile(\"\"\" ... \"\"\") — triple-double-quoted string on the same line as compile(",
+      "begin": "\\b(RtlCompiler)\\s*(\\.)\\s*(compile)\\s*(\\()\\s*([rR]?)(\"\"\")",
+      "beginCaptures": {
+        "1": { "name": "support.type.class.python" },
+        "2": { "name": "punctuation.separator.period.python" },
+        "3": { "name": "meta.function-call.python" },
+        "4": { "name": "punctuation.definition.arguments.begin.python" },
+        "5": { "name": "storage.type.string.python" },
+        "6": { "name": "punctuation.definition.string.begin.python" }
+      },
+      "end": "\"\"\"",
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.string.end.python" }
+      },
+      "contentName": "meta.embedded.block.rtl",
+      "patterns": [ { "include": "source.rtl" } ]
+    },
+    "compile-triple-single": {
+      "comment": "RtlCompiler.compile(''' ... ''')",
+      "begin": "\\b(RtlCompiler)\\s*(\\.)\\s*(compile)\\s*(\\()\\s*([rR]?)(''')",
+      "beginCaptures": {
+        "1": { "name": "support.type.class.python" },
+        "2": { "name": "punctuation.separator.period.python" },
+        "3": { "name": "meta.function-call.python" },
+        "4": { "name": "punctuation.definition.arguments.begin.python" },
+        "5": { "name": "storage.type.string.python" },
+        "6": { "name": "punctuation.definition.string.begin.python" }
+      },
+      "end": "'''",
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.string.end.python" }
+      },
+      "contentName": "meta.embedded.block.rtl",
+      "patterns": [ { "include": "source.rtl" } ]
+    },
+    "compile-single-double": {
+      "comment": "RtlCompiler.compile(\"...\") — single-line double-quoted string",
+      "begin": "\\b(RtlCompiler)\\s*(\\.)\\s*(compile)\\s*(\\()\\s*([rR]?)(\")",
+      "beginCaptures": {
+        "1": { "name": "support.type.class.python" },
+        "2": { "name": "punctuation.separator.period.python" },
+        "3": { "name": "meta.function-call.python" },
+        "4": { "name": "punctuation.definition.arguments.begin.python" },
+        "5": { "name": "storage.type.string.python" },
+        "6": { "name": "punctuation.definition.string.begin.python" }
+      },
+      "end": "(?<!\\\\)\"",
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.string.end.python" }
+      },
+      "contentName": "meta.embedded.line.rtl",
+      "patterns": [ { "include": "source.rtl" } ]
+    },
+    "compile-single-single": {
+      "comment": "RtlCompiler.compile('...') — single-line single-quoted string",
+      "begin": "\\b(RtlCompiler)\\s*(\\.)\\s*(compile)\\s*(\\()\\s*([rR]?)(')",
+      "beginCaptures": {
+        "1": { "name": "support.type.class.python" },
+        "2": { "name": "punctuation.separator.period.python" },
+        "3": { "name": "meta.function-call.python" },
+        "4": { "name": "punctuation.definition.arguments.begin.python" },
+        "5": { "name": "storage.type.string.python" },
+        "6": { "name": "punctuation.definition.string.begin.python" }
+      },
+      "end": "(?<!\\\\)'",
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.string.end.python" }
+      },
+      "contentName": "meta.embedded.line.rtl",
+      "patterns": [ { "include": "source.rtl" } ]
+    }
+  }
+}

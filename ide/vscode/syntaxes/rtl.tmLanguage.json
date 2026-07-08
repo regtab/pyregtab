@@ -1,0 +1,114 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "RTL",
+  "scopeName": "source.rtl",
+  "patterns": [
+    { "include": "#comment" },
+    { "include": "#string" },
+    { "include": "#fragment-id" },
+    { "include": "#settings-and-extractors" },
+    { "include": "#positional-constraint" },
+    { "include": "#item-derivation" },
+    { "include": "#action" },
+    { "include": "#provider" },
+    { "include": "#content-keyword" },
+    { "include": "#tag" },
+    { "include": "#context-avp" },
+    { "include": "#arrow" },
+    { "include": "#range" },
+    { "include": "#number" },
+    { "include": "#quantifier" },
+    { "include": "#operator" },
+    { "include": "#bracket" }
+  ],
+  "repository": {
+    "comment": {
+      "match": "//.*$",
+      "name": "comment.line.double-slash.rtl"
+    },
+    "string": {
+      "patterns": [
+        {
+          "match": "'(?:`'|''|[^'])*'",
+          "name": "string.quoted.single.rtl"
+        },
+        {
+          "match": "\"(?:`\"|\"\"|[^\"])*\"",
+          "name": "string.quoted.double.rtl"
+        },
+        {
+          "match": "“[^”″]*(?:”|″)",
+          "name": "string.quoted.other.smart.rtl"
+        }
+      ]
+    },
+    "fragment-id": {
+      "match": "\\$[A-Za-z][A-Za-z0-9_]*",
+      "name": "variable.other.fragment.rtl"
+    },
+    "settings-and-extractors": {
+      "match": "(?i)\\b(NORM|ANCH|SPLIT|SUBSTR|REPL|UC|LC|TRIM)\\b",
+      "name": "support.function.extractor.rtl"
+    },
+    "positional-constraint": {
+      "match": "(?i)\\b([CRP])(?=[+-]?\\d)",
+      "name": "support.constant.positional.rtl"
+    },
+    "item-derivation": {
+      "patterns": [
+        {
+          "match": "(?i)\\b(ATTR|VAL|AUX|SKIP)\\b",
+          "name": "storage.type.item.rtl"
+        },
+        {
+          "match": "(?<![A-Za-z0-9_])_(?![A-Za-z0-9_])",
+          "name": "storage.type.item.skip.rtl"
+        }
+      ]
+    },
+    "action": {
+      "match": "(?i)\\b(FILL|PREFIX|SUFFIX|AVP|REC|JOIN)\\b",
+      "name": "keyword.control.action.rtl"
+    },
+    "provider": {
+      "match": "(?i)\\b(LT|RT|AV|BW|ROW|COL|SR|SC|ST|NCL|CL)\\b",
+      "name": "support.constant.provider.rtl"
+    },
+    "content-keyword": {
+      "match": "(?i)\\b(BLANK|STR|EXT)\\b",
+      "name": "constant.language.content.rtl"
+    },
+    "tag": {
+      "match": "!?#",
+      "name": "entity.name.tag.rtl"
+    },
+    "context-avp": {
+      "match": "@",
+      "name": "keyword.operator.context-avp.rtl"
+    },
+    "arrow": {
+      "match": "->",
+      "name": "keyword.operator.arrow.rtl"
+    },
+    "range": {
+      "match": "\\.\\.",
+      "name": "keyword.operator.range.rtl"
+    },
+    "number": {
+      "match": "[+-]?\\d+",
+      "name": "constant.numeric.rtl"
+    },
+    "quantifier": {
+      "match": "[+*?]",
+      "name": "keyword.operator.quantifier.rtl"
+    },
+    "operator": {
+      "match": "[&|!=:~^,]",
+      "name": "keyword.operator.rtl"
+    },
+    "bracket": {
+      "match": "[\\[\\]{}()<>]",
+      "name": "punctuation.section.bracket.rtl"
+    }
+  }
+}

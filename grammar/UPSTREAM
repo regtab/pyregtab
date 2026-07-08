@@ -1,1 +1,4 @@
-efdee2c62bff2851f04cfd579f958ec51f7871ee
+commit: f3b99e8d313d8726504c58bfd3dd014a3111300f
+tag: v0.4.0
+path: src/main/antlr4/ru/icc/regtab/rtl/RTL.g4
+sha256: 4fffbdf3f2dcb13935b8f062b5c6c55321de08cf130a4a28fa0845f5b48d68c0

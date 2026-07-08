@@ -11,7 +11,7 @@ and interprets the match into a relational **recordset**:
 TableSyntax → RtlCompiler/TablePattern → AtpMatcher → TableInterpreter → Recordset
 ```
 
-**pyRegTab 0.1.x ≙ jRegTab 0.3.0** (same API, same semantics, same test
+**pyRegTab 0.1.x ≙ jRegTab 0.4.0** (same API, same semantics, same test
 corpus).
 
 ## Installation
@@ -82,9 +82,12 @@ Rust (`pyregtab._core`, built with [PyO3](https://pyo3.rs) and
 [maturin](https://maturin.rs)); the Python layer is a thin re-export.
 
 - `grammar/RTL.g4` — the **normative specification** of the RTL language
-  (a pinned copy from jRegTab; the upstream commit is recorded in
-  `grammar/UPSTREAM`). The core's parser is a hand-written lexer +
-  recursive descent that structurally follows the grammar rules.
+  (a verbatim copy from jRegTab; the upstream commit and the grammar's
+  SHA-256 are recorded in `grammar/UPSTREAM`). The core's parser is a
+  hand-written lexer + recursive descent that structurally follows the
+  grammar rules. A CI job (`tools/check_grammar_sync.py`) fails the build if
+  the copy drifts from the pinned hash, and — when a jRegTab read token is
+  available — cross-checks it byte-for-byte against the upstream commit.
 - `conformance/` — the shared RTL conformance corpus (also pinned from
   jRegTab, see `conformance/UPSTREAM` and `conformance/README.md`). Both
   implementations must compile every positive case to the same canonical
@@ -120,7 +123,15 @@ Rust (`pyregtab._core`, built with [PyO3](https://pyo3.rs) and
 smoke test against the native core alone. Differential testing against the
 Java reference (`tools/differential.py` + `tools/RecordsetDumpMain.java`)
 compares recordsets cell-by-cell on all 750 task variants — zero
-mismatches against jRegTab v0.3.0.
+mismatches against jRegTab v0.4.0.
+
+## IDE support
+
+`ide/vscode/` is a VS Code extension (and IntelliJ/PyCharm TextMate bundle)
+that highlights `.rtl` files and RTL embedded in Python strings passed to
+`RtlCompiler.compile(...)`. See [`ide/README.md`](ide/README.md). RTL is also
+validated at compile time: `RtlCompiler.compile(...)` raises `RtlCompileError`
+with a `line:col` position on an invalid pattern.
 
 ## Development
 
