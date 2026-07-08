@@ -1,7 +1,7 @@
 # Configuration for the project documentation site
 site_name: pyRegTab
 site_description: Pattern-driven data extraction from tables — Python port of jRegTab with a native Rust core
-site_url: https://regtab.github.io/pyregtab/
+site_url: https://regtab.icc.ru/pyregtab/
 repo_url: https://github.com/regtab/pyregtab
 
 theme:
