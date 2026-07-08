@@ -1,9 +1,9 @@
 # pyRegTab
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![CI](https://github.com/regtab/pyregtab/actions/workflows/ci.yml/badge.svg)](https://github.com/regtab/pyregtab/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/pyregtab.svg)](https://pypi.org/project/pyregtab/)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
-[![CI](https://github.com/regtab/pyregtab/actions/workflows/ci.yml/badge.svg)](https://github.com/regtab/pyregtab/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
 RegTab: pattern-driven data extraction from document tables with regular
 structure — the Python port of jRegTab with a native Rust core.
