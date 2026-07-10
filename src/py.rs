@@ -816,6 +816,56 @@ impl PyRecordset {
             .unbind())
     }
 
+    /// CSV export (RFC 4180 quoting). Returns the CSV text when `path` is
+    /// None, otherwise writes it to `path` (UTF-8) and returns None.
+    /// Missing values are rendered as `missing` (default: empty field).
+    #[pyo3(signature = (path=None, *, sep=",", missing=""))]
+    fn to_csv(
+        &self,
+        path: Option<std::path::PathBuf>,
+        sep: &str,
+        missing: &str,
+    ) -> PyResult<Option<String>> {
+        fn field(s: &str, sep: &str) -> String {
+            if s.contains(sep) || s.contains('"') || s.contains('\n') || s.contains('\r') {
+                format!("\"{}\"", s.replace('"', "\"\""))
+            } else {
+                s.to_string()
+            }
+        }
+        let mut csv = String::new();
+        let header: Vec<String> = self
+            .core
+            .schema
+            .attributes
+            .iter()
+            .map(|a| field(a, sep))
+            .collect();
+        csv.push_str(&header.join(sep));
+        csv.push_str("\r\n");
+        for r in &self.core.records {
+            let row: Vec<String> = r
+                .values
+                .iter()
+                .map(|v| field(v.as_deref().unwrap_or(missing), sep))
+                .collect();
+            csv.push_str(&row.join(sep));
+            csv.push_str("\r\n");
+        }
+        match path {
+            None => Ok(Some(csv)),
+            Some(p) => {
+                std::fs::write(&p, csv.as_bytes()).map_err(|e| {
+                    PyErr::new::<pyo3::exceptions::PyOSError, _>(format!(
+                        "cannot write {}: {e}",
+                        p.display()
+                    ))
+                })?;
+                Ok(None)
+            }
+        }
+    }
+
     fn __repr__(&self) -> String {
         let mut sb = format!(
             "Recordset[schema=Schema{:?}, records=[\n",
@@ -2587,6 +2637,35 @@ impl PyInterpretableTable {
     }
 }
 
+/// Outcome of a GIL-free match of one table: the updated syntax core plus
+/// constructed semantics (inner None when the pattern did not match).
+type MatchOutcome = CoreResult<Option<(SyntaxCore, Option<SemanticsCore>)>>;
+
+/// Fast-path match of one syntax core (pattern has no Python callbacks):
+/// runs entirely without touching Python objects, so it may execute with the
+/// GIL released and on any thread. Mirrors the phases of `AtpMatcher.match`.
+fn match_core_no_gil(
+    pattern: &sp::TablePattern,
+    ctx: &[CtxItem],
+    mut core: SyntaxCore,
+) -> MatchOutcome {
+    let result = {
+        let env = EvalEnv { syntax: &core, py_table: None };
+        matcher::syntax_match(pattern, &core, &env)?
+    };
+    let Some(result) = result else {
+        return Ok(None);
+    };
+    matcher::apply_structure(&mut core, &result)?;
+    let env = EvalEnv { syntax: &core, py_table: None };
+    match matcher::construct_semantics(&result.pairs, ctx.to_vec(), &core, &env) {
+        Ok(sem) => Ok(Some((core, Some(sem)))),
+        // structure changes survive a MatchException, as in Java
+        Err(matcher::SemErr::Match(_)) => Ok(Some((core, None))),
+        Err(matcher::SemErr::Other(e)) => Err(e),
+    }
+}
+
 #[pyclass(name = "AtpMatcher")]
 pub struct PyAtpMatcher;
 
@@ -2612,26 +2691,10 @@ impl PyAtpMatcher {
             // Fast path: no Python callbacks in the pattern — run the whole
             // match on a private copy of the syntax core with the GIL
             // released, then write the matched structure back.
-            let mut core = syntax.borrow().core.clone();
+            let core = syntax.borrow().core.clone();
             let pattern = atp.core.clone();
-            let outcome: CoreResult<Option<(SyntaxCore, Option<SemanticsCore>)>> =
-                py.allow_threads(move || {
-                    let result = {
-                        let env = EvalEnv { syntax: &core, py_table: None };
-                        matcher::syntax_match(&pattern, &core, &env)?
-                    };
-                    let Some(result) = result else {
-                        return Ok(None);
-                    };
-                    matcher::apply_structure(&mut core, &result)?;
-                    let env = EvalEnv { syntax: &core, py_table: None };
-                    match matcher::construct_semantics(&result.pairs, ctx, &core, &env) {
-                        Ok(sem) => Ok(Some((core, Some(sem)))),
-                        // structure changes survive a MatchException, as in Java
-                        Err(matcher::SemErr::Match(_)) => Ok(Some((core, None))),
-                        Err(matcher::SemErr::Other(e)) => Err(e),
-                    }
-                });
+            let outcome: MatchOutcome =
+                py.allow_threads(move || match_core_no_gil(&pattern, &ctx, core));
             return match outcome.map_err(core_err)? {
                 None => Ok(None),
                 Some((core, sem)) => {
@@ -2674,6 +2737,93 @@ impl PyAtpMatcher {
             table: syntax.clone().unbind(),
             sem: Arc::new(sem),
         }))
+    }
+
+    /// `AtpMatcher.match_many(pattern, syntaxes, context_items=None)` →
+    /// `list[InterpretableTable | None]` — batch form of `match`.
+    ///
+    /// Without Python callbacks in the pattern the tables are matched in
+    /// parallel on an internal thread pool with the GIL released; with
+    /// callbacks it degrades to matching sequentially under the GIL (the
+    /// documented slow path, as for `match`). On error no table is modified.
+    #[staticmethod]
+    #[pyo3(signature = (atp, syntaxes, context_items=None))]
+    fn match_many(
+        py: Python<'_>,
+        atp: &PyTablePattern,
+        syntaxes: Vec<Bound<'_, PyTableSyntax>>,
+        context_items: Option<Vec<PyContextDerivedItem>>,
+    ) -> PyResult<Vec<Option<PyInterpretableTable>>> {
+        if atp.core.has_py_callbacks() {
+            return syntaxes
+                .iter()
+                .map(|s| Self::match_(py, atp, s, context_items.clone()))
+                .collect();
+        }
+        let ctx: Vec<CtxItem> = context_items
+            .unwrap_or_default()
+            .into_iter()
+            .map(|c| c.core)
+            .collect();
+        let cores: Vec<SyntaxCore> = syntaxes.iter().map(|s| s.borrow().core.clone()).collect();
+        let pattern = atp.core.clone();
+        let n = cores.len();
+        let outcomes: Vec<MatchOutcome> = py
+            .allow_threads(move || {
+                let workers = std::thread::available_parallelism()
+                    .map(|p| p.get())
+                    .unwrap_or(1)
+                    .min(n.max(1));
+                let per = n.div_ceil(workers);
+                let mut chunks: Vec<Vec<SyntaxCore>> = Vec::new();
+                let mut it = cores.into_iter();
+                loop {
+                    let chunk: Vec<SyntaxCore> = it.by_ref().take(per.max(1)).collect();
+                    if chunk.is_empty() {
+                        break;
+                    }
+                    chunks.push(chunk);
+                }
+                std::thread::scope(|scope| {
+                    let handles: Vec<_> = chunks
+                        .into_iter()
+                        .map(|chunk| {
+                            let pattern = &pattern;
+                            let ctx = &ctx;
+                            scope.spawn(move || {
+                                chunk
+                                    .into_iter()
+                                    .map(|core| match_core_no_gil(pattern, ctx, core))
+                                    .collect::<Vec<_>>()
+                            })
+                        })
+                        .collect();
+                    handles
+                        .into_iter()
+                        .flat_map(|h| h.join().expect("match_many worker panicked"))
+                        .collect()
+                })
+            });
+        // Surface the first error before mutating any table, so a failed
+        // batch leaves every input untouched.
+        let mut checked = Vec::with_capacity(n);
+        for outcome in outcomes {
+            checked.push(outcome.map_err(core_err)?);
+        }
+        let mut results = Vec::with_capacity(n);
+        for (syntax, outcome) in syntaxes.iter().zip(checked) {
+            match outcome {
+                None => results.push(None),
+                Some((core, sem)) => {
+                    syntax.borrow_mut().core = core;
+                    results.push(sem.map(|sem| PyInterpretableTable {
+                        table: syntax.clone().unbind(),
+                        sem: Arc::new(sem),
+                    }));
+                }
+            }
+        }
+        Ok(results)
     }
 }
 

@@ -1,5 +1,6 @@
 """Type stubs for the native core `pyregtab._core`."""
 
+import os
 from enum import Enum
 from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, Union
 
@@ -204,6 +205,13 @@ class Recordset:
     def get(self, index: int) -> Record: ...
     def __getitem__(self, index: int) -> Record: ...
     def to_pandas(self) -> Any: ...
+    def to_csv(
+        self,
+        path: Optional[Union[str, os.PathLike[str]]] = None,
+        *,
+        sep: str = ",",
+        missing: str = "",
+    ) -> Optional[str]: ...
 
 # ---------------------------------------------------------------- spec
 
@@ -658,6 +666,12 @@ class AtpMatcher:
         syntax: TableSyntax,
         context_items: Optional[Sequence[ContextDerivedItem]] = None,
     ) -> Optional[InterpretableTable]: ...
+    @staticmethod
+    def match_many(
+        atp: TablePattern,
+        syntaxes: Sequence[TableSyntax],
+        context_items: Optional[Sequence[ContextDerivedItem]] = None,
+    ) -> list[Optional[InterpretableTable]]: ...
 
 class TableInterpreter:
     def __init__(self) -> None: ...

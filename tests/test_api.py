@@ -180,3 +180,64 @@ def test_serializer_and_repr():
 
     s = AtpToRtlSerializer.serialize(p)
     assert "REC" in s and s.startswith("[")
+
+
+def test_match_many():
+    """AtpMatcher.match_many (plan §4.5): batch parity with match — results
+    arrive in input order, non-matching tables yield None, and matched
+    structure is written back to each input table."""
+    p = rtl_compile("[ [VAL : ST*->REC] [VAL] ]\n[ [] [VAL] ]")
+    tables = [make_table([[f"a{i}", "b"], ["", f"c{i}"]]) for i in range(32)]
+    tables.insert(7, make_table([["too small"]]))  # does not match
+
+    itms = AtpMatcher.match_many(p, tables)
+
+    assert len(itms) == 33
+    assert itms[7] is None
+    for i, itm in enumerate(itms):
+        if i == 7:
+            continue
+        j = i if i < 7 else i - 1
+        assert itm is not None
+        rs = TableInterpreter().interpret(itm)
+        assert rs[0][rs.schema.attributes[0]] == f"a{j}"
+
+
+def test_match_many_with_python_callbacks():
+    """match_many falls back to the sequential GIL path when the pattern
+    holds Python callables (EXT bindings) and still returns correct results."""
+    bindings = Bindings.of().cell("isX", lambda c: c.text == "x")
+    p = RtlCompiler.compile("[ [EXT('isX') ? VAL] ]", bindings)
+    itms = AtpMatcher.match_many(p, [make_table([["x"]]), make_table([["y"]])])
+    assert itms[0] is not None and itms[1] is None
+
+
+def test_match_many_empty():
+    p = rtl_compile("[ [VAL] ]")
+    assert AtpMatcher.match_many(p, []) == []
+
+
+def test_recordset_to_csv(tmp_path):
+    rs = Recordset(
+        Schema(["A", "B,x", "C"]),
+        [
+            {"A": "plain", "B,x": 'say "hi"', "C": None},
+            {"A": "multi\nline", "B,x": "", "C": "z"},
+        ],
+    )
+    csv = rs.to_csv()
+    assert csv == (
+        'A,"B,x",C\r\n'
+        'plain,"say ""hi""",\r\n'
+        '"multi\nline",,z\r\n'
+    )
+    # separator and missing-value placeholder
+    assert rs.to_csv(sep=";", missing="NULL") == (
+        'A;B,x;C\r\n'
+        'plain;"say ""hi""";NULL\r\n'
+        '"multi\nline";;z\r\n'
+    )
+    # writing to a file returns None and round-trips byte-for-byte
+    out = tmp_path / "rs.csv"
+    assert rs.to_csv(out) is None
+    assert out.read_bytes().decode("utf-8") == csv

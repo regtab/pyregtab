@@ -12,6 +12,7 @@ core `pyregtab._core` (Rust). Full signatures are in the bundled type stubs
 |---|---|
 | `RtlCompiler.compile(rtl, bindings=None)` / `pyregtab.compile(...)` | RTL string → `TablePattern`; raises `RtlCompileError` with source position |
 | `AtpMatcher.match(pattern, syntax, context_items=None)` | `TablePattern` × `TableSyntax` → `InterpretableTable \| None` |
+| `AtpMatcher.match_many(pattern, syntaxes, context_items=None)` | batch form of `match`: `list[InterpretableTable \| None]` in input order, matched in parallel on an internal thread pool (GIL released) |
 | `TableInterpreter().interpret(itm)` | `InterpretableTable` → `Recordset` |
 | `AtpToRtlSerializer.serialize(pattern)` | `TablePattern` → canonical RTL string |
 | `TablePattern.transform(rs)` | applies the pattern's recordset transformations |
@@ -31,7 +32,10 @@ rs = (
 
 When the pattern contains no Python callbacks (no `EXT`/custom predicates),
 `AtpMatcher.match` and `TableInterpreter.interpret` release the GIL — batch
-processing parallelizes with a plain `ThreadPoolExecutor`.
+processing parallelizes with a plain `ThreadPoolExecutor`, or use
+`AtpMatcher.match_many`, which fans the tables out over an internal thread
+pool itself. With Python callbacks present, `match_many` degrades to matching
+sequentially under the GIL, like `match`.
 
 ## ITM: syntactic layer
 
@@ -50,7 +54,7 @@ processing parallelizes with a plain `ThreadPoolExecutor`.
 | `TableSemantics` | `cell_derived_items()`, `context_derived_items()` |
 | `CellDerivedItem` | `.str`, `.tags`, `.index`, `.cell`; passed to filter callbacks |
 | `ContextDerivedItem(s, ItemType, const_value=None)` | external context items for `AtpMatcher.match` |
-| `Recordset` | `.schema`, `.records`, `len(rs)`, `rs[i]`, `to_pandas()` |
+| `Recordset` | `.schema`, `.records`, `len(rs)`, `rs[i]`, `to_pandas()`, `to_csv(path=None, sep=",", missing="")` (RFC 4180; returns the CSV text when `path` is None) |
 | `Record` | `rec[attr]`, `rec[i]`, `.get(...)`, `.values()`; missing value → `None` |
 | `Schema` | `.attributes`, `index_of`, `contains` |
 

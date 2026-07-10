@@ -205,6 +205,9 @@ pub struct CellBodyAst {
 }
 
 #[derive(Clone, Debug)]
+// The AST is built once per compiled pattern and immediately lowered; the
+// per-variant size imbalance has no measurable cost there.
+#[allow(clippy::large_enum_variant)]
 pub enum CellAst {
     Body { body: Option<CellBodyAst>, quant: Option<PQuant> },
     Frag { name: String, quant: Option<PQuant> },

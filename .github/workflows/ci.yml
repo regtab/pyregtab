@@ -5,6 +5,7 @@ on:
     branches: [main]
     tags: ["v*"]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   grammar-sync:
@@ -36,11 +37,11 @@ jobs:
         with:
           python-version: "3.10"
       - uses: dtolnay/rust-toolchain@stable
-      - name: Lint (rustfmt + clippy)
+        with:
+          components: clippy
+      - name: Lint (clippy, blocking)
         if: matrix.os == 'ubuntu-latest'
-        run: |
-          rustup component add clippy
-          cargo clippy --all-targets -- -D warnings || true
+        run: cargo clippy --all-targets -- -D warnings
       - name: Build and install
         run: |
           pip install maturin pytest
@@ -48,6 +49,47 @@ jobs:
           pip install --no-index --find-links dist pyregtab
       - name: Run test suite (150 tasks + conformance + round-trip)
         run: pytest tests -q
+
+  differential:
+    # Differential test against the reference Java implementation (plan
+    # §7.3): compiles jRegTab at the pinned tag, dumps its recordsets for all
+    # task variants, and compares them cell-by-cell with pyRegTab. Manual
+    # trigger (workflow_dispatch) because it needs the JREGTAB_TOKEN secret
+    # with read access to the private regtab/jregtab repository.
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check out jRegTab at the pinned release
+        uses: actions/checkout@v4
+        with:
+          repository: regtab/jregtab
+          ref: v0.4.1
+          token: ${{ secrets.JREGTAB_TOKEN }}
+          path: jregtab
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Dump reference recordsets from jRegTab
+        run: |
+          cp tools/RecordsetDumpMain.java jregtab/src/test/java/ru/icc/regtab/
+          mvn -q -f jregtab/pom.xml -DskipTests test-compile \
+            dependency:build-classpath -Dmdep.outputFile="$PWD/cp.txt"
+          java -cp "jregtab/target/test-classes:jregtab/target/classes:$(cat cp.txt)" \
+            ru.icc.regtab.RecordsetDumpMain tests/fixtures/tasks conformance/positive dump.jsonl
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build and install pyRegTab
+        run: |
+          pip install maturin
+          maturin build --release --out dist
+          pip install --no-index --find-links dist pyregtab
+      - name: Compare recordsets cell-by-cell
+        run: python tools/differential.py dump.jsonl
 
   docs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'

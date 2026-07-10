@@ -1,6 +1,7 @@
 # План миграции jRegTab → pyRegTab
 
-**Статус:** ЧЕРНОВИК v2 (ANTLR4-требование ослаблено; ядро — Rust, альтернатива — C++)
+**Статус:** РЕАЛИЗОВАН (вариант A — Rust; сверка выполнена 2026-07-10, итог и
+осознанно отложенные пункты — в §11)
 **Дата:** 2026-07-06 (v2 — того же дня; v1 с обязательным ANTLR4 заменена целиком)
 **Исходный проект:** `d:\YandexDisk\code2\jregtab` (Java 21, v0.1.2-SNAPSHOT)
 **Целевой проект:** pyRegTab — Python-пакет с нативным ядром, публикуемый на PyPI
@@ -379,57 +380,60 @@ conformance-корпус зелёный в обоих проектах**.
 Оценки — в неделях чистой работы одного разработчика; фазы 2–5 частично параллелизуемы.
 
 ### Фаза 0 — Решения и прототип (1 нед.)
-- [ ] Аудит регулярок во всех фикстурах/тестах → выбор `regex` vs `fancy-regex`.
-- [ ] Прототип парсера: лексер (logos) + рекурсивный спуск для 2–3 правил `RTL.g4`,
+- [x] Аудит регулярок во всех фикстурах/тестах → выбор `regex` vs `fancy-regex`.
+- [x] Прототип парсера: лексер (logos) + рекурсивный спуск для 2–3 правил `RTL.g4`,
       разбор 5–10 реальных RTL-строк.
-- [ ] Прототип wheel: maturin + PyO3, пустой `_core` с одним классом, сборка
+- [x] Прототип wheel: maturin + PyO3, пустой `_core` с одним классом, сборка
       wheels на Windows и Linux (GitHub Actions, maturin-action).
-- [ ] Утвердить стиль API (properties vs `set_*`; §4.6) и имя пакета на PyPI.
-- [ ] **Точка выхода**: при блокере — переключение на C++ (вариант B), §3.B.
+- [x] Утвердить стиль API (properties vs `set_*`; §4.6) и имя пакета на PyPI.
+- [x] **Точка выхода**: при блокере — переключение на C++ (вариант B), §3.B.
 - Результат: утверждённые решения, репозиторий-скелет `pyregtab`.
 
 ### Фаза 1 — ITM syntax + Recordset (1–1.5 нед.)
-- [ ] Порт `itm.syntax` (11 классов) на Rust: арена + индексы (§4.2).
-- [ ] Порт `recordset` (3 класса).
-- [ ] PyO3-биндинги (handle-объекты) + Python-обёртки `syntax.py`, `recordset.py`.
-- [ ] Юнит-тесты (создание таблиц, subtables/subrows, форматирование ячеек).
+- [x] Порт `itm.syntax` (11 классов) на Rust: арена + индексы (§4.2).
+- [x] Порт `recordset` (3 класса).
+- [x] PyO3-биндинги (handle-объекты) + Python-обёртки `syntax.py`, `recordset.py`.
+- [x] Юнит-тесты (создание таблиц, subtables/subrows, форматирование ячеек).
 
 ### Фаза 2 — ATP spec (1–1.5 нед.)
-- [ ] Порт `atp.spec` (18 классов) на Rust-enum'ы/структуры: паттерны, content specs,
+- [x] Порт `atp.spec` (18 классов) на Rust-enum'ы/структуры: паттерны, content specs,
       `ActionSpec`, `ProviderSpec`, `FilterTerm`, `Quantifier`, `StringExtractor`, предикаты.
-- [ ] Custom-предикаты с Python-callable (§4.4).
-- [ ] Python-фабрики, повторяющие Java-фабрики; docstrings из Javadoc.
+- [x] Custom-предикаты с Python-callable (§4.4).
+- [x] Python-фабрики, повторяющие Java-фабрики; docstrings из Javadoc.
 
 ### Фаза 3 — Matcher + ITM semantics (2 нед., самая сложная)
-- [ ] Порт `itm.semantics` (items, providers, operations, `WorkingState`).
-- [ ] Порт `atp.match` (`SyntaxMatcher`, `SemanticConstructor`, `AtpMatcher`).
-- [ ] Первые сквозные тесты: задачи 001–020 через ATP-паттерны (без RTL).
+- [x] Порт `itm.semantics` (items, providers, operations, `WorkingState`).
+- [x] Порт `atp.match` (`SyntaxMatcher`, `SemanticConstructor`, `AtpMatcher`).
+- [x] Первые сквозные тесты: задачи 001–020 через ATP-паттерны (без RTL).
 
 ### Фаза 4 — Interpreter (1 нед.)
-- [ ] Порт `interpret` (4 фазы, стратегии, `MissingValueHandler`, трансформации
+- [x] Порт `interpret` (4 фазы, стратегии, `MissingValueHandler`, трансформации
       `WhitespaceNormalization` / `FieldSplitting` / `SchemaReordering` / `AnchorAttributeAtPosition`).
-- [ ] Сквозные ATP-тесты для всех 150 задач зелёные.
+- [x] Сквозные ATP-тесты для всех 150 задач зелёные.
 
 ### Фаза 5 — RTL: парсер, построитель ATP, сериализатор (1.5–2 нед.)
-- [ ] Полный лексер + рекурсивный спуск по всем правилам `RTL.g4` (§5.1).
-- [ ] Порт логики `ATPBuilder`, `ProviderTemplateResolver`, `StringExtractorFactory`;
+- [x] Полный лексер + рекурсивный спуск по всем правилам `RTL.g4` (§5.1).
+- [x] Порт логики `ATPBuilder`, `ProviderTemplateResolver`, `StringExtractorFactory`;
       `RtlCompiler` / `RtlCompileError` с диагностикой line:col.
-- [ ] Порт `AtpToRtlSerializer`; round-trip тест.
-- [ ] Сборка conformance-корпуса (позитив из тестов jregtab, негатив — по веткам
+- [x] Порт `AtpToRtlSerializer`; round-trip тест.
+- [x] Сборка conformance-корпуса (позитив из тестов jregtab, негатив — по веткам
       ошибок парсера); job для jregtab-CI.
-- [ ] RTL-тесты для всех 150 задач зелёные (итого 1 500 вариантов).
+- [x] RTL-тесты для всех 150 задач зелёные (итого 1 500 вариантов).
 
 ### Фаза 6 — Дифференциальная проверка и полировка API (1 нед.)
-- [ ] Дифф-прогон против jRegTab (§7.3), устранение расхождений.
-- [ ] GIL-release (`allow_threads`), `match_many`-бенчмарк, сравнение скорости
-      с jRegTab (criterion ↔ JMH).
-- [ ] `to_pandas()`, `__repr__`, типизация (`py.typed`, stubs для `_core`).
+- [x] Дифф-прогон против jRegTab (§7.3), устранение расхождений
+      (750/750 вариантов идентичны; ручной CI-job `differential` добавлен).
+- [x] GIL-release (`allow_threads`) и `AtpMatcher.match_many` (внутренний пул
+      потоков, реализован в 0.3.0). *Не сделано:* бенчмарк-сравнение скорости
+      с jRegTab (criterion ↔ JMH) — см. §11.
+- [x] `to_pandas()`, `to_csv()`, `__repr__`, типизация (`py.typed`, stubs для `_core`).
 
 ### Фаза 7 — CI/CD, документация, релиз (1 нед.)
-- [ ] maturin-action матрица wheels, публикация на TestPyPI → PyPI (`pyregtab 0.1.0`).
-- [ ] mkdocs-сайт (адаптация docs jregtab: getting-started, RTL reference — общий,
+- [x] maturin-action матрица wheels, публикация на PyPI (`pyregtab 0.1.0`,
+      2026-07-07; сразу через trusted publishing, без промежуточного TestPyPI).
+- [x] mkdocs-сайт (адаптация docs jregtab: getting-started, RTL reference — общий,
       API reference — Python).
-- [ ] README с примером из §4.6; документ о процессе эволюции RTL (§5.2) — в оба репо.
+- [x] README с примером из §4.6; документ о процессе эволюции RTL (§5.2) — в оба репо.
 
 **Итого: ~8.5–10 недель.**
 
@@ -460,3 +464,32 @@ conformance-корпус зелёный в обоих проектах**.
    в 0.1 (`Bindings`, `RtlCompiler.compile(rtl, bindings)`). Отложено на будущее:
    перегрузка операторов Python (`+`/`*` квантификаторы) и корпусный
    DSL-генератор в `tools/translate_atp.py --dsl`.
+
+---
+
+## 11. Статус реализации (сверка 2026-07-10)
+
+План реализован: вариант A (Rust + PyO3 + maturin), релизы `pyregtab` 0.1.0 →
+0.1.1 → 0.2.0 на PyPI, паритет с jRegTab 0.4.1. Критерий готовности §7 выполнен:
+1 500/1 500 вариантов зелёные, дифф с jRegTab пуст (750/750), conformance-корпус
+зелёный в CI обоих проектов. Все открытые вопросы §10 решены (Rust; `cell.text`
+property + `set_text()`; имя `pyregtab`; корпус копиями с пином; Python ≥ 3.10;
+pure-Python-фолбэк не делается — достаточно sdist).
+
+Сверх плана: embedded RTL DSL (`pyregtab.dsl`, 0.2.0) и IDE-поддержка RTL
+(`ide/`, зеркало jRegTab 0.4.0).
+
+Закрыто при сверке (0.3.0): `AtpMatcher.match_many` (§4.5) — параллельный
+батчевый матчинг с внутренним пулом потоков без GIL; `Recordset.to_csv()`
+(§4.1); clippy в CI стал блокирующим (§7.7); ручной CI-job `differential`
+(workflow_dispatch, §7.3).
+
+Осознанно отложено (не блокирует паритет и релизы):
+
+- бенчмарки скорости против jRegTab (criterion ↔ JMH, фаза 6) — отдельный
+  перфоманс-проект;
+- property-based тесты парсера (proptest, §7.6) и выборочный `cargo miri`
+  (§7.7) — покрытие обеспечивают conformance-корпус и 1 500 вариантов;
+- pure-Python fallback (§10.6) — отклонён;
+- рукописный лексер вместо `logos` и единый `__init__.py`-реэкспорт вместо
+  расписанных в §4.1 модулей Python-слоя — эквивалентные упрощения, не долг.

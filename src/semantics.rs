@@ -452,7 +452,7 @@ impl WorkingState {
             let mut seen: Vec<&str> = Vec::new();
             for &item in sequence {
                 if let Some(a) = self.assoc(item) {
-                    if seen.iter().any(|x| *x == a) {
+                    if seen.contains(&a) {
                         return false;
                     }
                     seen.push(a);

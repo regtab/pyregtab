@@ -273,9 +273,9 @@ fn construct_schema(cfg: &InterpreterCfg, ws: &mut WorkingState) -> CoreResult<S
                 }
             }
             None => {
-                if !anon_map.contains_key(&pos_idx) {
+                if let std::collections::hash_map::Entry::Vacant(e) = anon_map.entry(pos_idx) {
                     let anon = anonymous_attribute(cfg, pos_idx + 1);
-                    anon_map.insert(pos_idx, anon.clone());
+                    e.insert(anon.clone());
                     schema_attrs.push(anon.clone());
                     in_schema.push(anon);
                 }

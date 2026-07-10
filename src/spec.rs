@@ -1194,13 +1194,13 @@ fn apply_delimited_field_split(
     let mut out = Vec::with_capacity(rs.records.len());
     for r in &rs.records {
         let mut cells: Vec<Option<String>> = Vec::with_capacity(total);
-        for i in 0..n {
+        for (i, &w) in width.iter().enumerate().take(n) {
             let val = r.values[i].clone().unwrap_or_default();
-            if width[i] == 1 {
+            if w == 1 {
                 cells.push(Some(val));
             } else {
                 let parts = split_literal(delimiter, &val);
-                for p in 0..width[i] {
+                for p in 0..w {
                     cells.push(Some(parts.get(p).cloned().unwrap_or_default()));
                 }
             }

@@ -16,10 +16,12 @@ and interprets the match into a relational **recordset**:
 TableSyntax → RtlCompiler/TablePattern → AtpMatcher → TableInterpreter → Recordset
 ```
 
-**pyRegTab 0.2.0 ≙ jRegTab 0.4.1** (same API, same semantics, same test
+**pyRegTab 0.3.0 ≙ jRegTab 0.4.1** (same API, same semantics, same test
 corpus; jRegTab 0.4.1 changes only the Java build over 0.4.0), including the
 embedded RTL DSL `pyregtab.dsl` — a port of jRegTab's `ru.icc.regtab.dsl`
-(added upstream in jRegTab 0.3.0).
+(added upstream in jRegTab 0.3.0). Python-side extras on top of the Java API:
+`AtpMatcher.match_many` (parallel batch matching), `Recordset.to_pandas()`
+and `Recordset.to_csv()`.
 
 ## Installation
 
@@ -140,7 +142,7 @@ Rust (`pyregtab._core`, built with [PyO3](https://pyo3.rs) and
 
 ## Testing
 
-`pytest tests` runs (1 904 tests):
+`pytest tests` runs (1 908 tests):
 
 - the full benchmark suite — tasks 001–150 (Foofah, RegTab, Baikal),
   every fixture variant, **both** via RTL patterns and via ATP patterns
@@ -156,7 +158,7 @@ Rust (`pyregtab._core`, built with [PyO3](https://pyo3.rs) and
 - RTL↔ATP round-trip for tasks 001–050;
 - API unit tests (syntax layer, extractors, EXT bindings, custom
   predicates, transformations, interpreter options, GIL-released batch
-  matching from a thread pool).
+  matching from a thread pool and via `AtpMatcher.match_many`).
 
 `cargo test` additionally runs the conformance corpus and an end-to-end
 smoke test against the native core alone. Differential testing against the
