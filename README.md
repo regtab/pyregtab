@@ -16,9 +16,10 @@ and interprets the match into a relational **recordset**:
 TableSyntax → RtlCompiler/TablePattern → AtpMatcher → TableInterpreter → Recordset
 ```
 
-**pyRegTab 0.2.0 ≙ jRegTab 0.4.0** (same API, same semantics, same test
-corpus), including the embedded RTL DSL `pyregtab.dsl` — a port of jRegTab's
-`ru.icc.regtab.dsl` (added upstream in jRegTab 0.3.0).
+**pyRegTab 0.2.0 ≙ jRegTab 0.4.1** (same API, same semantics, same test
+corpus; jRegTab 0.4.1 changes only the Java build over 0.4.0), including the
+embedded RTL DSL `pyregtab.dsl` — a port of jRegTab's `ru.icc.regtab.dsl`
+(added upstream in jRegTab 0.3.0).
 
 ## Installation
 
@@ -161,7 +162,8 @@ Rust (`pyregtab._core`, built with [PyO3](https://pyo3.rs) and
 smoke test against the native core alone. Differential testing against the
 Java reference (`tools/differential.py` + `tools/RecordsetDumpMain.java`)
 compares recordsets cell-by-cell on all 750 task variants — zero
-mismatches against jRegTab v0.4.0.
+mismatches against jRegTab v0.4.0 (whose Java sources are unchanged in
+v0.4.1).
 
 ## IDE support
 
