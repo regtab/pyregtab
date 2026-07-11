@@ -9,8 +9,15 @@ license = "MIT"
 name = "pyregtab"
 crate-type = ["cdylib", "rlib"]
 
+[features]
+# The Python bindings (pyo3 module, External/Custom callbacks). Disable with
+# `--no-default-features` to build the pure-Rust core (RTL compiler, matcher,
+# interpreter) for embedding, e.g. in rtl-lsp.
+default = ["python"]
+python = ["dep:pyo3"]
+
 [dependencies]
-pyo3 = { version = "0.23", features = ["abi3-py310"] }
+pyo3 = { version = "0.23", features = ["abi3-py310"], optional = true }
 regex = "1"
 indexmap = "2"
 

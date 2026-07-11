@@ -17,27 +17,20 @@ pub const UNBOUNDED: i64 = i64::MAX;
 
 // ---------------------------------------------------------------- enums
 
-#[pyo3::pyclass(eq, eq_int)]
+#[cfg_attr(feature = "python", pyo3::pyclass(eq, eq_int, rename_all = "SCREAMING_SNAKE_CASE"))]
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum ItemType {
-    #[pyo3(name = "VALUE")]
     Value,
-    #[pyo3(name = "ATTRIBUTE")]
     Attribute,
-    #[pyo3(name = "AUXILIARY")]
     Auxiliary,
 }
 
-#[pyo3::pyclass(eq, eq_int, name = "ItemDerivationDirective")]
+#[cfg_attr(feature = "python", pyo3::pyclass(eq, eq_int, name = "ItemDerivationDirective", rename_all = "SCREAMING_SNAKE_CASE"))]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Idd {
-    #[pyo3(name = "VAL")]
     Val,
-    #[pyo3(name = "ATTR")]
     Attr,
-    #[pyo3(name = "AUX")]
     Aux,
-    #[pyo3(name = "SKIP")]
     Skip,
 }
 
@@ -52,61 +45,43 @@ impl Idd {
     }
 }
 
-#[pyo3::pyclass(eq, eq_int)]
+#[cfg_attr(feature = "python", pyo3::pyclass(eq, eq_int, rename_all = "SCREAMING_SNAKE_CASE"))]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum OperationType {
-    #[pyo3(name = "FILL")]
     Fill,
-    #[pyo3(name = "PREFIX")]
     Prefix,
-    #[pyo3(name = "SUFFIX")]
     Suffix,
-    #[pyo3(name = "AVP")]
     Avp,
-    #[pyo3(name = "REC")]
     Rec,
-    #[pyo3(name = "JOIN")]
     Join,
 }
 
-#[pyo3::pyclass(eq, eq_int)]
+#[cfg_attr(feature = "python", pyo3::pyclass(eq, eq_int, rename_all = "SCREAMING_SNAKE_CASE"))]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum TraversalOrder {
-    #[pyo3(name = "ROW_MAJOR")]
     RowMajor,
-    #[pyo3(name = "REVERSE_ROW_MAJOR")]
     ReverseRowMajor,
-    #[pyo3(name = "COLUMN_MAJOR")]
     ColumnMajor,
-    #[pyo3(name = "REVERSE_COLUMN_MAJOR")]
     ReverseColumnMajor,
 }
 
 /// `CellDerivedProviderKind`.
-#[pyo3::pyclass(eq, eq_int, name = "CellDerivedProviderKind")]
+#[cfg_attr(feature = "python", pyo3::pyclass(eq, eq_int, name = "CellDerivedProviderKind", rename_all = "SCREAMING_SNAKE_CASE"))]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum CellKind {
-    #[pyo3(name = "UNRESTRICTED")]
     Unrestricted,
-    #[pyo3(name = "VAL")]
     Val,
-    #[pyo3(name = "ATTR")]
     Attr,
-    #[pyo3(name = "AUX")]
     Aux,
 }
 
 /// `ContextDerivedProviderKind`.
-#[pyo3::pyclass(eq, eq_int, name = "ContextDerivedProviderKind")]
+#[cfg_attr(feature = "python", pyo3::pyclass(eq, eq_int, name = "ContextDerivedProviderKind", rename_all = "SCREAMING_SNAKE_CASE"))]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum CtxKind {
-    #[pyo3(name = "UNRESTRICTED")]
     Unrestricted,
-    #[pyo3(name = "VAL")]
     Val,
-    #[pyo3(name = "ATTR")]
     Attr,
-    #[pyo3(name = "AUX")]
     Aux,
 }
 
@@ -160,21 +135,37 @@ impl Quantifier {
 // ---------------------------------------------------------------- Python callbacks
 
 /// A shared Python callable used by Custom/External predicates and extractors.
+#[cfg(feature = "python")]
 #[derive(Clone, Debug)]
 pub struct PyFunc(pub Arc<pyo3::Py<pyo3::PyAny>>);
 
+#[cfg(feature = "python")]
 impl PartialEq for PyFunc {
     fn eq(&self, other: &Self) -> bool {
         self.0.as_ptr() == other.0.as_ptr()
     }
 }
 
+/// Without the `python` feature there are no Python callables. The type stays
+/// so enum shapes are identical in both modes, but it is uninhabited: variants
+/// holding a `PyFunc` provably cannot be constructed.
+#[cfg(not(feature = "python"))]
+#[derive(Clone, Debug, PartialEq)]
+pub enum PyFunc {}
+
+/// Handle to the Python-side `pyregtab._core.TableSyntax`, passed to
+/// External/Custom callbacks. Uninhabited without the `python` feature.
+#[cfg(feature = "python")]
+pub type PyTableHandle = pyo3::Py<pyo3::PyAny>;
+#[cfg(not(feature = "python"))]
+pub type PyTableHandle = std::convert::Infallible;
+
 /// Evaluation environment threaded through predicate evaluation.
 /// `py_table` (a `pyregtab._core.TableSyntax` handle) is required only when
 /// External/Custom Python callbacks participate.
 pub struct EvalEnv<'a> {
     pub syntax: &'a SyntaxCore,
-    pub py_table: Option<&'a pyo3::Py<pyo3::PyAny>>,
+    pub py_table: Option<&'a PyTableHandle>,
 }
 
 // ---------------------------------------------------------------- CellPredicate
@@ -189,6 +180,8 @@ pub enum CellPredicate {
     NotContains(String),
     External { name: String, func: PyFunc },
     Custom { description: String, func: PyFunc },
+    /// Permissive-mode stub for `EXT('name')` with no binding: always true.
+    ExternalUnbound { name: String },
 }
 
 impl CellPredicate {
@@ -200,9 +193,16 @@ impl CellPredicate {
             CellPredicate::NotRegex(p) => Ok(!full_match(p, &cell.text)?),
             CellPredicate::Contains(s) => Ok(cell.text.contains(s.as_str())),
             CellPredicate::NotContains(s) => Ok(!cell.text.contains(s.as_str())),
+            #[cfg(feature = "python")]
             CellPredicate::External { func, .. } | CellPredicate::Custom { func, .. } => {
                 crate::py::call_cell_predicate(func, env, cell.row, cell.col)
             }
+            #[cfg(not(feature = "python"))]
+            CellPredicate::External { func, .. } | CellPredicate::Custom { func, .. } => {
+                let _ = env;
+                match *func {}
+            }
+            CellPredicate::ExternalUnbound { .. } => Ok(true),
         }
     }
 
@@ -214,7 +214,9 @@ impl CellPredicate {
             CellPredicate::NotRegex(p) => format!("!\"{p}\""),
             CellPredicate::Contains(s) => format!("~\"{s}\""),
             CellPredicate::NotContains(s) => format!("!~\"{s}\""),
-            CellPredicate::External { name, .. } => format!("EXT('{name}')"),
+            CellPredicate::External { name, .. } | CellPredicate::ExternalUnbound { name } => {
+                format!("EXT('{name}')")
+            }
             CellPredicate::Custom { description, .. } => {
                 return Err(format!("Custom CellPredicate has no RTL analog: {description}").into())
             }
@@ -258,6 +260,8 @@ pub enum FilterTerm {
     SameStr,
     External { name: String, func: PyFunc },
     Custom { description: String, func: PyFunc },
+    /// Permissive-mode stub for `EXT('name')` with no binding: always true.
+    ExternalUnbound { name: String },
 }
 
 fn same_subrow(a: &CellItem, c: &CellItem, env: &EvalEnv) -> bool {
@@ -321,9 +325,13 @@ impl FilterTerm {
             FilterTerm::Tagged(t) => c.tags.iter().any(|x| x == t),
             FilterTerm::NotTagged(t) => !c.tags.iter().any(|x| x == t),
             FilterTerm::SameStr => c.s == a.s,
+            #[cfg(feature = "python")]
             FilterTerm::External { func, .. } | FilterTerm::Custom { func, .. } => {
                 return crate::py::call_item_filter(func, env, a, c);
             }
+            #[cfg(not(feature = "python"))]
+            FilterTerm::External { func, .. } | FilterTerm::Custom { func, .. } => match *func {},
+            FilterTerm::ExternalUnbound { .. } => true,
         })
     }
 
@@ -384,7 +392,9 @@ impl FilterTerm {
             FilterTerm::Tagged(t) => quoted_tag(t),
             FilterTerm::NotTagged(t) => format!("!{}", quoted_tag(t)),
             FilterTerm::SameStr => "STR".into(),
-            FilterTerm::External { name, .. } => format!("EXT('{name}')"),
+            FilterTerm::External { name, .. } | FilterTerm::ExternalUnbound { name } => {
+                format!("EXT('{name}')")
+            }
             FilterTerm::Custom { .. } => {
                 return Err("Custom constraint has no RTL analog".into());
             }
@@ -430,7 +440,10 @@ impl FilterCond {
                 }
                 Ok(false)
             }
+            #[cfg(feature = "python")]
             FilterCond::Custom { func, .. } => crate::py::call_item_filter(func, env, a, c),
+            #[cfg(not(feature = "python"))]
+            FilterCond::Custom { func, .. } => match *func {},
         }
     }
 
@@ -496,7 +509,10 @@ impl Extractor {
                 }
                 cur
             }
+            #[cfg(feature = "python")]
             Extractor::Custom { func, .. } => crate::py::call_extractor(func, input)?,
+            #[cfg(not(feature = "python"))]
+            Extractor::Custom { func, .. } => match *func {},
         })
     }
 
@@ -886,6 +902,7 @@ impl TablePattern {
 
 impl CellPredicate {
     pub fn has_py(&self) -> bool {
+        // ExternalUnbound is a native always-true stub: no GIL needed.
         matches!(self, CellPredicate::External { .. } | CellPredicate::Custom { .. })
     }
 }

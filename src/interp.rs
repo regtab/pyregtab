@@ -7,21 +7,17 @@ use crate::syntax::SyntaxCore;
 use crate::util::CoreResult;
 use std::collections::HashMap;
 
-#[pyo3::pyclass(eq, eq_int, name = "SchemaConstructionStrategy")]
+#[cfg_attr(feature = "python", pyo3::pyclass(eq, eq_int, name = "SchemaConstructionStrategy", rename_all = "SCREAMING_SNAKE_CASE"))]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum SchemaStrategy {
-    #[pyo3(name = "RECORD_FIRST")]
     RecordFirst,
-    #[pyo3(name = "POSITION_FIRST")]
     PositionFirst,
 }
 
-#[pyo3::pyclass(eq, eq_int, name = "ActionApplicationStrategy")]
+#[cfg_attr(feature = "python", pyo3::pyclass(eq, eq_int, name = "ActionApplicationStrategy", rename_all = "SCREAMING_SNAKE_CASE"))]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ActionStrategy {
-    #[pyo3(name = "ROW_FIRST")]
     RowFirst,
-    #[pyo3(name = "COLUMN_FIRST")]
     ColumnFirst,
 }
 
@@ -49,7 +45,7 @@ pub fn interpret(
     cfg: &InterpreterCfg,
     syntax: &SyntaxCore,
     sem: &SemanticsCore,
-    py_table: Option<&pyo3::Py<pyo3::PyAny>>,
+    py_table: Option<&crate::spec::PyTableHandle>,
 ) -> CoreResult<RecordsetCore> {
     let env = EvalEnv { syntax, py_table };
 
@@ -318,6 +314,12 @@ fn generate_records(
 fn handle_missing(cfg: &InterpreterCfg, attribute: &str) -> CoreResult<Option<String>> {
     match &cfg.missing_value_handler {
         None => Ok(None),
+        #[cfg(feature = "python")]
         Some(f) => crate::py::call_missing_handler(f, attribute),
+        #[cfg(not(feature = "python"))]
+        Some(f) => {
+            let _ = attribute;
+            match *f {}
+        }
     }
 }

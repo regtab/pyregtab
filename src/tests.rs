@@ -3,7 +3,7 @@
 
 use crate::interp::{interpret, InterpreterCfg};
 use crate::matcher::match_atp;
-use crate::rtl::{compile, serialize::serialize, BindingsCore};
+use crate::rtl::{compile, compile_permissive, serialize::serialize, BindingsCore};
 use crate::syntax::SyntaxCore;
 use std::fs;
 use std::path::PathBuf;
@@ -61,6 +61,32 @@ fn conformance_negative_rejected() {
         n += 1;
     }
     assert!(n >= 15, "expected at least 15 negative cases, got {n}");
+}
+
+#[test]
+fn permissive_binds_ext_as_always_true_stub() {
+    // Strict compilation rejects unbound EXT names…
+    let rtl = "[ [EXT('mypred') ? VAL : (LT & EXT('myfilter'))->REC] ]+";
+    assert!(compile(rtl, &BindingsCore::default()).is_err());
+
+    // …permissive compilation accepts them and serializes them back verbatim.
+    let pattern = compile_permissive(rtl).expect("permissive compile must succeed");
+    let canonical = serialize(&pattern).unwrap();
+    assert!(canonical.contains("EXT('mypred')"), "canonical: {canonical}");
+    assert!(canonical.contains("EXT('myfilter')"), "canonical: {canonical}");
+
+    // Everything else is still checked: a genuinely broken pattern fails
+    // with a position even in permissive mode.
+    let err = compile_permissive("[ [VAL : ->REC] ]").unwrap_err();
+    assert_eq!((err.line, err.col), (1, 3));
+
+    // And the EXT stub behaves as always-true end to end: the cell condition
+    // does not reject any cell.
+    let mut syntax = SyntaxCore::new(1, 1).unwrap();
+    syntax.cell_mut(0, 0).set_text("x".to_string());
+    let pattern = compile_permissive("[ [EXT('anything') ? VAL : ()->REC] ]").unwrap();
+    let sem = match_atp(&pattern, &mut syntax, Vec::new()).unwrap();
+    assert!(sem.is_some(), "EXT stub must not reject the cell");
 }
 
 #[test]

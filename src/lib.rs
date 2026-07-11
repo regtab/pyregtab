@@ -3,6 +3,7 @@
 
 pub mod interp;
 pub mod matcher;
+#[cfg(feature = "python")]
 pub mod py;
 pub mod recordset;
 pub mod rtl;
@@ -13,8 +14,10 @@ pub mod syntax;
 mod tests;
 pub mod util;
 
+#[cfg(feature = "python")]
 use pyo3::prelude::*;
 
+#[cfg(feature = "python")]
 #[pymodule]
 fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // syntax

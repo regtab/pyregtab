@@ -6,40 +6,29 @@
 
 use crate::util::{java_is_blank, CoreResult};
 
-#[pyo3::pyclass(eq, eq_int)]
+#[cfg_attr(feature = "python", pyo3::pyclass(eq, eq_int, rename_all = "SCREAMING_SNAKE_CASE"))]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum FontFamily {
-    #[pyo3(name = "SERIF")]
     Serif,
-    #[pyo3(name = "SANS_SERIF")]
     SansSerif,
-    #[pyo3(name = "MONOSPACED")]
     Monospaced,
 }
 
-#[pyo3::pyclass(eq, eq_int)]
+#[cfg_attr(feature = "python", pyo3::pyclass(eq, eq_int, rename_all = "SCREAMING_SNAKE_CASE"))]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum HorizontalAlignment {
-    #[pyo3(name = "LEFT")]
     Left,
-    #[pyo3(name = "CENTER")]
     Center,
-    #[pyo3(name = "RIGHT")]
     Right,
-    #[pyo3(name = "JUSTIFY")]
     Justify,
 }
 
-#[pyo3::pyclass(eq, eq_int)]
+#[cfg_attr(feature = "python", pyo3::pyclass(eq, eq_int, rename_all = "SCREAMING_SNAKE_CASE"))]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum VerticalAlignment {
-    #[pyo3(name = "TOP")]
     Top,
-    #[pyo3(name = "CENTER")]
     Center,
-    #[pyo3(name = "BOTTOM")]
     Bottom,
-    #[pyo3(name = "JUSTIFY")]
     Justify,
 }
 
