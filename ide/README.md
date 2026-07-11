@@ -1,65 +1,30 @@
 # IDE support for RTL
 
-This directory ships editor tooling for RTL (Regular Table Language):
+Editor tooling for RTL (Regular Table Language) — the VS Code extension, the
+TextMate grammars for `.rtl` files, and the injection grammars that highlight
+RTL inside Python and Java string literals — lives in its own repository:
 
-- a TextMate grammar for `.rtl` files (`vscode/syntaxes/rtl.tmLanguage.json`),
-- an injection grammar that highlights RTL inside Python string literals
-  (`vscode/syntaxes/rtl-python-injection.tmLanguage.json`),
-- a VS Code extension manifest wiring both together (`vscode/`).
+**https://github.com/regtab/vscode-rtl**
 
-The same `vscode/` directory doubles as a TextMate bundle for IntelliJ-based IDEs
-(PyCharm and friends).
+The extension is universal: it serves every RegTab implementation (jRegTab,
+pyRegTab, future ports) and requires neither Python nor a JDK.
 
-## VS Code
+- **VS Code**: install “RegTab RTL” from the
+  VS Code Marketplace or Open VSX (extension id `regtab.rtl`).
+- **PyCharm / IntelliJ IDEA**: register the extension directory as a TextMate
+  bundle (*Settings → Editor → TextMate Bundles*) — see the vscode-rtl README.
 
-Copy (or symlink) the extension into your local extensions directory and reload:
+## Keeping the grammar in sync
 
-```
-# Windows
-xcopy /E /I ide\vscode %USERPROFILE%\.vscode\extensions\regtab.rtl-language-0.1.0
-
-# Linux / macOS
-cp -r ide/vscode ~/.vscode/extensions/regtab.rtl-language-0.1.0
-```
-
-Alternatively, package it properly with [vsce](https://github.com/microsoft/vscode-vsce):
-`cd ide/vscode && npx @vscode/vsce package`, then install the produced `.vsix` via
-*Extensions → … → Install from VSIX*.
-
-You get:
-
-- syntax highlighting for `*.rtl` files;
-- highlighting of RTL inside Python strings for these forms:
-  - `RtlCompiler.compile("""…""")` / `RtlCompiler.compile('''…''')`,
-  - `RtlCompiler.compile("…")` / `RtlCompiler.compile('…')` (optionally raw:
-    `r"…"`).
-
-Limitation (inherent to TextMate): the opening quote must be on the same line as
-`RtlCompiler.compile(`.
-
-## PyCharm / IntelliJ IDEA
-
-1. *Settings → Editor → TextMate Bundles → “+”* and select the `ide/vscode` directory.
-2. `*.rtl` files are now highlighted.
-
-For RTL inside Python string literals, PyCharm's built-in language injection also
-recognizes the line-comment marker `# language=RTL` placed on the statement — when the
-IDE knows the RTL language (registered TextMate bundle or a dedicated plugin), it injects
-RTL into the following literal. Support for injecting TextMate-backed languages varies by
-IDE version; where unavailable, you still get `.rtl` file highlighting.
+vscode-rtl is the canonical home of the RTL TextMate grammars. Any change to
+the normative grammar `grammar/RTL.g4` (pinned from jRegTab) must be
+accompanied by an issue/PR in vscode-rtl updating `rtl.tmLanguage.json`;
+its CI runs a keyword-coverage sync-check against the pinned `RTL.g4`.
 
 ## Runtime validation
 
 Python has no compile-time annotation processor (the jRegTab counterpart is
-`@RtlSource` + a `javac` processor). In pyRegTab, an invalid RTL string is reported at
-call time: `RtlCompiler.compile(...)` raises `RtlCompileError` with the source position
-(`line:col`), the expected tokens, and a fragment of the offending input.
-
-## Keeping the grammar in sync
-
-The TextMate grammar mirrors the tokens of the normative grammar `grammar/RTL.g4`
-(pinned from jRegTab). Any change to `RTL.g4` must be accompanied by a matching update to
-`vscode/syntaxes/rtl.tmLanguage.json` in the same PR. The `.rtl` grammar
-(`rtl.tmLanguage.json`) and the editor configuration (`language-configuration.json`) are
-copied verbatim from jRegTab; only the injection grammar and manifest differ (Python
-instead of Java host language).
+`@RtlSource` + a `javac` processor). In pyRegTab, an invalid RTL string is
+reported at call time: `RtlCompiler.compile(...)` raises `RtlCompileError` with
+the source position (`line:col`), the expected tokens, and a fragment of the
+offending input.
