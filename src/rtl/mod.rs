@@ -32,6 +32,7 @@ impl From<CoreErr> for RtlErr {
     fn from(e: CoreErr) -> Self {
         match e {
             CoreErr::Msg(m) => RtlErr::new(m),
+            #[cfg(feature = "python")]
             CoreErr::Py(e) => RtlErr::new(format!("{e}")),
         }
     }
@@ -46,6 +47,22 @@ pub struct BindingsCore {
 
 /// Port of `RtlCompiler.compile(rtl, bindings)`.
 pub fn compile(rtl: &str, bindings: &BindingsCore) -> Result<TablePattern, RtlErr> {
+    compile_inner(rtl, bindings, false)
+}
+
+/// Permissive compilation for standalone editing (rtl-lsp): any `EXT('name')`
+/// is considered bound via an always-true stub, so `.rtl` files that rely on
+/// host-runtime `Bindings` do not produce false errors. Everything else is
+/// checked exactly as in [`compile`].
+pub fn compile_permissive(rtl: &str) -> Result<TablePattern, RtlErr> {
+    compile_inner(rtl, &BindingsCore::default(), true)
+}
+
+fn compile_inner(
+    rtl: &str,
+    bindings: &BindingsCore,
+    permissive: bool,
+) -> Result<TablePattern, RtlErr> {
     let tokens = lexer::lex(rtl)?;
     let tree = parser::parse(tokens)?;
 
@@ -121,7 +138,7 @@ pub fn compile(rtl: &str, bindings: &BindingsCore) -> Result<TablePattern, RtlEr
         }
     }
 
-    let pattern = build::ATPBuilder::new(bindings).build(&tree)?;
+    let pattern = build::ATPBuilder::with_permissive(bindings, permissive).build(&tree)?;
     if transforms.is_empty() {
         Ok(pattern)
     } else {

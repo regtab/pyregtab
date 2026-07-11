@@ -10,6 +10,10 @@ use std::sync::Arc;
 
 pub struct ATPBuilder<'a> {
     bindings: &'a BindingsCore,
+    /// Permissive mode: an `EXT('name')` with no binding becomes an
+    /// always-true `ExternalUnbound` stub instead of a compile error
+    /// (standalone editing without a host runtime, e.g. rtl-lsp).
+    permissive: bool,
     inherited_stack: Vec<Vec<ActionSpec>>,
     cell_frags: HashMap<String, Option<CellBodyAst>>,
     row_frags: HashMap<String, RowBodyAst>,
@@ -45,8 +49,13 @@ fn build_extractor(steps: &[PStep]) -> Extractor {
 
 impl<'a> ATPBuilder<'a> {
     pub fn new(bindings: &'a BindingsCore) -> Self {
+        Self::with_permissive(bindings, false)
+    }
+
+    pub fn with_permissive(bindings: &'a BindingsCore, permissive: bool) -> Self {
         ATPBuilder {
             bindings,
+            permissive,
             inherited_stack: Vec::new(),
             cell_frags: HashMap::new(),
             row_frags: HashMap::new(),
@@ -647,7 +656,13 @@ impl<'a> ATPBuilder<'a> {
                     ));
                 }
                 match self.bindings.filter.get(name) {
+                    // Unreachable without the `python` feature: PyFunc is
+                    // uninhabited there, so the map is always empty.
+                    #[allow(unreachable_code)]
                     Some(f) => FilterTerm::External { name: name.clone(), func: f.clone() },
+                    None if self.permissive => {
+                        FilterTerm::ExternalUnbound { name: name.clone() }
+                    }
                     None => {
                         let hint = if self.bindings.cell.contains_key(name) {
                             format!(
@@ -690,7 +705,12 @@ impl<'a> ATPBuilder<'a> {
                     ));
                 }
                 match self.bindings.cell.get(name) {
+                    // Unreachable without the `python` feature (see above).
+                    #[allow(unreachable_code)]
                     Some(f) => CellPredicate::External { name: name.clone(), func: f.clone() },
+                    None if self.permissive => {
+                        CellPredicate::ExternalUnbound { name: name.clone() }
+                    }
                     None => {
                         let hint = if self.bindings.filter.contains_key(name) {
                             format!(

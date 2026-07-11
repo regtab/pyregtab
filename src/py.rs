@@ -33,7 +33,17 @@ fn rtl_err(e: RtlErr) -> PyErr {
     } else {
         format!("RTL compile error: {}", e.msg)
     };
-    RtlCompileError::new_err(msg)
+    let err = RtlCompileError::new_err(msg);
+    // Expose the source position programmatically: err.line (1-based) and
+    // err.col (0-based), both None when unknown.
+    Python::with_gil(|py| {
+        let value = err.value(py);
+        let line = if e.line >= 0 { Some(e.line) } else { None };
+        let col = if e.col >= 0 { Some(e.col) } else { None };
+        let _ = value.setattr("line", line);
+        let _ = value.setattr("col", col);
+    });
+    err
 }
 
 // ================================================================ callbacks

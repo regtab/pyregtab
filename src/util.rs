@@ -13,6 +13,7 @@ use std::sync::{Arc, Mutex, OnceLock};
 #[derive(Debug)]
 pub enum CoreErr {
     Msg(String),
+    #[cfg(feature = "python")]
     Py(pyo3::PyErr),
 }
 
@@ -26,6 +27,7 @@ impl From<&str> for CoreErr {
         CoreErr::Msg(s.to_string())
     }
 }
+#[cfg(feature = "python")]
 impl From<pyo3::PyErr> for CoreErr {
     fn from(e: pyo3::PyErr) -> Self {
         CoreErr::Py(e)
