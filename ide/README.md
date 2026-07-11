@@ -10,7 +10,7 @@ The extension is universal: it serves every RegTab implementation (jRegTab,
 pyRegTab, future ports) and requires neither Python nor a JDK.
 
 - **VS Code**: install “RegTab RTL” from the
-  VS Code Marketplace or Open VSX (extension id `regtab.rtl-language`).
+  VS Code Marketplace or Open VSX (extension id `regtab.rtl`).
 - **PyCharm / IntelliJ IDEA**: register the extension directory as a TextMate
   bundle (*Settings → Editor → TextMate Bundles*) — see the vscode-rtl README.
 
