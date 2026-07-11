@@ -9,7 +9,7 @@ RTL inside Python and Java string literals — lives in its own repository:
 The extension is universal: it serves every RegTab implementation (jRegTab,
 pyRegTab, future ports) and requires neither Python nor a JDK.
 
-- **VS Code**: install “RTL — Regular Table Language (RegTab)” from the
+- **VS Code**: install “RegTab RTL” from the
   VS Code Marketplace or Open VSX (extension id `regtab.rtl-language`).
 - **PyCharm / IntelliJ IDEA**: register the extension directory as a TextMate
   bundle (*Settings → Editor → TextMate Bundles*) — see the vscode-rtl README.
