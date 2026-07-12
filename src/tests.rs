@@ -112,6 +112,25 @@ fn end_to_end_match_and_interpret() {
     let sem = match_atp(&pattern, &mut syntax, Vec::new())
         .unwrap()
         .expect("pattern must match");
+
+    // Item spans: the compound cell "0 Jan" (row 1, col 1) yields two VAL
+    // items whose spans point at the segments of the raw cell text.
+    let compound: Vec<_> = sem
+        .cell_items
+        .iter()
+        .filter(|it| it.row == 1 && it.col == 1)
+        .collect();
+    assert_eq!(compound.len(), 2);
+    assert_eq!((compound[0].s.as_str(), compound[0].span), ("0", (0, 1)));
+    assert_eq!((compound[1].s.as_str(), compound[1].span), ("Jan", (2, 5)));
+    // Atomic cells span their whole text.
+    let atomic = sem
+        .cell_items
+        .iter()
+        .find(|it| it.row == 1 && it.col == 0)
+        .unwrap();
+    assert_eq!(atomic.span, (0, "IKT".len()));
+
     let rs = interpret(&InterpreterCfg::default(), &syntax, &sem, None).unwrap();
 
     assert_eq!(rs.schema.attributes, vec!["ND", "AIRLINE", "AIRPORT", "MON"]);
