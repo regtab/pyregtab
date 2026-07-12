@@ -358,6 +358,7 @@ fn process_atomic(
     col: usize,
     input_text: &str,
     item_index: usize,
+    span: (usize, usize),
     sem: &mut SemanticsCore,
 ) -> Result<(), SemErr> {
     if atomic.idd == Idd::Skip {
@@ -376,12 +377,31 @@ fn process_atomic(
         row,
         col,
         ty,
+        span,
     });
     for action_spec in &atomic.actions {
         let action = instantiate_action(ItemId::Cell(item_id), action_spec, sem)?;
         sem.actions.push(action);
     }
     Ok(())
+}
+
+/// Non-empty `java_trim`med parts of a literal split as
+/// (original part position, trimmed part, byte span in the original cell
+/// text); `base` is the offset of `text` within that cell text.
+fn split_with_spans(delim: &str, text: &str, base: usize) -> Vec<(usize, String, (usize, usize))> {
+    let mut out = Vec::new();
+    let mut start = 0usize;
+    for (i, part) in split_literal(delim, text).into_iter().enumerate() {
+        let trimmed = java_trim(&part);
+        if !trimmed.is_empty() {
+            let lead = part.len() - part.trim_start_matches(|c: char| c <= ' ').len();
+            let from = base + start + lead;
+            out.push((i, trimmed.to_string(), (from, from + trimmed.len())));
+        }
+        start += part.len() + delim.len();
+    }
+    out
 }
 
 fn process_delimited(
@@ -391,12 +411,8 @@ fn process_delimited(
     text: &str,
     sem: &mut SemanticsCore,
 ) -> Result<(), SemErr> {
-    let parts = split_literal(&d.delimiter, text);
-    for (i, part) in parts.iter().enumerate() {
-        let part = java_trim(part);
-        if !part.is_empty() {
-            process_atomic(&d.atom, row, col, part, i, sem)?;
-        }
+    for (i, part, span) in split_with_spans(&d.delimiter, text, 0) {
+        process_atomic(&d.atom, row, col, &part, i, span, sem)?;
     }
     Ok(())
 }
@@ -444,16 +460,13 @@ fn process_compound(
         let substring = &text[pos..end_pos];
         match &seg.spec {
             ContentSpec::Atomic(a) => {
-                process_atomic(a, row, col, substring, item_index, sem)?;
+                process_atomic(a, row, col, substring, item_index, (pos, end_pos), sem)?;
                 item_index += 1;
             }
             ContentSpec::Delimited(d) => {
-                for part in split_literal(&d.delimiter, substring) {
-                    let trimmed = java_trim(&part);
-                    if !trimmed.is_empty() {
-                        process_atomic(&d.atom, row, col, trimmed, item_index, sem)?;
-                        item_index += 1;
-                    }
+                for (_, part, span) in split_with_spans(&d.delimiter, substring, pos) {
+                    process_atomic(&d.atom, row, col, &part, item_index, span, sem)?;
+                    item_index += 1;
                 }
             }
             _ => unreachable!("compound segment restricted to atomic/delimited"),
@@ -476,7 +489,8 @@ fn process_content_spec(
     match cs {
         ContentSpec::Atomic(a) => {
             let text = syntax.cell(row, col).text.clone();
-            process_atomic(a, row, col, &text, 0, sem)
+            let span = (0, text.len());
+            process_atomic(a, row, col, &text, 0, span, sem)
         }
         ContentSpec::Delimited(d) => {
             let text = syntax.cell(row, col).text.clone();

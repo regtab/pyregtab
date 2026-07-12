@@ -21,6 +21,10 @@ pub struct CellItem {
     pub row: usize,
     pub col: usize,
     pub ty: ItemType,
+    /// Byte range of the item's source segment within the raw cell text
+    /// (before extractors): atomic content spans the whole text, delimited
+    /// and compound content spans the segment the item was derived from.
+    pub span: (usize, usize),
 }
 
 /// Context-derived item.

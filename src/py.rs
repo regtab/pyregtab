@@ -85,6 +85,7 @@ pub fn call_item_filter(
             ty: it.ty,
             row: it.row,
             col: it.col,
+            span: it.span,
             table: table.as_ref().map(|t| t.clone_ref(py)),
         };
         let res = func
@@ -635,6 +636,7 @@ pub struct PyCellDerivedItem {
     pub ty: sp::ItemType,
     pub row: usize,
     pub col: usize,
+    pub span: (usize, usize),
     pub table: Option<Py<PyTableSyntax>>,
 }
 
@@ -643,6 +645,12 @@ impl PyCellDerivedItem {
     #[getter]
     fn str(&self) -> String {
         self.s.clone()
+    }
+    /// Byte range of the item's source segment within the raw cell text
+    /// (before extractors).
+    #[getter]
+    fn span(&self) -> (usize, usize) {
+        self.span
     }
     #[getter]
     fn tags(&self) -> Vec<String> {
@@ -2610,6 +2618,7 @@ impl PyTableSemantics {
                 ty: it.ty,
                 row: it.row,
                 col: it.col,
+                span: it.span,
                 table: Some(self.table.clone_ref(py)),
             })
             .collect()
