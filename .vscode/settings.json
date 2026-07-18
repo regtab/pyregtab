@@ -1,0 +1,23 @@
+{
+    "rtl.fixtures.input": [
+        {
+            "pattern": "conformance/positive/*.rtl",
+            "input": "${workspaceFolder}/tests/fixtures/tasks/${basename}/input_*.csv"
+        }
+    ],
+    // Comparison semantics mirror tests/fixtures/tasks/task_match_options.json:
+    // recordOrder STRICT -> orderedRows; the tasks listed in its "tasks" map have
+    // expectedHasHeader: true -> the hasHeader rule below (first match wins).
+    "rtl.fixtures.expected": [
+        {
+            "pattern": "conformance/positive/task_{013,018,023,026,036,040,042,043,046,048,050,051,052,053,056,060,061,063,064,067,069,072,074,078,082,083,086,088,089,091,093,095,096,099,102,103,106,108,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149,150}.rtl",
+            "expected": "${workspaceFolder}/tests/fixtures/tasks/${basename}/expected_*.csv",
+            "hasHeader": true
+        },
+        {
+            "pattern": "conformance/positive/*.rtl",
+            "expected": "${workspaceFolder}/tests/fixtures/tasks/${basename}/expected_*.csv"
+        }
+    ],
+    "rtl.fixtures.orderedRows": true
+}
