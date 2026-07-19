@@ -6,6 +6,8 @@ repo_url: https://github.com/regtab/pyregtab
 
 theme:
   name: material
+  logo: assets/logo.svg
+  favicon: assets/favicon.svg
   language: en
   palette:
     - media: "(prefers-color-scheme: light)"
