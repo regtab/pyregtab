@@ -18,7 +18,7 @@ from pyregtab.dsl import *
 
 RTL (task 001):
 
-```
+```rtl
 { [ [VAL : ST*->REC] [VAL]{2} []+ ]
   [ []               [VAL]{4} []+ ] }+
 ```

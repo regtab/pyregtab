@@ -1,0 +1,3 @@
+mkdocs-material>=9.7.6,<10.0
+# Syntax highlighting for ```rtl code blocks (local package)
+./rtl-lexer

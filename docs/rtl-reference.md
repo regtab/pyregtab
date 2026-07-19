@@ -92,7 +92,7 @@ The bracket style encodes the hierarchy level: `[ … ]` wraps rows and cells, `
 subtables and subrows. A minimal flat table is a sequence of row patterns, each a sequence of
 cell patterns:
 
-```
+```rtl
 [ [VAL] [VAL : SR->REC(1)]{2} ]+
 ```
 
@@ -117,7 +117,7 @@ cell's `contSpec`. Incompatible inherited actions (e.g. `COL->AVP` on an `ATTR` 
 silently skipped. For instance, in Task 116 the row-level action `'LOCATION'->AVP` is inherited
 by every cell of that header row:
 
-```
+```rtl
 [ 'LOCATION'->AVP [] [$V1]{4} [VAL] [] … ]
 ```
 
@@ -169,14 +169,14 @@ When the cell body contains **only** a condition and nothing else, `?` must be o
 
 Examples from the test suite:
 
-```
+```rtl
 [ [!BLANK? VAL] [!BLANK? (VAL : SR&C0->REC(1)){','}] ]+
 ```
 
 *(Task 45 — both cells of each row are guarded as non-blank; the second is also a delimited
 cell.)*
 
-```
+```rtl
 [ [BLANK] [] ]?
 ```
 
@@ -185,7 +185,7 @@ skip cell, `?` quantifies the whole row.)*
 
 A regex guard at row level selects header/data rows by content:
 
-```
+```rtl
 [ ['20\d\d' ? VAL: 'YEAR'->AVP] … ]+
 ```
 
@@ -244,7 +244,7 @@ itemDerivDir [tags] [= strExtr] [: actSpecs]
 
 A plain `VAL` with a single action is the most common atom:
 
-```
+```rtl
 [VAL : ST*->REC]
 ```
 
@@ -259,7 +259,7 @@ VAL #tag1 #tag2
 Tags let a later provider find exactly the right items. In Task 107 header values are tagged
 `#H` (column headers) and `#S` (row headers) so that data cells can gather them:
 
-```
+```rtl
 [!BLANK ? VAL#'H']            — tag a column-header value
 VAL: (COL&#'H'*, ROW&#'S'*)->REC  — collect tagged headers into the record
 ```
@@ -277,7 +277,7 @@ VAL: (COL&#'H'*, ROW&#'S'*)->REC  — collect tagged headers into the record
 
 Extractors can be chained with `.`: `=REPL(" ","_").LC`. Real uses:
 
-```
+```rtl
 [VAL=NORM] [] ]{2}                 — normalise whitespace in header cells (Task 02)
 [VAL=SUBSTR(0,4): 'YEAR'->AVP]+    — keep the first 4 chars as the year (Task 127)
 [VAL=TRIM: 'UNIT'->AVP]            — trim the unit token (Task 127)
@@ -303,7 +303,7 @@ prov->op
 
 Splits the cell text by `"sep"` and derives one item per token.
 
-```
+```rtl
 [!BLANK? (VAL : SR&C0->REC(1)){','}]
 ```
 
@@ -319,7 +319,7 @@ row key via `SR & C0`.)*
 Matches a cell whose text is a sequence of segments separated by fixed delimiters.
 Opening and closing delimiters are optional.
 
-```
+```rtl
 VAL: (COL,ROW,CL)->REC, 'ND'->AVP ' ' VAL: 'MON'->AVP
 ```
 
@@ -328,7 +328,7 @@ each becoming its own VAL item with its own actions.)*
 
 A three-part compound with `-` and a newline as delimiters:
 
-```
+```rtl
 VAL: 'MIN'->AVP '-' VAL: 'MAX'->AVP '\n' VAL: 'AVE'->AVP, (CL*,ROW&C1)->REC
 ```
 
@@ -344,14 +344,14 @@ Branches on a cell match condition; both branches must be `atomContSpec`, `delim
 
 Parentheses are **not allowed**; the bare form is the only valid syntax:
 
-```
+```rtl
 [BLANK ? _ | VAL]                    — skip blank cells, derive VAL otherwise
 [RT*->REC BLANK ? _ | VAL]           — with preceding actSpec
 ```
 
 A common idiom is to skip empty/dash-only cells and otherwise parse a compound value:
 
-```
+```rtl
 ['\s*-?\s*' ? _ | VAL: 'MIN'->AVP '-' VAL: 'MAX'->AVP '\n' VAL: 'AVE'->AVP, (CL*,ROW&C1)->REC]+
 ```
 
@@ -384,7 +384,7 @@ provSpecs -> op
 
 Examples by operation:
 
-```
+```rtl
 [VAL : ST*->REC]                        — REC, collect whole subtable (Task 01)
 [VAL : SR->REC(1)]{2}                   — REC(1), name the record by attribute at position 1 (Task 03)
 [VAL: 'AIRLINE'->AVP]                   — AVP with a literal attribute (Illustrative example)
@@ -470,7 +470,7 @@ for `TAG #tag`: `COL&#'H'*` means "same column **and** tagged `H`, unbounded".
 Parentheses are required for `|`-disjunctions and for constraints starting with a string literal.
 For `&`-conjunctions starting with a `spatConstr` keyword, parentheses are **optional**:
 
-```
+```rtl
 RT&P0              — right-of AND position 0  (no parens needed)
 CL&P2              — same-cell AND position 2
 -LT&P0             — reverse-traversal, left-of AND position 0
@@ -499,7 +499,7 @@ Examples from the test suite:
 
 A quoted string literal supplies a fixed string as an attribute or value:
 
-```
+```rtl
 ('AIRLINE')->AVP
 ```
 
@@ -545,7 +545,7 @@ $NAME = fragmentBody
 
 The reference can carry its own quantifier independently of the definition:
 
-```
+```rtl
 $V=[VAL: 'X'->AVP]
 [ [$V]{4} [$V] ]   — four then one cell of the same form
 ```
