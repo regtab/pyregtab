@@ -73,7 +73,7 @@ from pyregtab._core import (
 
 from pyregtab import dsl
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 __all__ = [
     "TableSyntax", "Cell", "Row", "Subrow", "Subtable", "GridPosition",

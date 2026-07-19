@@ -158,6 +158,7 @@ class CellDerivedItem:
     index: int
     type_: ItemType
     cell: Cell
+    span: tuple[int, int]
     def has_tag(self, tag: str) -> bool: ...
 
 class ContextDerivedItem:
@@ -706,6 +707,8 @@ class AtpToRtlSerializer:
     @staticmethod
     def serialize(pattern: TablePattern) -> str: ...
 
-class RtlCompileError(Exception): ...
+class RtlCompileError(Exception):
+    line: Optional[int]  # 1-based, None when unknown
+    col: Optional[int]  # 0-based, None when unknown
 
 def compile(rtl: str, bindings: Optional[Bindings] = None) -> TablePattern: ...

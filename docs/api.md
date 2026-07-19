@@ -10,7 +10,7 @@ core `pyregtab._core` (Rust). Full signatures are in the bundled type stubs
 
 | Class / function | Role |
 |---|---|
-| `RtlCompiler.compile(rtl, bindings=None)` / `pyregtab.compile(...)` | RTL string → `TablePattern`; raises `RtlCompileError` with source position |
+| `RtlCompiler.compile(rtl, bindings=None)` / `pyregtab.compile(...)` | RTL string → `TablePattern`; raises `RtlCompileError` with source position (`.line` 1-based, `.col` 0-based, both `None` when unknown) |
 | `AtpMatcher.match(pattern, syntax, context_items=None)` | `TablePattern` × `TableSyntax` → `InterpretableTable \| None` |
 | `AtpMatcher.match_many(pattern, syntaxes, context_items=None)` | batch form of `match`: `list[InterpretableTable \| None]` in input order, matched in parallel on an internal thread pool (GIL released) |
 | `TableInterpreter().interpret(itm)` | `InterpretableTable` → `Recordset` |
@@ -52,7 +52,7 @@ sequentially under the GIL, like `match`.
 |---|---|
 | `InterpretableTable` | `.syntax`, `.semantics` |
 | `TableSemantics` | `cell_derived_items()`, `context_derived_items()` |
-| `CellDerivedItem` | `.str`, `.tags`, `.index`, `.cell`; passed to filter callbacks |
+| `CellDerivedItem` | `.str`, `.tags`, `.index`, `.cell`, `.span` (byte range of the item's source segment within the raw cell text, before extractors); passed to filter callbacks |
 | `ContextDerivedItem(s, ItemType, const_value=None)` | external context items for `AtpMatcher.match` |
 | `Recordset` | `.schema`, `.records`, `len(rs)`, `rs[i]`, `to_pandas()`, `to_csv(path=None, sep=",", missing="")` (RFC 4180; returns the CSV text when `path` is None) |
 | `Record` | `rec[attr]`, `rec[i]`, `.get(...)`, `.values()`; missing value → `None` |

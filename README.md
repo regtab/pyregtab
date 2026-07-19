@@ -16,12 +16,13 @@ and interprets the match into a relational **recordset**:
 TableSyntax → RtlCompiler/TablePattern → AtpMatcher → TableInterpreter → Recordset
 ```
 
-**pyRegTab 0.3.0 ≙ jRegTab 0.4.1** (same API, same semantics, same test
+**pyRegTab 0.4.0 ≙ jRegTab 0.4.1** (same API, same semantics, same test
 corpus; jRegTab 0.4.1 changes only the Java build over 0.4.0), including the
 embedded RTL DSL `pyregtab.dsl` — a port of jRegTab's `ru.icc.regtab.dsl`
 (added upstream in jRegTab 0.3.0). Python-side extras on top of the Java API:
-`AtpMatcher.match_many` (parallel batch matching), `Recordset.to_pandas()`
-and `Recordset.to_csv()`.
+`AtpMatcher.match_many` (parallel batch matching), `Recordset.to_pandas()`,
+`Recordset.to_csv()`, `RtlCompileError.line`/`.col` attributes, and
+`CellDerivedItem.span` (the item's byte range within the raw cell text).
 
 ## Installation
 
