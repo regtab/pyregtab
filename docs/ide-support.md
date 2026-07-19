@@ -1,33 +1,39 @@
 # IDE support
 
 RTL patterns usually live inside Python string literals, which editors treat as plain
-text by default. pyRegTab ships editor tooling that improves this:
+text by default. Editor tooling for RTL — syntax highlighting, compile diagnostics,
+live match preview, and more — is developed in a companion repository so that every
+RegTab implementation (jRegTab, pyRegTab, future ports) shares the same extension:
+
+**[github.com/regtab/vscode-rtl](https://github.com/regtab/vscode-rtl)**
+
+Highlights relevant here:
 
 1. **Syntax highlighting** — a TextMate grammar for `.rtl` files and for RTL embedded in
-   Python strings (VS Code, PyCharm, and any TextMate-compatible editor).
+   Python strings.
 2. **Runtime validation** — an invalid RTL string is reported at `RtlCompiler.compile(...)`
    call time, with the exact source position.
 
 ## Syntax highlighting
 
-The grammar lives in the repository under [`ide/`](https://github.com/regtab/pyregtab/tree/main/ide):
-`ide/vscode/` is simultaneously a VS Code extension and an IntelliJ/PyCharm TextMate bundle.
-
 ### VS Code
 
-Copy the extension into your extensions directory and reload:
+The extension isn't on the Marketplace/Open VSX yet — install a VSIX from the
+[Releases page](https://github.com/regtab/vscode-rtl/releases), e.g.
+[v0.8.3](https://github.com/regtab/vscode-rtl/releases/tag/v0.8.3):
 
-```bash
-# Linux / macOS
-cp -r ide/vscode ~/.vscode/extensions/regtab.rtl-language-0.1.0
-```
+1. Download the package for your platform (`regtab-rtl-<version>-<platform>.vsix`).
+2. Install it:
 
-```bat
-:: Windows
-xcopy /E /I ide\vscode %USERPROFILE%\.vscode\extensions\regtab.rtl-language-0.1.0
-```
+   ```bash
+   code --install-extension regtab-rtl-<version>-<platform>.vsix
+   ```
 
-(Or package a proper `.vsix` with `npx @vscode/vsce package` inside `ide/vscode`.)
+   or from the UI: *Extensions* panel → **⋯** menu (top right) →
+   **Install from VSIX…** → pick the file. Reload the window afterwards.
+
+A VSIX installed this way does not auto-update — install a newer VSIX over it to
+upgrade.
 
 This highlights `*.rtl` files and RTL inside Python strings in these forms:
 
@@ -45,10 +51,17 @@ single = RtlCompiler.compile("[ [ATTR] [VAL]+ ]")
 
 ### PyCharm / IntelliJ IDEA
 
-*Settings → Editor → TextMate Bundles → “+”* and select the `ide/vscode` directory —
+Clone [vscode-rtl](https://github.com/regtab/vscode-rtl), then
+*Settings → Editor → TextMate Bundles → “+”* and select its repository root
+(it holds `package.json`, `language-configuration.json` and `syntaxes/`) —
 `*.rtl` files are highlighted. For RTL inside Python string literals, PyCharm's built-in
 language injection recognizes the `# language=RTL` line-comment marker, where the IDE
 version supports injecting TextMate-backed languages.
+
+The rest of the extension's feature set (compile diagnostics as you type, live match
+preview against CSV fixtures, Test Explorer integration, hover reference, completion,
+`$fragment` navigation) is VS Code-specific — see the
+[vscode-rtl README](https://github.com/regtab/vscode-rtl#readme) for details.
 
 ## Runtime validation
 

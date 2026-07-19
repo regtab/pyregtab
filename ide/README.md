@@ -9,10 +9,12 @@ RTL inside Python and Java string literals — lives in its own repository:
 The extension is universal: it serves every RegTab implementation (jRegTab,
 pyRegTab, future ports) and requires neither Python nor a JDK.
 
-- **VS Code**: install “RegTab RTL” from the
-  VS Code Marketplace or Open VSX (extension id `regtab.rtl`).
-- **PyCharm / IntelliJ IDEA**: register the extension directory as a TextMate
-  bundle (*Settings → Editor → TextMate Bundles*) — see the vscode-rtl README.
+- **VS Code**: not on the Marketplace/Open VSX yet — install a VSIX from the
+  [Releases page](https://github.com/regtab/vscode-rtl/releases) (extension
+  id `regtab.rtl`); see the vscode-rtl README for the per-platform file names.
+- **PyCharm / IntelliJ IDEA**: clone vscode-rtl and register its repository
+  root as a TextMate bundle (*Settings → Editor → TextMate Bundles*) — see
+  the vscode-rtl README.
 
 ## Keeping the grammar in sync
 
