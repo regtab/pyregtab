@@ -260,8 +260,8 @@ Tags let a later provider find exactly the right items. In Task 107 header value
 `#H` (column headers) and `#S` (row headers) so that data cells can gather them:
 
 ```rtl
-[!BLANK ? VAL#'H']            — tag a column-header value
-VAL: (COL&#'H'*, ROW&#'S'*)->REC  — collect tagged headers into the record
+[!BLANK ? VAL#'H']            // tag a column-header value
+VAL: (COL&#'H'*, ROW&#'S'*)->REC  // collect tagged headers into the record
 ```
 
 **String extractor** (after `=`):
@@ -278,9 +278,9 @@ VAL: (COL&#'H'*, ROW&#'S'*)->REC  — collect tagged headers into the record
 Extractors can be chained with `.`: `=REPL(" ","_").LC`. Real uses:
 
 ```rtl
-[VAL=NORM] [] ]{2}                 — normalise whitespace in header cells (Task 02)
-[VAL=SUBSTR(0,4): 'YEAR'->AVP]+    — keep the first 4 chars as the year (Task 127)
-[VAL=TRIM: 'UNIT'->AVP]            — trim the unit token (Task 127)
+[VAL=NORM] [] ]{2}                 // normalise whitespace in header cells (Task 02)
+[VAL=SUBSTR(0,4): 'YEAR'->AVP]+    // keep the first 4 chars as the year (Task 127)
+[VAL=TRIM: 'UNIT'->AVP]            // trim the unit token (Task 127)
 ```
 
 **Action specs** (after `:`):
@@ -345,8 +345,8 @@ Branches on a cell match condition; both branches must be `atomContSpec`, `delim
 Parentheses are **not allowed**; the bare form is the only valid syntax:
 
 ```rtl
-[BLANK ? _ | VAL]                    — skip blank cells, derive VAL otherwise
-[RT*->REC BLANK ? _ | VAL]           — with preceding actSpec
+[BLANK ? _ | VAL]                    // skip blank cells, derive VAL otherwise
+[RT*->REC BLANK ? _ | VAL]           // with preceding actSpec
 ```
 
 A common idiom is to skip empty/dash-only cells and otherwise parse a compound value:
@@ -385,11 +385,11 @@ provSpecs -> op
 Examples by operation:
 
 ```rtl
-[VAL : ST*->REC]                        — REC, collect whole subtable (Task 01)
-[VAL : SR->REC(1)]{2}                   — REC(1), name the record by attribute at position 1 (Task 03)
-[VAL: 'AIRLINE'->AVP]                   — AVP with a literal attribute (Illustrative example)
-[VAL: -AV->PREFIX(', ')]                — PREFIX: prepend the value above, separator ", " (Task 116)
-[BLANK ? VAL#'H': -LT&!BLANK->FILL | …] — FILL: copy the nearest non-blank cell to the left (Task 107)
+[VAL : ST*->REC]                        // REC, collect whole subtable (Task 01)
+[VAL : SR->REC(1)]{2}                   // REC(1), name the record by attribute at position 1 (Task 03)
+[VAL: 'AIRLINE'->AVP]                   // AVP with a literal attribute (Illustrative example)
+[VAL: -AV->PREFIX(', ')]                // PREFIX: prepend the value above, separator ", " (Task 116)
+[BLANK ? VAL#'H': -LT&!BLANK->FILL | …] // FILL: copy the nearest non-blank cell to the left (Task 107)
 ```
 
 `PREFIX`/`SUFFIX`/`FILL` followed by `()->REC` is the idiom for building a single-field record out
@@ -471,12 +471,12 @@ Parentheses are required for `|`-disjunctions and for constraints starting with 
 For `&`-conjunctions starting with a `spatConstr` keyword, parentheses are **optional**:
 
 ```rtl
-RT&P0              — right-of AND position 0  (no parens needed)
-CL&P2              — same-cell AND position 2
--LT&P0             — reverse-traversal, left-of AND position 0
-(ST & !BLANK)      — same subtable AND not blank
-(ROW | COL)        — same row OR same column  (parens required for |)
-('regex' & RT)     — parens required: starts with a string literal
+RT&P0              // right-of AND position 0  (no parens needed)
+CL&P2              // same-cell AND position 2
+-LT&P0             // reverse-traversal, left-of AND position 0
+(ST & !BLANK)      // same subtable AND not blank
+(ROW | COL)        // same row OR same column  (parens required for |)
+('regex' & RT)     // parens required: starts with a string literal
 ```
 
 **Cardinality** (suffix, applies after the whole constraint expression):
@@ -547,7 +547,7 @@ The reference can carry its own quantifier independently of the definition:
 
 ```rtl
 $V=[VAL: 'X'->AVP]
-[ [$V]{4} [$V] ]   — four then one cell of the same form
+[ [$V]{4} [$V] ]   // four then one cell of the same form
 ```
 
 ### Semantics
