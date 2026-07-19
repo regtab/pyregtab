@@ -1,41 +1,39 @@
 # IDE support
 
 RTL patterns usually live inside Python string literals, which editors treat as plain
-text by default. Editor tooling for RTL — syntax highlighting, compile diagnostics,
-live match preview, and more — is developed in a companion repository so that every
-RegTab implementation (jRegTab, pyRegTab, future ports) shares the same extension:
+text by default. Two layers of tooling improve this:
 
-**[github.com/regtab/vscode-rtl](https://github.com/regtab/vscode-rtl)**
-
-Highlights relevant here:
-
-1. **Syntax highlighting** — a TextMate grammar for `.rtl` files and for RTL embedded in
-   Python strings.
+1. **Editor support** — the [RegTab RTL extension](https://github.com/regtab/vscode-rtl)
+   for VS Code: syntax highlighting for `.rtl` files and for RTL embedded in Python
+   strings, plus a native language server with compile diagnostics, live match preview,
+   and more. It is developed in its own repository so that every RegTab implementation
+   (jRegTab, pyRegTab, future ports) shares the same extension.
 2. **Runtime validation** — an invalid RTL string is reported at `RtlCompiler.compile(...)`
    call time, with the exact source position.
 
-## Syntax highlighting
+## Editor support
 
 ### VS Code
 
-The extension isn't on the Marketplace/Open VSX yet — install a VSIX from the
-[Releases page](https://github.com/regtab/vscode-rtl/releases), e.g.
-[v0.8.3](https://github.com/regtab/vscode-rtl/releases/tag/v0.8.3):
+Install the [RegTab RTL extension](https://github.com/regtab/vscode-rtl). Until the
+Marketplace listing is live, install it from a VSIX: download the package for your platform
+from [Releases](https://github.com/regtab/vscode-rtl/releases) (the `universal` build ships
+highlighting and snippets only, without the bundled language server), then:
 
-1. Download the package for your platform (`regtab-rtl-<version>-<platform>.vsix`).
-2. Install it:
+```bash
+code --install-extension regtab-rtl-<version>-<platform>.vsix
+```
 
-   ```bash
-   code --install-extension regtab-rtl-<version>-<platform>.vsix
-   ```
+or via the UI: *Extensions panel → ⋯ menu → Install from VSIX…* → pick the file, then reload
+the window. A VSIX installed this way does not auto-update — install a newer VSIX over it to
+upgrade (settings and state are kept).
 
-   or from the UI: *Extensions* panel → **⋯** menu (top right) →
-   **Install from VSIX…** → pick the file. Reload the window afterwards.
+Beyond highlighting, the extension bundles a native language server (`rtl-lsp`, built on
+the same Rust core as pyRegTab): compile diagnostics as you type — in `.rtl` files and
+inside RTL string literals in Python — live match preview against CSV fixtures,
+expected-result diffing, fragment navigation, completion, and code snippets.
 
-A VSIX installed this way does not auto-update — install a newer VSIX over it to
-upgrade.
-
-This highlights `*.rtl` files and RTL inside Python strings in these forms:
+The extension highlights `*.rtl` files and RTL inside Python strings in these forms:
 
 ```python
 pattern = RtlCompiler.compile("""
@@ -58,10 +56,8 @@ Clone [vscode-rtl](https://github.com/regtab/vscode-rtl), then
 language injection recognizes the `# language=RTL` line-comment marker, where the IDE
 version supports injecting TextMate-backed languages.
 
-The rest of the extension's feature set (compile diagnostics as you type, live match
-preview against CSV fixtures, Test Explorer integration, hover reference, completion,
-`$fragment` navigation) is VS Code-specific — see the
-[vscode-rtl README](https://github.com/regtab/vscode-rtl#readme) for details.
+The language-server features (diagnostics, match preview, completion, navigation) are
+VS Code-only — a TextMate bundle carries highlighting alone.
 
 ## Runtime validation
 

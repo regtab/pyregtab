@@ -9,12 +9,18 @@ RTL inside Python and Java string literals — lives in its own repository:
 The extension is universal: it serves every RegTab implementation (jRegTab,
 pyRegTab, future ports) and requires neither Python nor a JDK.
 
-- **VS Code**: not on the Marketplace/Open VSX yet — install a VSIX from the
-  [Releases page](https://github.com/regtab/vscode-rtl/releases) (extension
-  id `regtab.rtl`); see the vscode-rtl README for the per-platform file names.
+- **VS Code**: until the Marketplace listing is live, download the VSIX for
+  your platform from [Releases](https://github.com/regtab/vscode-rtl/releases)
+  and install via `code --install-extension <file>.vsix` or
+  *Extensions → ⋯ → Install from VSIX…* (the `universal` build ships
+  highlighting and snippets only, without the bundled language server).
+  Besides highlighting, the extension bundles a native language server
+  (`rtl-lsp`) with compile diagnostics — in `.rtl` files and inside RTL
+  string literals in Python — live match preview, and more.
 - **PyCharm / IntelliJ IDEA**: clone vscode-rtl and register its repository
   root as a TextMate bundle (*Settings → Editor → TextMate Bundles*) — see
-  the vscode-rtl README.
+  the vscode-rtl README. This gives `.rtl` highlighting; the language-server
+  features are VS Code-only.
 
 ## Keeping the grammar in sync
 
