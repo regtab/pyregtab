@@ -83,9 +83,9 @@ subrowPattern    : cellPattern+                         // implicit
 cellPattern      : [ ] q?                               // skip cell
                  | [ cellPatternBody ] q?
 
-cellPatternBody  : cond ? [acts] contSpec   // guarded: ? required when contSpec follows
+cellPatternBody  : cond ? [acts] contSpec  // guarded: ? required when contSpec follows
                  | cond                    // condition-only: no ? (skip cell with guard)
-                 | [acts] contSpec          // unguarded (condContSpec bare form included)
+                 | [acts] contSpec         // unguarded (condContSpec bare form included)
 ```
 
 The bracket style encodes the hierarchy level: `[ … ]` wraps rows and cells, `{ … }` wraps
@@ -260,7 +260,7 @@ Tags let a later provider find exactly the right items. In Task 107 header value
 `#H` (column headers) and `#S` (row headers) so that data cells can gather them:
 
 ```rtl
-[!BLANK ? VAL#'H']            // tag a column-header value
+[!BLANK ? VAL#'H']                // tag a column-header value
 VAL: (COL&#'H'*, ROW&#'S'*)->REC  // collect tagged headers into the record
 ```
 
