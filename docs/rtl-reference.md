@@ -278,7 +278,7 @@ VAL: (COL&#'H'*, ROW&#'S'*)->REC  // collect tagged headers into the record
 Extractors can be chained with `.`: `=REPL(" ","_").LC`. Real uses:
 
 ```rtl
-[VAL=NORM] [] ]{2}                 // normalise whitespace in header cells (Task 02)
+[VAL=NORM]                         // normalise whitespace in header cells (Task 02)
 [VAL=SUBSTR(0,4): 'YEAR'->AVP]+    // keep the first 4 chars as the year (Task 127)
 [VAL=TRIM: 'UNIT'->AVP]            // trim the unit token (Task 127)
 ```
