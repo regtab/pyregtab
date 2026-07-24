@@ -1,0 +1,1971 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Pattern-driven data extraction from tables — Python port of jRegTab with a native Rust core">
+      
+      
+      
+        <link rel="canonical" href="https://regtab.icc.ru/pyregtab/rtl-reference/">
+      
+      
+        <link rel="prev" href="../getting-started/">
+      
+      
+        <link rel="next" href="../embedded-rtl/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/favicon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>RTL reference - pyRegTab</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#rtl-reference" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="pyRegTab" class="md-header__button md-logo" aria-label="pyRegTab" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            pyRegTab
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              RTL reference
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/regtab/pyregtab" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="pyRegTab" class="md-nav__button md-logo" aria-label="pyRegTab" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="logo">
+
+    </a>
+    pyRegTab
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/regtab/pyregtab" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RTL reference
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RTL reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#rtl-atp-and-the-compiler" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RTL, ATP, and the compiler
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pattern-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pattern structure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#settings-prefix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Settings prefix
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cell-match-conditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cell match conditions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#external-python-bindings-extname" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        External Python bindings — EXT('name')
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#content-specifications" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Content specifications
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Content specifications">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#atomic-contspec" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Atomic — contSpec
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delimited" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Delimited
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compound" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compound
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conditional" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conditional
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#action-specifications" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Action specifications
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#provider-specifications" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Provider specifications
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Provider specifications">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cell-derived-provider-tblprovspec" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cell-derived provider (tblProvSpec)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#context-derived-provider-literal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Context-derived provider (literal)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#frequently-used-combinations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Frequently used combinations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#named-fragment-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Named fragment definitions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Named fragment definitions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#syntax" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Syntax
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#semantics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Semantics
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../embedded-rtl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Embedded RTL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ide-support/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IDE support
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Formal model
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Formal model
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model/itm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ITM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model/atp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ATP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#rtl-atp-and-the-compiler" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RTL, ATP, and the compiler
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pattern-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pattern structure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#settings-prefix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Settings prefix
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cell-match-conditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cell match conditions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#external-python-bindings-extname" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        External Python bindings — EXT('name')
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#content-specifications" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Content specifications
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Content specifications">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#atomic-contspec" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Atomic — contSpec
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delimited" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Delimited
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compound" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compound
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conditional" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conditional
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#action-specifications" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Action specifications
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#provider-specifications" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Provider specifications
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Provider specifications">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cell-derived-provider-tblprovspec" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cell-derived provider (tblProvSpec)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#context-derived-provider-literal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Context-derived provider (literal)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#frequently-used-combinations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Frequently used combinations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#named-fragment-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Named fragment definitions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Named fragment definitions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#syntax" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Syntax
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#semantics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Semantics
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="rtl-reference">RTL Reference</h1>
+<p>RTL (Regular Table Language) is a compact textual DSL that compiles to ATP via <code>RtlCompiler.compile(rtl)</code>.
+The normative grammar is at <code>grammar/RTL.g4</code> (pinned from jRegTab).
+RTL tokens are case-insensitive.</p>
+<div class="admonition tip">
+<p class="admonition-title">Where the examples come from</p>
+<p>Most RTL snippets on this page are taken verbatim from the project's test suite
+(<code>src/test/java/ru/icc/regtab/rtl/RtlTask*Test.java</code>). Each task test compiles its RTL,
+matches it against fixture tables, and asserts the extracted recordset — so the patterns
+shown here are known to compile and run.</p>
+</div>
+<hr />
+<h2 id="rtl-atp-and-the-compiler">RTL, ATP, and the compiler</h2>
+<p>RTL is <strong>not</strong> a separate model — it is a concrete surface syntax for <a href="../model/atp/">ATP</a>.
+Every RTL string denotes an ATP <code>TablePattern</code>, and the two are connected by a compiler and a
+serializer:</p>
+<div class="highlight"><pre><span></span><code>flowchart LR
+    A[&quot;RTL string&quot;]
+    B[&quot;TablePattern (ATP)&quot;]
+    C[&quot;RTL string&quot;]
+    A --&gt;|&quot;RtlCompiler.compile()&quot;| B
+    B --&gt;|&quot;AtpToRtlSerializer.serialize()&quot;| C
+</code></pre></div>
+<p><strong>Compilation</strong> (<code>RtlCompiler</code>) runs the native hand-written lexer/parser (structurally following the grammar) over
+the RTL grammar, then builds the pattern from the AST:</p>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Class</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Parse</td>
+<td>hand-written lexer + recursive-descent parser (follows <code>RTL.g4</code>)</td>
+<td>RTL text → AST</td>
+</tr>
+<tr>
+<td>Build ATP</td>
+<td><code>ATPBuilder</code></td>
+<td>AST → <code>TablePattern</code> and nested pattern objects</td>
+</tr>
+<tr>
+<td>Resolve providers</td>
+<td><code>ProviderTemplateResolver</code></td>
+<td>provider templates + constraints → <code>ProviderSpec</code></td>
+</tr>
+<tr>
+<td>Settings / inline transforms</td>
+<td><code>RtlCompiler</code></td>
+<td><code>&lt;NORM, ANCH(n), SPLIT("s")&gt;</code> and inline <code>REC(n)</code>/<code>REC('s')</code> → <code>RecordsetTransformation</code> list attached to the <code>TablePattern</code></td>
+</tr>
+</tbody>
+</table>
+<p>On any lexer or parser error, <code>compile</code> throws <code>RtlCompileError</code> carrying the line and
+column. The compiler also validates cross-cutting constraints — e.g. conflicting <code>ANCH(n)</code> /
+<code>REC(n)</code> anchor positions, or conflicting <code>SPLIT</code> / <code>REC('s')</code> delimiters — and raises
+<code>RtlCompileError</code> for those too.</p>
+<p>The result is exactly the same kind of <code>TablePattern</code> you could build with the Python fluent API
+(<code>TablePattern.of(...)</code>); see the <a href="../model/atp/">ATP page</a> for the object model. Once compiled,
+a pattern is matched and interpreted the usual way:</p>
+<div class="highlight"><pre><span></span><code><span class="n">pattern</span> <span class="o">=</span> <span class="n">RtlCompiler</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">rtl</span><span class="p">)</span>
+<span class="n">itm</span> <span class="o">=</span> <span class="n">AtpMatcher</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">syntax</span><span class="p">)</span>
+<span class="n">rs</span> <span class="o">=</span> <span class="n">pattern</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span>
+    <span class="n">TableInterpreter</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">with_strategy</span><span class="p">(</span><span class="n">SchemaConstructionStrategy</span><span class="o">.</span><span class="n">RECORD_FIRST</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">interpret</span><span class="p">(</span><span class="n">itm</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div>
+<p><strong>Serialization</strong> (<code>AtpToRtlSerializer.serialize(pattern)</code>) performs the
+reverse mapping, turning an ATP <code>TablePattern</code> back into an RTL string. It is the tool used to
+cross-check the two representations. Two limitations apply: actions are emitted at the atom level
+only (inherited-level action specs are not reconstructed), and custom Python predicates
+(<code>CellPredicate.custom</code>, <code>ItemFilterConditionSpec.custom</code>) cannot be serialized. Named external
+bindings (<code>EXT('name')</code>, see <a href="#external-python-bindings-extname">External Python bindings</a>) <em>are</em>
+serializable — the name identifies the binding; compiling the output back requires the same
+<code>Bindings</code> object.</p>
+<hr />
+<h2 id="pattern-structure">Pattern structure</h2>
+<div class="highlight"><pre><span></span><code>tablePattern     : [cond ?] [&lt;settings&gt;] [acts] subtablePattern+
+
+subtablePattern  : rowPattern+                          // implicit (no braces)
+                 | { [cond ?] [acts] rowPattern+ } q?   // explicit
+
+rowPattern       : [ [cond ?] [acts] subrowPattern+ ] q?
+
+subrowPattern    : cellPattern+                         // implicit
+                 | { [cond ?] [acts] cellPattern+ } q?  // explicit
+
+cellPattern      : [ ] q?                               // skip cell
+                 | [ cellPatternBody ] q?
+
+cellPatternBody  : cond ? [acts] contSpec  // guarded: ? required when contSpec follows
+                 | cond                    // condition-only: no ? (skip cell with guard)
+                 | [acts] contSpec         // unguarded (condContSpec bare form included)
+</code></pre></div>
+<p>The bracket style encodes the hierarchy level: <code>[ … ]</code> wraps rows and cells, <code>{ … }</code> wraps
+subtables and subrows. A minimal flat table is a sequence of row patterns, each a sequence of
+cell patterns:</p>
+<div class="highlight"><pre><span></span><code><span class="p">[</span><span class="w"> </span><span class="p">[</span><span class="k">VAL</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="k">VAL</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">SR</span><span class="o">-&gt;</span><span class="nf">REC</span><span class="p">(</span><span class="mi">1</span><span class="p">)]{</span><span class="mi">2</span><span class="p">}</span><span class="w"> </span><span class="p">]</span><span class="o">+</span>
+</code></pre></div>
+<p><em>(Task 03 — a row-key anchor followed by exactly two value cells per row.)</em></p>
+<p><strong>Quantifiers</strong> (suffix on any <code>{ }</code> or <code>[ ]</code> block):</p>
+<table>
+<thead>
+<tr>
+<th>Syntax</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>(absent)</em></td>
+<td>exactly 1</td>
+</tr>
+<tr>
+<td><code>?</code></td>
+<td>0 or 1</td>
+</tr>
+<tr>
+<td><code>*</code></td>
+<td>0 or more</td>
+</tr>
+<tr>
+<td><code>+</code></td>
+<td>1 or more</td>
+</tr>
+<tr>
+<td><code>{n}</code></td>
+<td>exactly <em>n</em></td>
+</tr>
+</tbody>
+</table>
+<p>The <code>+</code> on the outer row pattern above means "one or more data rows"; the <code>{2}</code> means "exactly
+two value cells".</p>
+<p><strong>Inherited action specs</strong> — <code>[acts]</code> placed at the table, subtable, row, or subrow level are
+inherited by all descendant cells. Inherited actions are merged with any local actions on the
+cell's <code>contSpec</code>. Incompatible inherited actions (e.g. <code>COL-&gt;AVP</code> on an <code>ATTR</code> anchor) are
+silently skipped. For instance, in Task 116 the row-level action <code>'LOCATION'-&gt;AVP</code> is inherited
+by every cell of that header row:</p>
+<div class="highlight"><pre><span></span><code><span class="p">[</span><span class="w"> </span><span class="s1">&#39;LOCATION&#39;</span><span class="o">-&gt;</span><span class="nf">AVP</span><span class="w"> </span><span class="p">[]</span><span class="w"> </span><span class="p">[</span><span class="nv">$V1</span><span class="p">]{</span><span class="mi">4</span><span class="p">}</span><span class="w"> </span><span class="p">[</span><span class="k">VAL</span><span class="p">]</span><span class="w"> </span><span class="p">[]</span><span class="w"> </span>…<span class="w"> </span><span class="p">]</span>
+</code></pre></div>
+<hr />
+<h2 id="settings-prefix">Settings prefix</h2>
+<p>Optional prefix before the first subtable pattern: <code>&lt;setting, …&gt;</code>. Settings compile to
+post-extraction <code>RecordsetTransformation</code>s on the resulting <code>TablePattern</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>NORM</code></td>
+<td>Apply whitespace normalisation to all field values after extraction</td>
+</tr>
+<tr>
+<td><code>ANCH(n)</code></td>
+<td>Use position <em>n</em> in the first record as the attribute name for all records</td>
+</tr>
+<tr>
+<td><code>SPLIT("s")</code></td>
+<td>Split all field values by delimiter <em>s</em> after extraction</td>
+</tr>
+</tbody>
+</table>
+<p>Example: <code>&lt;NORM, ANCH(2)&gt; [ … ]</code> — normalise and anchor at position 2.</p>
+<div class="admonition note">
+<p class="admonition-title">Inline equivalents</p>
+<p>The same two transformations can be requested <em>inline</em> on a <code>REC</code> action:
+<code>REC(n)</code> is equivalent to the <code>ANCH(n)</code> setting, and <code>REC('s')</code> is equivalent to
+<code>SPLIT("s")</code>. Inline forms are by far the more common in practice (see Tasks 02, 03).
+The compiler merges inline and prefix forms and raises <code>RtlCompileError</code> if they
+conflict (e.g. <code>ANCH(1)</code> together with <code>REC(2)</code>).</p>
+</div>
+<hr />
+<h2 id="cell-match-conditions">Cell match conditions</h2>
+<p>A cell match condition guards pattern application; it tests the <strong>cell</strong>, not the item.</p>
+<table>
+<thead>
+<tr>
+<th>Syntax</th>
+<th>Condition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>"regex" ?</code></td>
+<td>Cell text matches the Java regex</td>
+</tr>
+<tr>
+<td><code>!"regex" ?</code></td>
+<td>Cell text does not match</td>
+</tr>
+<tr>
+<td><code>BLANK ?</code></td>
+<td>Cell text is blank</td>
+</tr>
+<tr>
+<td><code>!BLANK ?</code></td>
+<td>Cell text is not blank</td>
+</tr>
+<tr>
+<td><code>~"sub" ?</code></td>
+<td>Cell text contains the substring</td>
+</tr>
+<tr>
+<td><code>EXT('name') ?</code></td>
+<td>Cell satisfies the Python predicate bound under <code>name</code> — see <a href="#external-python-bindings-extname">External Python bindings</a></td>
+</tr>
+</tbody>
+</table>
+<p>The <code>?</code> separator is required when a <code>contSpec</code> follows the condition (guarded form).
+When the cell body contains <strong>only</strong> a condition and nothing else, <code>?</code> must be omitted:</p>
+<table>
+<thead>
+<tr>
+<th>Form</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>[!BLANK ? VAL : …]</code></td>
+<td>Guarded cell — match non-blank, derive VAL</td>
+</tr>
+<tr>
+<td><code>[!BLANK]</code></td>
+<td>Condition-only skip cell — consume non-blank, produce no item</td>
+</tr>
+<tr>
+<td><code>[BLANK]</code></td>
+<td>Condition-only skip cell — consume blank, produce no item</td>
+</tr>
+</tbody>
+</table>
+<p>Examples from the test suite:</p>
+<div class="highlight"><pre><span></span><code><span class="p">[</span><span class="w"> </span><span class="p">[</span>!<span class="k">BLANK</span><span class="o">?</span><span class="w"> </span><span class="k">VAL</span><span class="p">]</span><span class="w"> </span><span class="p">[</span>!<span class="k">BLANK</span><span class="o">?</span><span class="w"> </span><span class="p">(</span><span class="k">VAL</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">SR</span>&amp;<span class="k">C0</span><span class="o">-&gt;</span><span class="nf">REC</span><span class="p">(</span><span class="mi">1</span><span class="p">)){</span><span class="s1">&#39;,&#39;</span><span class="p">}]</span><span class="w"> </span><span class="p">]</span><span class="o">+</span>
+</code></pre></div>
+<p><em>(Task 45 — both cells of each row are guarded as non-blank; the second is also a delimited
+cell.)</em></p>
+<div class="highlight"><pre><span></span><code><span class="p">[</span><span class="w"> </span><span class="p">[</span><span class="k">BLANK</span><span class="p">]</span><span class="w"> </span><span class="p">[]</span><span class="w"> </span><span class="p">]</span><span class="o">?</span>
+</code></pre></div>
+<p><em>(Task 02 — an optional footer row whose first cell must be blank; <code>[BLANK]</code> is a condition-only
+skip cell, <code>?</code> quantifies the whole row.)</em></p>
+<p>A regex guard at row level selects header/data rows by content:</p>
+<div class="highlight"><pre><span></span><code><span class="p">[</span><span class="w"> </span><span class="p">[</span><span class="s1">&#39;20\d\d&#39;</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="k">VAL</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;YEAR&#39;</span><span class="o">-&gt;</span><span class="nf">AVP</span><span class="p">]</span><span class="w"> </span>…<span class="w"> </span><span class="p">]</span><span class="o">+</span>
+</code></pre></div>
+<p><em>(Task 116 — the leading cell of every data row must look like a 4-digit year.)</em></p>
+<hr />
+<h2 id="external-python-bindings-extname">External Python bindings — <code>EXT('name')</code></h2>
+<p><code>EXT('name')</code> is the escape hatch from RTL into Python: it references a named predicate supplied
+alongside the RTL string via <code>ru.icc.regtab.rtl.Bindings</code>. The same syntax works in two
+positions, resolved by where it appears:</p>
+<table>
+<thead>
+<tr>
+<th>Position</th>
+<th>Binding kind</th>
+<th>Python callable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cell match condition (<code>EXT('n') ?</code>, <code>[EXT('n')]</code>)</td>
+<td><code>Bindings.cell(name, …)</code></td>
+<td><code>Predicate&lt;Cell&gt;</code></td>
+</tr>
+<tr>
+<td>Provider constraint (<code>(ROW &amp; EXT('n'))-&gt;REC</code>)</td>
+<td><code>Bindings.filter(name, …)</code></td>
+<td><code>BiPredicate&lt;CellDerivedItem, CellDerivedItem&gt;</code> (anchor, candidate)</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyregtab</span><span class="w"> </span><span class="kn">import</span> <span class="n">Bindings</span><span class="p">,</span> <span class="n">RtlCompiler</span>
+
+<span class="n">p</span> <span class="o">=</span> <span class="n">RtlCompiler</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+    <span class="s2">&quot;{ [ [EXT(&#39;isTotal&#39;) ? VAL : (ROW &amp; EXT(&#39;isNum&#39;))*-&gt;REC] [VAL]+ ] }+&quot;</span><span class="p">,</span>
+    <span class="n">Bindings</span><span class="o">.</span><span class="n">of</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="s2">&quot;isTotal&quot;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">c</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;Total&quot;</span><span class="p">))</span>
+    <span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="s2">&quot;isNum&quot;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">a</span><span class="p">,</span> <span class="n">c</span><span class="p">:</span> <span class="n">re</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\d+&quot;</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">str</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">),</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>Rules:</p>
+<ul>
+<li>Referencing a name that is not bound (or bound under the other kind) raises
+  <code>RtlCompileError</code> at compile time, with the position of the <code>EXT</code> constraint.</li>
+<li>The two kinds form independent namespaces; a <code>Bindings</code> object may carry bindings that a
+  particular pattern does not use.</li>
+<li>Unlike opaque <code>Custom</code> predicates, <code>EXT</code> constraints survive ATP→RTL serialization
+  (they serialize back to <code>EXT('name')</code>); recompiling the output requires the same <code>Bindings</code>.</li>
+</ul>
+<hr />
+<h2 id="content-specifications">Content specifications</h2>
+<h3 id="atomic-contspec">Atomic — <code>contSpec</code></h3>
+<div class="highlight"><pre><span></span><code>itemDerivDir [tags] [= strExtr] [: actSpecs]
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th><code>itemDerivDir</code></th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>VAL</code></td>
+<td>Value-associated item</td>
+</tr>
+<tr>
+<td><code>ATTR</code></td>
+<td>Attribute-associated item</td>
+</tr>
+<tr>
+<td><code>AUX</code></td>
+<td>Auxiliary item</td>
+</tr>
+<tr>
+<td><code>SKIP</code> or <code>_</code></td>
+<td>No item derived (cell is consumed but ignored)</td>
+</tr>
+</tbody>
+</table>
+<p>A plain <code>VAL</code> with a single action is the most common atom:</p>
+<div class="highlight"><pre><span></span><code><span class="p">[</span><span class="k">VAL</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">ST</span><span class="o">*-&gt;</span><span class="nf">REC</span><span class="p">]</span>
+</code></pre></div>
+<p><em>(Task 01 — derive a value and collect all same-subtable values into one record.)</em></p>
+<p><strong>Tag annotation</strong> (user-defined tags, for use with <code>TAG</code> filter):</p>
+<div class="highlight"><pre><span></span><code>VAL #tag1 #tag2
+</code></pre></div>
+<p>Tags let a later provider find exactly the right items. In Task 107 header values are tagged
+<code>#H</code> (column headers) and <code>#S</code> (row headers) so that data cells can gather them:</p>
+<div class="highlight"><pre><span></span><code><span class="p">[</span>!<span class="k">BLANK</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="k">VAL</span><span class="nt">#&#39;H&#39;</span><span class="p">]</span><span class="w">                </span><span class="c1">// tag a column-header value</span>
+<span class="k">VAL</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="k">COL</span>&amp;<span class="nt">#&#39;H&#39;</span><span class="o">*,</span><span class="w"> </span><span class="k">ROW</span>&amp;<span class="nt">#&#39;S&#39;</span><span class="o">*</span><span class="p">)</span><span class="o">-&gt;</span><span class="nf">REC</span><span class="w">  </span><span class="c1">// collect tagged headers into the record</span>
+</code></pre></div>
+<p><strong>String extractor</strong> (after <code>=</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Extractor</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>NORM</code></td>
+<td>Collapse whitespace</td>
+</tr>
+<tr>
+<td><code>UC</code></td>
+<td>To upper case</td>
+</tr>
+<tr>
+<td><code>LC</code></td>
+<td>To lower case</td>
+</tr>
+<tr>
+<td><code>TRIM</code></td>
+<td>Trim</td>
+</tr>
+<tr>
+<td><code>SUBSTR(n,m)</code></td>
+<td>Substring starting at position <em>n</em>, length <em>m</em></td>
+</tr>
+<tr>
+<td><code>REPL("a","b")</code></td>
+<td>Replace <em>a</em> with <em>b</em> (Java regex)</td>
+</tr>
+</tbody>
+</table>
+<p>Extractors can be chained with <code>.</code>: <code>=REPL(" ","_").LC</code>. Real uses:</p>
+<div class="highlight"><pre><span></span><code><span class="p">[</span><span class="k">VAL</span><span class="o">=</span><span class="k">NORM</span><span class="p">]</span><span class="w">                         </span><span class="c1">// normalise whitespace in header cells (Task 02)</span>
+<span class="p">[</span><span class="k">VAL</span><span class="o">=</span><span class="k">SUBSTR</span><span class="p">(</span><span class="mi">0</span><span class="o">,</span><span class="mi">4</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;YEAR&#39;</span><span class="o">-&gt;</span><span class="nf">AVP</span><span class="p">]</span><span class="o">+</span><span class="w">    </span><span class="c1">// keep the first 4 chars as the year (Task 127)</span>
+<span class="p">[</span><span class="k">VAL</span><span class="o">=</span><span class="k">TRIM</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;UNIT&#39;</span><span class="o">-&gt;</span><span class="nf">AVP</span><span class="p">]</span><span class="w">            </span><span class="c1">// trim the unit token (Task 127)</span>
+</code></pre></div>
+<p><strong>Action specs</strong> (after <code>:</code>):</p>
+<div class="highlight"><pre><span></span><code>(prov1, prov2, …)-&gt;op
+</code></pre></div>
+<p>or with a single provider:</p>
+<div class="highlight"><pre><span></span><code>prov-&gt;op
+</code></pre></div>
+<h3 id="delimited">Delimited</h3>
+<div class="highlight"><pre><span></span><code>(VAL [tags] [= extr] [: acts]){&quot;sep&quot;}
+</code></pre></div>
+<p>Splits the cell text by <code>"sep"</code> and derives one item per token.</p>
+<div class="highlight"><pre><span></span><code><span class="p">[</span>!<span class="k">BLANK</span><span class="o">?</span><span class="w"> </span><span class="p">(</span><span class="k">VAL</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">SR</span>&amp;<span class="k">C0</span><span class="o">-&gt;</span><span class="nf">REC</span><span class="p">(</span><span class="mi">1</span><span class="p">)){</span><span class="s1">&#39;,&#39;</span><span class="p">}]</span>
+</code></pre></div>
+<p><em>(Task 45 — a cell like <code>"a,b,c"</code> yields three VAL items, each forming a record bound to the
+row key via <code>SR &amp; C0</code>.)</em></p>
+<h3 id="compound">Compound</h3>
+<div class="highlight"><pre><span></span><code>[&quot;open&quot;] VAL [acts] &quot;sep&quot; VAL [acts] [&quot;close&quot;]
+</code></pre></div>
+<p>Matches a cell whose text is a sequence of segments separated by fixed delimiters.
+Opening and closing delimiters are optional.</p>
+<div class="highlight"><pre><span></span><code><span class="k">VAL</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="k">COL</span><span class="o">,</span><span class="k">ROW</span><span class="o">,</span><span class="k">CL</span><span class="p">)</span><span class="o">-&gt;</span><span class="nf">REC</span><span class="o">,</span><span class="w"> </span><span class="s1">&#39;ND&#39;</span><span class="o">-&gt;</span><span class="nf">AVP</span><span class="w"> </span><span class="s1">&#39; &#39;</span><span class="w"> </span><span class="k">VAL</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;MON&#39;</span><span class="o">-&gt;</span><span class="nf">AVP</span>
+</code></pre></div>
+<p><em>(Illustrative example — a cell like <code>"0 Jan"</code> is split on the space into a count and a month,
+each becoming its own VAL item with its own actions.)</em></p>
+<p>A three-part compound with <code>-</code> and a newline as delimiters:</p>
+<div class="highlight"><pre><span></span><code><span class="k">VAL</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;MIN&#39;</span><span class="o">-&gt;</span><span class="nf">AVP</span><span class="w"> </span><span class="s1">&#39;-&#39;</span><span class="w"> </span><span class="k">VAL</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;MAX&#39;</span><span class="o">-&gt;</span><span class="nf">AVP</span><span class="w"> </span><span class="s1">&#39;\n&#39;</span><span class="w"> </span><span class="k">VAL</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;AVE&#39;</span><span class="o">-&gt;</span><span class="nf">AVP</span><span class="o">,</span><span class="w"> </span><span class="p">(</span><span class="k">CL</span><span class="o">*,</span><span class="k">ROW</span>&amp;<span class="k">C1</span><span class="p">)</span><span class="o">-&gt;</span><span class="nf">REC</span>
+</code></pre></div>
+<p><em>(Task 126 — a cell like <code>"12-48\n30"</code> yields MIN, MAX and AVE items.)</em></p>
+<h3 id="conditional">Conditional</h3>
+<div class="highlight"><pre><span></span><code>cond ? trueSpec | falseSpec
+</code></pre></div>
+<p>Branches on a cell match condition; both branches must be <code>atomContSpec</code>, <code>delimContSpec</code>, or <code>compContSpec</code>.</p>
+<p>Parentheses are <strong>not allowed</strong>; the bare form is the only valid syntax:</p>
+<div class="highlight"><pre><span></span><code><span class="p">[</span><span class="k">BLANK</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">_</span><span class="w"> </span>|<span class="w"> </span><span class="k">VAL</span><span class="p">]</span><span class="w">                    </span><span class="c1">// skip blank cells, derive VAL otherwise</span>
+<span class="p">[</span><span class="k">RT</span><span class="o">*-&gt;</span><span class="nf">REC</span><span class="w"> </span><span class="k">BLANK</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">_</span><span class="w"> </span>|<span class="w"> </span><span class="k">VAL</span><span class="p">]</span><span class="w">           </span><span class="c1">// with preceding actSpec</span>
+</code></pre></div>
+<p>A common idiom is to skip empty/dash-only cells and otherwise parse a compound value:</p>
+<div class="highlight"><pre><span></span><code><span class="p">[</span><span class="s1">&#39;\s*-?\s*&#39;</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">_</span><span class="w"> </span>|<span class="w"> </span><span class="k">VAL</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;MIN&#39;</span><span class="o">-&gt;</span><span class="nf">AVP</span><span class="w"> </span><span class="s1">&#39;-&#39;</span><span class="w"> </span><span class="k">VAL</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;MAX&#39;</span><span class="o">-&gt;</span><span class="nf">AVP</span><span class="w"> </span><span class="s1">&#39;\n&#39;</span><span class="w"> </span><span class="k">VAL</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;AVE&#39;</span><span class="o">-&gt;</span><span class="nf">AVP</span><span class="o">,</span><span class="w"> </span><span class="p">(</span><span class="k">CL</span><span class="o">*,</span><span class="k">ROW</span>&amp;<span class="k">C1</span><span class="p">)</span><span class="o">-&gt;</span><span class="nf">REC</span><span class="p">]</span><span class="o">+</span>
+</code></pre></div>
+<p><em>(Task 126 — cells matching <code>\s*-?\s*</code> (blank or a lone dash) are skipped; the rest are parsed as
+MIN-MAX/AVE compounds.)</em></p>
+<hr />
+<h2 id="action-specifications">Action specifications</h2>
+<div class="highlight"><pre><span></span><code>provSpecs -&gt; op
+</code></pre></div>
+<p><code>provSpecs</code> is a single provider spec, a parenthesised comma-separated list, or empty parentheses
+<code>()</code> (no additional providers — anchor only).</p>
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th>Syntax</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>REC</code></td>
+<td><code>prov-&gt;REC</code></td>
+<td>Anchor item → record entry; provider supplies additional field values</td>
+</tr>
+<tr>
+<td><code>REC</code></td>
+<td><code>()-&gt;REC</code></td>
+<td>Anchor item → single-field record (no additional providers; useful after <code>SUFFIX</code>/<code>PREFIX</code>/<code>FILL</code> has enriched the anchor value)</td>
+</tr>
+<tr>
+<td><code>REC(n)</code></td>
+<td><code>prov-&gt;REC(n)</code></td>
+<td>Same + use attribute at position <em>n</em> as the record's attribute name</td>
+</tr>
+<tr>
+<td><code>REC('s')</code></td>
+<td><code>prov-&gt;REC('s')</code></td>
+<td>Same + split field values by delimiter <em>s</em></td>
+</tr>
+<tr>
+<td><code>AVP</code></td>
+<td><code>prov-&gt;AVP</code></td>
+<td>Associate anchor (VAL) with an attribute from the provider (ATTR)</td>
+</tr>
+<tr>
+<td><code>JOIN</code></td>
+<td><code>prov-&gt;JOIN</code></td>
+<td>Join item-based records: all items included, then dedup by named attribute (K=∅)</td>
+</tr>
+<tr>
+<td><code>JOIN(K)</code></td>
+<td><code>prov-&gt;JOIN(0)</code></td>
+<td>Join with key positions K dropped from each joined record before dedup (e.g. <code>JOIN(0)</code> drops the anchor position)</td>
+</tr>
+<tr>
+<td><code>FILL('s')</code></td>
+<td><code>prov-&gt;FILL('/')</code></td>
+<td>Fill anchor value forward from provider, separated by <em>s</em></td>
+</tr>
+<tr>
+<td><code>PREFIX('s')</code></td>
+<td><code>prov-&gt;PREFIX(' ')</code></td>
+<td>Prepend provider value to anchor, separated by <em>s</em></td>
+</tr>
+<tr>
+<td><code>SUFFIX('s')</code></td>
+<td><code>prov-&gt;SUFFIX(' ')</code></td>
+<td>Append provider value to anchor, separated by <em>s</em></td>
+</tr>
+</tbody>
+</table>
+<p>Examples by operation:</p>
+<div class="highlight"><pre><span></span><code><span class="p">[</span><span class="k">VAL</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">ST</span><span class="o">*-&gt;</span><span class="nf">REC</span><span class="p">]</span><span class="w">                        </span><span class="c1">// REC, collect whole subtable (Task 01)</span>
+<span class="p">[</span><span class="k">VAL</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">SR</span><span class="o">-&gt;</span><span class="nf">REC</span><span class="p">(</span><span class="mi">1</span><span class="p">)]{</span><span class="mi">2</span><span class="p">}</span><span class="w">                   </span><span class="c1">// REC(1), name the record by attribute at position 1 (Task 03)</span>
+<span class="p">[</span><span class="k">VAL</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;AIRLINE&#39;</span><span class="o">-&gt;</span><span class="nf">AVP</span><span class="p">]</span><span class="w">                   </span><span class="c1">// AVP with a literal attribute (Illustrative example)</span>
+<span class="p">[</span><span class="k">VAL</span><span class="o">:</span><span class="w"> </span>-<span class="k">AV</span><span class="o">-&gt;</span><span class="nf">PREFIX</span><span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="p">)]</span><span class="w">                </span><span class="c1">// PREFIX: prepend the value above, separator &quot;, &quot; (Task 116)</span>
+<span class="p">[</span><span class="k">BLANK</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="k">VAL</span><span class="nt">#&#39;H&#39;</span><span class="o">:</span><span class="w"> </span>-<span class="k">LT</span>&amp;!<span class="k">BLANK</span><span class="o">-&gt;</span><span class="nf">FILL</span><span class="w"> </span>|<span class="w"> </span>…<span class="p">]</span><span class="w"> </span><span class="c1">// FILL: copy the nearest non-blank cell to the left (Task 107)</span>
+</code></pre></div>
+<p><code>PREFIX</code>/<code>SUFFIX</code>/<code>FILL</code> followed by <code>()-&gt;REC</code> is the idiom for building a single-field record out
+of an anchor value that was first enriched from neighbours.</p>
+<hr />
+<h2 id="provider-specifications">Provider specifications</h2>
+<h3 id="cell-derived-provider-tblprovspec">Cell-derived provider (tblProvSpec)</h3>
+<div class="highlight"><pre><span></span><code>[traversal] (spatConstr | spatConstr &amp; constr &amp; … | (constraints)) [cardinality]
+</code></pre></div>
+<p><strong>Traversal order</strong> (prefix, default = ROW_MAJOR):</p>
+<table>
+<thead>
+<tr>
+<th>Symbol</th>
+<th>Order</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>(absent)</em></td>
+<td>ROW_MAJOR</td>
+</tr>
+<tr>
+<td><code>-</code></td>
+<td>REVERSE_ROW_MAJOR</td>
+</tr>
+<tr>
+<td><code>^</code></td>
+<td>COLUMN_MAJOR</td>
+</tr>
+<tr>
+<td><code>-^</code></td>
+<td>REVERSE_COLUMN_MAJOR</td>
+</tr>
+</tbody>
+</table>
+<p>The reverse traversal <code>-</code> is what makes <code>-AV</code> ("the nearest cell above") and <code>-LT</code> ("the nearest
+cell to the left") pick the <em>closest</em> neighbour rather than the farthest.</p>
+<p><strong>Spatial constraints</strong> (single bare form, bare <code>&amp;</code>-conjunction, or inside parentheses):</p>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Condition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ST</code></td>
+<td><code>same_subtable(a) &amp;&amp; !same_cell(a)</code></td>
+</tr>
+<tr>
+<td><code>SR</code></td>
+<td><code>same_subrow(a) &amp;&amp; !same_cell(a)</code></td>
+</tr>
+<tr>
+<td><code>SC</code></td>
+<td><code>same_subcol(a) &amp;&amp; !same_cell(a)</code></td>
+</tr>
+<tr>
+<td><code>CL</code></td>
+<td><code>same_cell(a)</code></td>
+</tr>
+<tr>
+<td><code>NCL</code></td>
+<td><code>!same_cell(a)</code></td>
+</tr>
+<tr>
+<td><code>ROW</code></td>
+<td><code>same_row(a) &amp;&amp; !same_cell(a)</code></td>
+</tr>
+<tr>
+<td><code>COL</code></td>
+<td><code>same_col(a) &amp;&amp; !same_cell(a)</code></td>
+</tr>
+<tr>
+<td><code>RT</code></td>
+<td><code>same_subrow(a) &amp;&amp; col &gt; col(a)</code></td>
+</tr>
+<tr>
+<td><code>LT</code></td>
+<td><code>same_subrow(a) &amp;&amp; col &lt; col(a)</code></td>
+</tr>
+<tr>
+<td><code>BW</code></td>
+<td><code>same_subcol(a) &amp;&amp; row &gt; row(a)</code></td>
+</tr>
+<tr>
+<td><code>AV</code></td>
+<td><code>same_subcol(a) &amp;&amp; row &lt; row(a)</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Positional constraints</strong> (spatial, absolute or relative):</p>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Condition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Cn</code></td>
+<td><code>col == n</code></td>
+</tr>
+<tr>
+<td><code>C+n</code> / <code>C-n</code></td>
+<td><code>col == col(a) + n</code></td>
+</tr>
+<tr>
+<td><code>Ca..b</code></td>
+<td><code>a ≤ col ≤ b</code> (absolute)</td>
+</tr>
+<tr>
+<td><code>C+a..b</code></td>
+<td><code>col(a)+a ≤ col ≤ col(a)+b</code> (relative)</td>
+</tr>
+<tr>
+<td><code>Rn</code></td>
+<td><code>row == n</code></td>
+</tr>
+<tr>
+<td><code>R+n</code> / <code>R-n</code></td>
+<td><code>row == row(a) + n</code></td>
+</tr>
+<tr>
+<td><code>Pn</code></td>
+<td><code>index == n</code></td>
+</tr>
+<tr>
+<td><code>P+n</code> / <code>P-n</code></td>
+<td><code>index == index(a) + n</code></td>
+</tr>
+<tr>
+<td><code>Pa..b</code></td>
+<td><code>a ≤ index ≤ b</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Content constraints</strong> (used inside parentheses, combined with <code>&amp;</code> / <code>|</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Condition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>"regex"</code></td>
+<td><code>str.matches(regex)</code></td>
+</tr>
+<tr>
+<td><code>!"regex"</code></td>
+<td><code>!str.matches(regex)</code></td>
+</tr>
+<tr>
+<td><code>~"sub"</code></td>
+<td><code>str.contains(sub)</code></td>
+</tr>
+<tr>
+<td><code>!~"sub"</code></td>
+<td><code>!str.contains(sub)</code></td>
+</tr>
+<tr>
+<td><code>BLANK</code></td>
+<td><code>blankStr()</code></td>
+</tr>
+<tr>
+<td><code>!BLANK</code></td>
+<td><code>!blankStr()</code></td>
+</tr>
+<tr>
+<td><code>TAG #t1 #t2</code></td>
+<td>any of the given tags matches (OR)</td>
+</tr>
+<tr>
+<td><code>!TAG #t1 #t2</code></td>
+<td>none of the given tags matches</td>
+</tr>
+<tr>
+<td><code>STR</code></td>
+<td><code>sameStr(a)</code> (same string as the anchor)</td>
+</tr>
+<tr>
+<td><code>EXT('name')</code></td>
+<td>Python item filter bound under <code>name</code> — see <a href="#external-python-bindings-extname">External Python bindings</a></td>
+</tr>
+</tbody>
+</table>
+<p>When a content constraint is attached to a spatial one with <code>&amp;</code>, the <code>#'tag'</code> shorthand stands
+for <code>TAG #tag</code>: <code>COL&amp;#'H'*</code> means "same column <strong>and</strong> tagged <code>H</code>, unbounded".</p>
+<p><strong>Compound constraints</strong> with <code>&amp;</code> and <code>|</code>:</p>
+<p>Parentheses are required for <code>|</code>-disjunctions and for constraints starting with a string literal.
+For <code>&amp;</code>-conjunctions starting with a <code>spatConstr</code> keyword, parentheses are <strong>optional</strong>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">RT</span>&amp;<span class="k">P0</span><span class="w">              </span><span class="c1">// right-of AND position 0  (no parens needed)</span>
+<span class="k">CL</span>&amp;<span class="k">P2</span><span class="w">              </span><span class="c1">// same-cell AND position 2</span>
+-<span class="k">LT</span>&amp;<span class="k">P0</span><span class="w">             </span><span class="c1">// reverse-traversal, left-of AND position 0</span>
+<span class="p">(</span><span class="k">ST</span><span class="w"> </span>&amp;<span class="w"> </span>!<span class="k">BLANK</span><span class="p">)</span><span class="w">      </span><span class="c1">// same subtable AND not blank</span>
+<span class="p">(</span><span class="k">ROW</span><span class="w"> </span>|<span class="w"> </span><span class="k">COL</span><span class="p">)</span><span class="w">        </span><span class="c1">// same row OR same column  (parens required for |)</span>
+<span class="p">(</span><span class="s1">&#39;regex&#39;</span><span class="w"> </span>&amp;<span class="w"> </span><span class="k">RT</span><span class="p">)</span><span class="w">     </span><span class="c1">// parens required: starts with a string literal</span>
+</code></pre></div>
+<p><strong>Cardinality</strong> (suffix, applies after the whole constraint expression):</p>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>(absent)</em></td>
+<td>at most 1 (default)</td>
+</tr>
+<tr>
+<td><code>{n}</code></td>
+<td>at most <em>n</em></td>
+</tr>
+<tr>
+<td><code>*</code></td>
+<td>unbounded</td>
+</tr>
+</tbody>
+</table>
+<p>Examples from the test suite:</p>
+<ul>
+<li><code>ST*</code> — all items in the same subtable (Task 01)</li>
+<li><code>SR&amp;C0</code> — the single same-subrow item in column 0 (Task 45)</li>
+<li><code>(SC{2}, SR)</code> — two items from the same subcolumn (headers) plus one from the same subrow (Task 02)</li>
+<li><code>COL&amp;R1..3*</code> — all same-column items at rows 1–3, unbounded (Task 116)</li>
+<li><code>(CL*, ROW&amp;C1)</code> — all same-cell items plus the same-row item in column 1 (Task 126)</li>
+</ul>
+<h3 id="context-derived-provider-literal">Context-derived provider (literal)</h3>
+<p>A quoted string literal supplies a fixed string as an attribute or value:</p>
+<div class="highlight"><pre><span></span><code><span class="p">(</span><span class="s1">&#39;AIRLINE&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="nf">AVP</span>
+</code></pre></div>
+<p>The item type is inferred from the action: <code>-&gt;AVP</code> → ATTR, <code>-&gt;REC</code> → VAL.</p>
+<hr />
+<h2 id="frequently-used-combinations">Frequently used combinations</h2>
+<table>
+<thead>
+<tr>
+<th>RTL</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ST*-&gt;REC</code></td>
+<td>Collect all same-subtable values into one record</td>
+</tr>
+<tr>
+<td><code>(SC{2}, SR)-&gt;REC(2)</code></td>
+<td>Two items from same subcolumn (headers) + one from same subrow</td>
+</tr>
+<tr>
+<td><code>^COL-&gt;AVP</code></td>
+<td>Associate with an attribute from the same column (column-major)</td>
+</tr>
+<tr>
+<td><code>('LABEL')-&gt;AVP</code></td>
+<td>Associate with a fixed string attribute</td>
+</tr>
+<tr>
+<td><code>(ST*)-&gt;REC</code> (in parentheses)</td>
+<td>Same as <code>ST*-&gt;REC</code> but explicit grouping</td>
+</tr>
+<tr>
+<td><code>CL-&gt;JOIN(0)</code></td>
+<td>Join (drop anchor) another item from the same cell</td>
+</tr>
+<tr>
+<td><code>(COL)-&gt;FILL('/')</code></td>
+<td>Fill forward from same-column values, delimiter <code>/</code></td>
+</tr>
+<tr>
+<td><code>-AV-&gt;PREFIX(', ')</code></td>
+<td>Prepend the nearest value above, separator ", "</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="named-fragment-definitions">Named fragment definitions</h2>
+<p>Repeated sub-patterns can be extracted into <strong>named fragments</strong> declared in a preamble
+before the first <code>[</code> or <code>{</code> of the pattern body.</p>
+<h3 id="syntax">Syntax</h3>
+<div class="highlight"><pre><span></span><code>$NAME = fragmentBody
+</code></pre></div>
+<p><code>$NAME</code> is a <code>$</code>-prefixed alphanumeric identifier (case-insensitive).
+<code>fragmentBody</code> uses the same bracket style as the level it represents:</p>
+<table>
+<thead>
+<tr>
+<th>Level</th>
+<th>Definition</th>
+<th>Reference</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>cell</td>
+<td><code>$N=[cellBody]</code></td>
+<td><code>[$N]</code> in cell position</td>
+</tr>
+<tr>
+<td>row</td>
+<td><code>$N=[ [sub]+ ]</code></td>
+<td><code>[$N]</code> in row position</td>
+</tr>
+<tr>
+<td>subrow</td>
+<td><code>$N={ [cell]+ }</code></td>
+<td><code>{$N}</code> in subrow position</td>
+</tr>
+<tr>
+<td>subtable</td>
+<td><code>$N={ [row]+ }</code></td>
+<td><code>{$N}</code> in subtable position</td>
+</tr>
+</tbody>
+</table>
+<p>The reference can carry its own quantifier independently of the definition:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">$V</span><span class="o">=</span><span class="p">[</span><span class="k">VAL</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;X&#39;</span><span class="o">-&gt;</span><span class="nf">AVP</span><span class="p">]</span>
+<span class="p">[</span><span class="w"> </span><span class="p">[</span><span class="nv">$V</span><span class="p">]{</span><span class="mi">4</span><span class="p">}</span><span class="w"> </span><span class="p">[</span><span class="nv">$V</span><span class="p">]</span><span class="w"> </span><span class="p">]</span><span class="w">   </span><span class="c1">// four then one cell of the same form</span>
+</code></pre></div>
+<h3 id="semantics">Semantics</h3>
+<p>Each reference is a <strong>syntactic substitution</strong>: it expands to a fresh pattern object equivalent
+to the inline form. Fragment bodies inherit <code>actSpecs</code> from their call-site context, exactly as
+inline patterns would. Forward references within the same preamble are allowed.
+A reference to an undefined name throws <code>RtlCompileError</code> at compile time.</p>
+<p>on the Examples page for a complete worked example with two reused cell fragments.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.sections", "navigation.top", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

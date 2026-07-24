@@ -1,0 +1,1301 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Pattern-driven data extraction from tables — Python port of jRegTab with a native Rust core">
+      
+      
+      
+        <link rel="canonical" href="https://regtab.icc.ru/pyregtab/embedded-rtl/">
+      
+      
+        <link rel="prev" href="../rtl-reference/">
+      
+      
+        <link rel="next" href="../ide-support/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/favicon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Embedded RTL - pyRegTab</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#embedded-rtl" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="pyRegTab" class="md-header__button md-logo" aria-label="pyRegTab" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            pyRegTab
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Embedded RTL
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/regtab/pyregtab" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="pyRegTab" class="md-nav__button md-logo" aria-label="pyRegTab" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="logo">
+
+    </a>
+    pyRegTab
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/regtab/pyregtab" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rtl-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RTL reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Embedded RTL
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Embedded RTL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#quick-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick example
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vocabulary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vocabulary
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Vocabulary">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pattern-levels-and-quantifiers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pattern levels and quantifiers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cells-and-guards" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cells and guards
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#content-specifications" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Content specifications
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#providers-and-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Providers and constraints
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#actions-and-context-providers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Actions and context providers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#level-scoped-inherited-actions-and-conditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Level-scoped (inherited) actions and conditions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Settings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fragments-are-just-python" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fragments are just Python
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#escape-hatches-into-python" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Escape hatches into Python
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#relation-to-the-other-two-apis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Relation to the other two APIs
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ide-support/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IDE support
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Formal model
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Formal model
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model/itm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ITM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model/atp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ATP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#quick-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick example
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vocabulary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vocabulary
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Vocabulary">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pattern-levels-and-quantifiers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pattern levels and quantifiers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cells-and-guards" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cells and guards
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#content-specifications" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Content specifications
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#providers-and-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Providers and constraints
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#actions-and-context-providers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Actions and context providers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#level-scoped-inherited-actions-and-conditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Level-scoped (inherited) actions and conditions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Settings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fragments-are-just-python" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fragments are just Python
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#escape-hatches-into-python" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Escape hatches into Python
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#relation-to-the-other-two-apis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Relation to the other two APIs
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="embedded-rtl">Embedded RTL</h1>
+<p><strong>Embedded RTL</strong> is a Python DSL (module <code>pyregtab.dsl</code>) that mirrors RTL syntax while
+remaining ordinary Python code. It combines the brevity of RTL with full Python integration:
+callables as constraints, IDE completion, and pattern composition with plain variables and
+functions.</p>
+<p>Patterns built with embedded RTL produce <strong>exactly the same <code>TablePattern</code> objects</strong> as
+<code>RtlCompiler.compile(...)</code> — this equivalence is verified task-by-task for a representative
+subset of the benchmark corpus (<code>tests/test_dsl.py</code>): for every lambda-free pattern the DSL
+builds a structurally identical ATP and serializes to the same canonical RTL.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pyregtab.dsl</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+</code></pre></div>
+<h2 id="quick-example">Quick example</h2>
+<p>RTL (task 001):</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="p">[</span><span class="k">VAL</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">ST</span><span class="o">*-&gt;</span><span class="nf">REC</span><span class="p">]</span><span class="w"> </span><span class="p">[</span><span class="k">VAL</span><span class="p">]{</span><span class="mi">2</span><span class="p">}</span><span class="w"> </span><span class="p">[]</span><span class="o">+</span><span class="w"> </span><span class="p">]</span>
+<span class="w">  </span><span class="p">[</span><span class="w"> </span><span class="p">[]</span><span class="w">               </span><span class="p">[</span><span class="k">VAL</span><span class="p">]{</span><span class="mi">4</span><span class="p">}</span><span class="w"> </span><span class="p">[]</span><span class="o">+</span><span class="w"> </span><span class="p">]</span><span class="w"> </span><span class="p">}</span><span class="o">+</span>
+</code></pre></div>
+<p>Embedded RTL:</p>
+<div class="highlight"><pre><span></span><code><span class="n">p</span> <span class="o">=</span> <span class="n">table</span><span class="p">(</span>
+    <span class="n">subtable</span><span class="p">(</span>
+        <span class="n">row</span><span class="p">(</span><span class="n">cell</span><span class="p">(</span><span class="n">VAL</span><span class="p">,</span> <span class="n">rec</span><span class="p">(</span><span class="n">ST</span><span class="o">.</span><span class="n">unbounded</span><span class="p">())),</span> <span class="n">cell</span><span class="p">(</span><span class="n">VAL</span><span class="p">)</span><span class="o">.</span><span class="n">exactly</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">skip</span><span class="p">()</span><span class="o">.</span><span class="n">one_or_more</span><span class="p">()),</span>
+        <span class="n">row</span><span class="p">(</span><span class="n">skip</span><span class="p">(),</span>                         <span class="n">cell</span><span class="p">(</span><span class="n">VAL</span><span class="p">)</span><span class="o">.</span><span class="n">exactly</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span> <span class="n">skip</span><span class="p">()</span><span class="o">.</span><span class="n">one_or_more</span><span class="p">()),</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">one_or_more</span><span class="p">())</span>
+</code></pre></div>
+<p>The result is a plain <code>pyregtab.TablePattern</code> — match and interpret it exactly like any other:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pyregtab</span><span class="w"> </span><span class="kn">import</span> <span class="n">AtpMatcher</span><span class="p">,</span> <span class="n">TableInterpreter</span>
+
+<span class="n">itm</span> <span class="o">=</span> <span class="n">AtpMatcher</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">syntax</span><span class="p">)</span>
+<span class="n">rs</span> <span class="o">=</span> <span class="n">TableInterpreter</span><span class="p">()</span><span class="o">.</span><span class="n">interpret</span><span class="p">(</span><span class="n">itm</span><span class="p">)</span>
+</code></pre></div>
+<hr />
+<h2 id="vocabulary">Vocabulary</h2>
+<h3 id="pattern-levels-and-quantifiers">Pattern levels and quantifiers</h3>
+<table>
+<thead>
+<tr>
+<th>RTL</th>
+<th>Embedded RTL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>table pattern</td>
+<td><code>table(subtable…)</code></td>
+</tr>
+<tr>
+<td><code>{ rows }</code> subtable</td>
+<td><code>subtable(row…)</code></td>
+</tr>
+<tr>
+<td><code>[ cells ]</code> row</td>
+<td><code>row(cell…)</code></td>
+</tr>
+<tr>
+<td><code>{ cells }</code> explicit subrow</td>
+<td><code>subrow(cell…)</code>, mixed with implicit runs: <code>row(subrow(…), subrow(…))</code></td>
+</tr>
+<tr>
+<td><code>+</code> <code>*</code> <code>?</code> <code>{n}</code></td>
+<td>postfix <code>.one_or_more()</code> <code>.zero_or_more()</code> <code>.zero_or_one()</code> <code>.exactly(n)</code></td>
+</tr>
+</tbody>
+</table>
+<p>A row with plain cells (<code>row(cell…)</code>) wraps them into one implicit subrow, exactly like the
+compiler.</p>
+<h3 id="cells-and-guards">Cells and guards</h3>
+<table>
+<thead>
+<tr>
+<th>RTL</th>
+<th>Embedded RTL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>[]</code></td>
+<td><code>skip()</code></td>
+</tr>
+<tr>
+<td><code>[VAL : acts]</code></td>
+<td><code>cell(VAL, acts…)</code></td>
+</tr>
+<tr>
+<td><code>[!BLANK ? VAL : acts]</code></td>
+<td><code>cell(not_blank(), VAL, acts…)</code></td>
+</tr>
+<tr>
+<td><code>[BLANK]</code> (condition-only)</td>
+<td><code>cell(blank())</code></td>
+</tr>
+<tr>
+<td>guards <code>BLANK</code> <code>"re"</code> <code>~"s"</code> (+ <code>!</code>)</td>
+<td><code>blank()</code> <code>re("…")</code> <code>contains("…")</code> / <code>not_blank()</code> <code>not_re("…")</code> <code>not_contains("…")</code></td>
+</tr>
+<tr>
+<td>— (escape hatch)</td>
+<td><code>cell(where("desc", lambda c: …), VAL)</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="content-specifications">Content specifications</h3>
+<table>
+<thead>
+<tr>
+<th>RTL</th>
+<th>Embedded RTL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>VAL</code> / <code>ATTR</code> / <code>AUX</code> / <code>_</code></td>
+<td>constants <code>VAL ATTR AUX SKIP</code>; atoms <code>val(acts…)</code> <code>attr(…)</code> <code>aux(…)</code></td>
+</tr>
+<tr>
+<td><code>VAL #'tag'</code></td>
+<td><code>val(…).tagged("tag")</code></td>
+</tr>
+<tr>
+<td><code>VAL = NORM</code> (also <code>TRIM UC LC REPL SUBSTR</code>, chains)</td>
+<td><code>val(…).extract(NORM)</code>, <code>repl("rx","rep")</code>, <code>substr(b,e)</code>, <code>chain(…)</code></td>
+</tr>
+<tr>
+<td>compound <code>A "d" B</code></td>
+<td><code>val(…).then(" ", val(…))</code> (chainable)</td>
+</tr>
+<tr>
+<td>delimited <code>(VAL : …){","}</code></td>
+<td><code>val(…).split_by(",")</code></td>
+</tr>
+<tr>
+<td>conditional <code>BLANK ? _ \| VAL</code></td>
+<td><code>when(blank(), SKIP, VAL)</code> (directives and specs mix freely)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="providers-and-constraints">Providers and constraints</h3>
+<table>
+<thead>
+<tr>
+<th>RTL</th>
+<th>Embedded RTL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>LT RT AV BW ROW COL SR SC ST NCL CL STR</code></td>
+<td>constants with the same names (type <code>Prov</code>)</td>
+</tr>
+<tr>
+<td><code>Cn</code> / <code>Ca..b</code> / <code>C+n</code>, <code>C-n</code> / <code>C+a..b</code> / <code>C+a..*</code></td>
+<td><code>C(n)</code> / <code>C(lo,hi)</code> / <code>Crel(±n)</code> / <code>Crel(lo,hi)</code> / <code>CrelFrom(lo)</code></td>
+</tr>
+<tr>
+<td><code>Rn Ra..b R±n</code>, <code>Pn Pa..b P±n</code></td>
+<td><code>R(…)</code>, <code>Rrel(…)</code>, <code>P(…)</code>, <code>Prel(…)</code></td>
+</tr>
+<tr>
+<td><code>#'t'</code> / <code>!#'t'</code></td>
+<td><code>tag("t")</code> / <code>not_tag("t")</code></td>
+</tr>
+<tr>
+<td>item <code>"re"</code>, <code>~"s"</code>, <code>BLANK</code> (+ <code>!</code>)</td>
+<td><code>item_re item_contains item_blank</code> / <code>item_not_re item_not_contains item_not_blank</code></td>
+</tr>
+<tr>
+<td><code>&amp;</code> conjunction</td>
+<td><code>.and_(…)</code></td>
+</tr>
+<tr>
+<td><code>\|</code> disjunction</td>
+<td><code>.or_(…)</code>; distribution matches the compiler: <code>A.and_(B.or_(C))</code> ≙ <code>(A&amp;B)\|(A&amp;C)</code></td>
+</tr>
+<tr>
+<td><code>{n}</code> / <code>*</code> cardinality</td>
+<td><code>.card(n)</code> / <code>.unbounded()</code></td>
+</tr>
+<tr>
+<td><code>-</code> / <code>^</code> / <code>-^</code> traversal</td>
+<td><code>.reversed()</code> / <code>.col_major()</code> / <code>.reversed_col_major()</code></td>
+</tr>
+<tr>
+<td>— (escape hatch)</td>
+<td><code>ROW.where("desc", lambda anchor, candidate: …)</code></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">Why <code>C(n)</code> and <code>Crel(n)</code> are separate</p>
+<p><code>C(n)</code> and <code>C(lo, hi)</code> are absolute column constraints (one column, or a range); <code>Crel</code>
+takes a signed anchor-relative delta: <code>Crel(1)</code> ≙ <code>C+1</code>, <code>Crel(-1)</code> ≙ <code>C-1</code>, and
+<code>Crel(lo, hi)</code> / <code>CrelFrom(lo)</code> give relative and open-ended relative ranges. The naming
+mirrors jRegTab's, where absolute and relative forms must be distinct factories.</p>
+</div>
+<h3 id="actions-and-context-providers">Actions and context providers</h3>
+<table>
+<thead>
+<tr>
+<th>RTL</th>
+<th>Embedded RTL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>(…)-&gt;REC</code> / <code>REC(n)</code> / <code>REC('s')</code></td>
+<td><code>rec(…)</code> / <code>rec(n, …)</code> / <code>rec_split("s", …)</code></td>
+</tr>
+<tr>
+<td><code>prov-&gt;AVP</code> / <code>'NAME'-&gt;AVP</code></td>
+<td><code>avp(prov)</code> / <code>avp("NAME")</code></td>
+</tr>
+<tr>
+<td><code>(…)-&gt;JOIN</code> / <code>JOIN(k)</code></td>
+<td><code>join(…)</code> / <code>join(k, …)</code></td>
+</tr>
+<tr>
+<td><code>(…)-&gt;FILL('d')</code>, <code>PREFIX</code>, <code>SUFFIX</code></td>
+<td><code>fill("d", …)</code>, <code>prefix(…)</code>, <code>suffix(…)</code> (delimiter optional)</td>
+</tr>
+<tr>
+<td><code>'EUR'</code> context literal</td>
+<td><code>lit("EUR")</code> (VALUE under REC/JOIN, ATTRIBUTE otherwise — as in the compiler)</td>
+</tr>
+<tr>
+<td><code>@'K'='V'</code></td>
+<td><code>ctx_avp("K", "V")</code></td>
+</tr>
+</tbody>
+</table>
+<p>Provider kinds (VAL/ATTR/UNRESTRICTED) are inferred from the action, exactly as in the RTL
+compiler — <code>rec(ST)</code> builds a VAL provider, <code>avp(SC)</code> an ATTR provider.</p>
+<h3 id="level-scoped-inherited-actions-and-conditions">Level-scoped (inherited) actions and conditions</h3>
+<p>RTL allows action specs and a condition at the table, subtable, row, and subrow level; they are
+merged down into every atom below. Embedded RTL mirrors this with <code>acts(…)</code> and an optional
+leading <code>CellPredicate</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># RTL: [ BW*-&gt;REC { [ATTR] [VAL] }* ]</span>
+<span class="n">row</span><span class="p">(</span><span class="n">acts</span><span class="p">(</span><span class="n">rec</span><span class="p">(</span><span class="n">BW</span><span class="o">.</span><span class="n">unbounded</span><span class="p">())),</span>
+    <span class="n">subrow</span><span class="p">(</span><span class="n">cell</span><span class="p">(</span><span class="n">ATTR</span><span class="p">),</span> <span class="n">cell</span><span class="p">(</span><span class="n">VAL</span><span class="p">))</span><span class="o">.</span><span class="n">zero_or_more</span><span class="p">())</span>
+
+<span class="c1"># RTL: !BLANK ? BW*-&gt;REC [ [VAL] ]+</span>
+<span class="n">table</span><span class="p">(</span><span class="n">not_blank</span><span class="p">(),</span> <span class="n">acts</span><span class="p">(</span><span class="n">rec</span><span class="p">(</span><span class="n">BW</span><span class="o">.</span><span class="n">unbounded</span><span class="p">())),</span> <span class="n">subtable</span><span class="p">(</span><span class="n">row</span><span class="p">(</span><span class="n">cell</span><span class="p">(</span><span class="n">VAL</span><span class="p">))</span><span class="o">.</span><span class="n">one_or_more</span><span class="p">()))</span>
+</code></pre></div>
+<h3 id="settings">Settings</h3>
+<p>The RTL settings prefix maps to recordset transformations:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># RTL: &lt;NORM,ANCH(1),SPLIT(&quot;,&quot;)&gt; …</span>
+<span class="n">table</span><span class="p">(</span><span class="err">…</span><span class="p">)</span><span class="o">.</span><span class="n">with_transformations</span><span class="p">(</span><span class="n">norm</span><span class="p">(),</span> <span class="n">anch</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">))</span>
+</code></pre></div>
+<h3 id="fragments-are-just-python">Fragments are just Python</h3>
+<p>RTL named fragments <code>$name=[…]</code> become plain variables — and gain parameterisation for free:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># RTL: $V=[&#39;\d+&#39; ? VAL: (COL&amp;#&#39;H&#39;*,ROW&amp;#&#39;S&#39;*)-&gt;REC]  …  [$V]+</span>
+<span class="n">v</span> <span class="o">=</span> <span class="n">cell</span><span class="p">(</span><span class="n">re</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\d+&quot;</span><span class="p">),</span> <span class="n">VAL</span><span class="p">,</span> <span class="n">rec</span><span class="p">(</span><span class="n">COL</span><span class="o">.</span><span class="n">and_</span><span class="p">(</span><span class="n">tag</span><span class="p">(</span><span class="s2">&quot;H&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">unbounded</span><span class="p">(),</span>
+                             <span class="n">ROW</span><span class="o">.</span><span class="n">and_</span><span class="p">(</span><span class="n">tag</span><span class="p">(</span><span class="s2">&quot;S&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">unbounded</span><span class="p">()))</span>
+<span class="n">row</span><span class="p">(</span><span class="n">cell</span><span class="p">(</span><span class="n">blank</span><span class="p">())</span><span class="o">.</span><span class="n">one_or_more</span><span class="p">(),</span> <span class="n">v</span><span class="o">.</span><span class="n">one_or_more</span><span class="p">())</span>
+</code></pre></div>
+<hr />
+<h2 id="escape-hatches-into-python">Escape hatches into Python</h2>
+<p>The reason embedded RTL exists: anywhere the model accepts a predicate, a plain Python callable
+works.</p>
+<div class="highlight"><pre><span></span><code><span class="n">p</span> <span class="o">=</span> <span class="n">table</span><span class="p">(</span><span class="n">subtable</span><span class="p">(</span><span class="n">row</span><span class="p">(</span>
+    <span class="n">cell</span><span class="p">(</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;is_total&quot;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">c</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;Total&quot;</span><span class="p">)),</span> <span class="n">VAL</span><span class="p">,</span>
+         <span class="n">rec</span><span class="p">(</span><span class="n">ROW</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;is_num&quot;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">a</span><span class="p">,</span> <span class="n">c</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">isdigit</span><span class="p">())</span><span class="o">.</span><span class="n">unbounded</span><span class="p">())),</span>
+    <span class="n">cell</span><span class="p">(</span><span class="n">VAL</span><span class="p">)</span><span class="o">.</span><span class="n">one_or_more</span><span class="p">())))</span>
+</code></pre></div>
+<p>Patterns containing <code>where(...)</code> <strong>cannot be serialized back to RTL</strong> (an opaque Python callable
+has no RTL analog) and two patterns with distinct callables never compare equal. The serializable
+alternative is a named <code>EXT('name')</code> binding in the string compiler, which round-trips:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pyregtab</span><span class="w"> </span><span class="kn">import</span> <span class="n">RtlCompiler</span><span class="p">,</span> <span class="n">Bindings</span>
+
+<span class="n">p</span> <span class="o">=</span> <span class="n">RtlCompiler</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+    <span class="s2">&quot;{ [ [EXT(&#39;is_total&#39;) ? VAL : ST*-&gt;REC] []+ ] }+&quot;</span><span class="p">,</span>
+    <span class="n">Bindings</span><span class="o">.</span><span class="n">of</span><span class="p">()</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="s2">&quot;is_total&quot;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">cell</span><span class="p">:</span> <span class="n">cell</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;Total&quot;</span><span class="p">)),</span>
+<span class="p">)</span>
+</code></pre></div>
+<hr />
+<h2 id="relation-to-the-other-two-apis">Relation to the other two APIs</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>RTL string</th>
+<th>Embedded RTL</th>
+<th>ATP API</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Brevity</td>
+<td>✅✅</td>
+<td>✅</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>Python callables</td>
+<td>via <code>EXT</code> + <code>Bindings</code></td>
+<td>✅ direct</td>
+<td>✅ direct</td>
+</tr>
+<tr>
+<td>IDE completion / structural typing</td>
+<td>❌</td>
+<td>✅</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>Layer</td>
+<td>compiles to ATP</td>
+<td>thin sugar over ATP</td>
+<td>the model itself</td>
+</tr>
+</tbody>
+</table>
+<p>Embedded RTL is a construction layer only — it adds no expressive power beyond ATP, and every
+pattern it builds is an ordinary <code>TablePattern</code>. The <a href="../model/atp/">ATP API</a> remains the
+documented low-level layer.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.sections", "navigation.top", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

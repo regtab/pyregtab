@@ -1,0 +1,1963 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Pattern-driven data extraction from tables — Python port of jRegTab with a native Rust core">
+      
+      
+      
+        <link rel="canonical" href="https://regtab.icc.ru/pyregtab/model/atp/">
+      
+      
+        <link rel="prev" href="../itm/">
+      
+      
+        <link rel="next" href="../../architecture/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/favicon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>ATP - pyRegTab</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#table-patterns-atp" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="pyRegTab" class="md-header__button md-logo" aria-label="pyRegTab" data-md-component="logo">
+      
+  <img src="../../assets/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            pyRegTab
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              ATP
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/regtab/pyregtab" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="pyRegTab" class="md-nav__button md-logo" aria-label="pyRegTab" data-md-component="logo">
+      
+  <img src="../../assets/logo.svg" alt="logo">
+
+    </a>
+    pyRegTab
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/regtab/pyregtab" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../rtl-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RTL reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../embedded-rtl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Embedded RTL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ide-support/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IDE support
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Formal model
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Formal model
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../itm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ITM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ATP
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ATP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pattern-hierarchy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pattern hierarchy
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Pattern hierarchy">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#quantifiers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quantifiers
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cell-match-conditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cell match conditions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#content-specifications" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Content specifications
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Content specifications">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#atomic-content-specification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Atomic content specification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delimited-content-specification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Delimited content specification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compound-content-specification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compound content specification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conditional-content-specification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conditional content specification
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#item-provider-specifications" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Item provider specifications
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#interpretation-action-specifications" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Interpretation action specifications
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#matching-atp-against-itm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Matching ATP against ITM
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Matching ATP against ITM">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#stage-1-syntactic-layer-matching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage 1 — Syntactic layer matching
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stage-2-semantic-layer-construction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage 2 — Semantic layer construction
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#end-to-end-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        End-to-end example
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="End-to-end example">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#table-class-and-goal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table class and goal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#atp-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ATP pattern
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#syntactic-match-on-a-concrete-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Syntactic match on a concrete table
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#python-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Python implementation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pattern-hierarchy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pattern hierarchy
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Pattern hierarchy">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#quantifiers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quantifiers
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cell-match-conditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cell match conditions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#content-specifications" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Content specifications
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Content specifications">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#atomic-content-specification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Atomic content specification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delimited-content-specification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Delimited content specification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compound-content-specification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compound content specification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conditional-content-specification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conditional content specification
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#item-provider-specifications" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Item provider specifications
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#interpretation-action-specifications" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Interpretation action specifications
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#matching-atp-against-itm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Matching ATP against ITM
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Matching ATP against ITM">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#stage-1-syntactic-layer-matching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage 1 — Syntactic layer matching
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stage-2-semantic-layer-construction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage 2 — Semantic layer construction
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#end-to-end-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        End-to-end example
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="End-to-end example">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#table-class-and-goal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table class and goal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#atp-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ATP pattern
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#syntactic-match-on-a-concrete-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Syntactic match on a concrete table
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#python-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Python implementation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="table-patterns-atp">Table patterns (ATP)</h1>
+<p>The <strong>Abstract Table Pattern (ATP)</strong> is the formal model for specifying <em>classes</em> of
+tables.  An ATP instance describes, in abstract and syntax-independent terms:</p>
+<ul>
+<li>what the members of a table class look like — through a hierarchy of patterns and
+  cell match conditions; and</li>
+<li>what they mean — through interpretation action specifications embedded at the
+  cell level.</li>
+</ul>
+<p>The relationship between ATP and <a href="../itm/">ITM</a> is dual and complementary.  An ITM
+instance is a single concrete table; an ATP instance is a description of all possible
+realisations of a table class.  <em>Matching</em> bridges the two: given an ATP instance and
+an ITM instance whose syntactic layer is populated but whose semantic layer is absent,
+matching checks whether the table belongs to the class and, if so, uses the ATP's
+action specifications to automatically populate the semantic layer.</p>
+<hr />
+<h2 id="pattern-hierarchy">Pattern hierarchy</h2>
+<p>An ATP instance mirrors the row-oriented substructure hierarchy of ITM:</p>
+<div class="highlight"><pre><span></span><code>TablePattern
+└── SubtablePattern+    (quantifier, optional condition)
+    └── RowPattern+     (quantifier, optional condition)
+        └── SubrowPattern+  (quantifier, optional condition)
+            └── CellPattern+  (quantifier, optional condition, optional content spec)
+</code></pre></div>
+<p>At each level a pattern specifies:</p>
+<ul>
+<li>an optional <strong>cell match condition</strong> <code>λ</code> constraining the cells in the matched
+  (sub)structure;</li>
+<li>an optional <strong>quantifier</strong> <code>q</code> controlling how many consecutive (sub)structures
+  of the same kind are matched at that level;</li>
+<li>child patterns (or, at the cell level, a content specification).</li>
+</ul>
+<p>Conditions from ancestor patterns compose <em>conjunctively</em>: a cell is admissible
+only if it satisfies the conditions of its cell pattern, its subrow pattern, its
+row pattern, its subtable pattern, and the top-level table pattern.</p>
+<h3 id="quantifiers">Quantifiers</h3>
+<table>
+<thead>
+<tr>
+<th>Quantifier</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>?</code></td>
+<td>zero or one occurrence</td>
+</tr>
+<tr>
+<td><code>1</code> (default)</td>
+<td>exactly one occurrence</td>
+</tr>
+<tr>
+<td><code>{n}</code></td>
+<td>exactly <code>n</code> occurrences (<code>n ≥ 2</code>)</td>
+</tr>
+<tr>
+<td><code>+</code></td>
+<td>one or more occurrences</td>
+</tr>
+<tr>
+<td><code>*</code></td>
+<td>zero or more occurrences</td>
+</tr>
+</tbody>
+</table>
+<p>Quantifiers have identical semantics at every level of the hierarchy.</p>
+<details class="note">
+<summary>API mapping — pattern hierarchy and quantifiers</summary>
+<p><strong>Definition (ATP instance):</strong> <code>P_tbl = (q, λ, ⟨P_st¹, …⟩)</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Formal concept</th>
+<th>Python class</th>
+<th>Constructor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Table pattern <code>P_tbl</code></td>
+<td><code>TablePattern</code></td>
+<td><code>TablePattern.of(subtablePatterns…)</code></td>
+</tr>
+<tr>
+<td>Subtable pattern <code>P_st</code></td>
+<td><code>SubtablePattern</code></td>
+<td><code>SubtablePattern.of(rowPatterns…)</code></td>
+</tr>
+<tr>
+<td>Row pattern <code>P_row</code></td>
+<td><code>RowPattern</code></td>
+<td><code>RowPattern.of(subrowOrCellPatterns…)</code></td>
+</tr>
+<tr>
+<td>Subrow pattern <code>P_sr</code></td>
+<td><code>SubrowPattern</code></td>
+<td><code>SubrowPattern.of(cellPatterns…)</code></td>
+</tr>
+<tr>
+<td>Cell pattern <code>P_cell</code></td>
+<td><code>CellPattern</code></td>
+<td><code>CellPattern.of(contentSpec)</code>, <code>CellPattern.skip()</code></td>
+</tr>
+</tbody>
+</table>
+<p>Quantifier factories (<code>Quantifier</code> record):</p>
+<table>
+<thead>
+<tr>
+<th>Notation</th>
+<th>Factory</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>?</code></td>
+<td><code>Quantifier.zero_or_one()</code></td>
+</tr>
+<tr>
+<td>default / <code>1</code></td>
+<td><code>Quantifier.one()</code> (implied if omitted)</td>
+</tr>
+<tr>
+<td><code>{n}</code></td>
+<td><code>Quantifier.exactly(n)</code></td>
+</tr>
+<tr>
+<td><code>+</code></td>
+<td><code>Quantifier.one_or_more()</code></td>
+</tr>
+<tr>
+<td><code>*</code></td>
+<td><code>Quantifier.zero_or_more()</code></td>
+</tr>
+</tbody>
+</table>
+<p>Pass the quantifier as the first argument:
+<code>CellPattern.of(Quantifier.one_or_more(), contentSpec)</code>,
+<code>RowPattern.of(Quantifier.zero_or_more(), cellPatterns…)</code>.</p>
+</details>
+<hr />
+<h2 id="cell-match-conditions">Cell match conditions</h2>
+<p>A <strong>cell match condition</strong> <code>λ : C → {true, false}</code> is a predicate on cells
+expressed as a finite Boolean combination of <em>atomic constraints</em> of the form
+<code>property θ value</code>, where <code>property</code> is any cell property from the syntactic
+layer, <code>θ</code> is a comparison or matching operator, and <code>value</code> is a constant.</p>
+<p>When used in a table, subtable, row, or subrow pattern, <code>λ</code> must hold for <em>every</em>
+cell belonging to the matched (sub)structure.  When used in a cell pattern, it must
+hold for that individual cell only.</p>
+<p>Commonly used atomic constraints (see
+<a href="../itm/#layout-hierarchy">ITM — Layout hierarchy</a> for the full property list):</p>
+<table>
+<thead>
+<tr>
+<th>Constraint</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>txtBlank = true</code> / <code>txtBlank = false</code></td>
+<td>cell is blank / non-blank</td>
+</tr>
+<tr>
+<td><code>txt matches "regex"</code></td>
+<td>cell text matches a regular expression</td>
+</tr>
+<tr>
+<td><code>col = n</code></td>
+<td>cell is in column <code>n</code></td>
+</tr>
+<tr>
+<td><code>tags anyMatch {t1, t2}</code></td>
+<td>cell item carries at least one of the listed tags</td>
+</tr>
+</tbody>
+</table>
+<p>In RTL notation, a condition appears inside <code>[ ]</code> at the cell level and inside
+<code>{ }</code> (or <code>[ ]</code>) at higher levels, separated from the content specification by
+<code>?</code>.</p>
+<details class="note">
+<summary>API mapping — CellMatchCondition and CellPredicate</summary>
+<table>
+<thead>
+<tr>
+<th>Concept</th>
+<th>Python</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cell match condition <code>λ</code></td>
+<td><code>CellMatchCondition</code> wraps a <code>CellPredicate</code></td>
+</tr>
+<tr>
+<td><code>txtBlank = true</code></td>
+<td><code>CellPredicate.blank()</code></td>
+</tr>
+<tr>
+<td><code>txtBlank = false</code></td>
+<td><code>CellPredicate.not_blank()</code></td>
+</tr>
+<tr>
+<td><code>txt matches "pat"</code></td>
+<td><code>CellPredicate.regex_matched(pattern)</code></td>
+</tr>
+<tr>
+<td><code>txt not matches "pat"</code></td>
+<td><code>CellPredicate.not_regex_matched(pattern)</code></td>
+</tr>
+</tbody>
+</table>
+<p>Conditions are composed using <code>CellMatchCondition.and(…)</code> and
+<code>CellMatchCondition.or(…)</code>.</p>
+</details>
+<hr />
+<h2 id="content-specifications">Content specifications</h2>
+<p>A <strong>content specification</strong> describes the items to be derived from a matched cell
+and the interpretation actions to be instantiated upon those items.  Four kinds
+exist, from simplest to most expressive.</p>
+<h3 id="atomic-content-specification">Atomic content specification</h3>
+<p>An <strong>atomic content specification</strong> describes exactly <em>one</em> item derived from a cell:</p>
+<div class="highlight"><pre><span></span><code>S_atom = (idd, ξ, u⃗, ⟨S_act¹, …, S_actᵐ⟩)
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>idd</code></td>
+<td>Item derivation directive: <code>VAL</code>, <code>ATTR</code>, <code>AUX</code>, or <code>SKIP</code></td>
+</tr>
+<tr>
+<td><code>ξ</code></td>
+<td>Optional string extractor applied to the raw cell text before creating the item string</td>
+</tr>
+<tr>
+<td><code>u⃗</code></td>
+<td>Optional sequence of user-defined tags attached to the derived item</td>
+</tr>
+<tr>
+<td><code>S_act¹ … S_actᵐ</code></td>
+<td>Sequence of interpretation action specifications (may be empty)</td>
+</tr>
+</tbody>
+</table>
+<p>When <code>idd = SKIP</code>, no item is derived and no actions are instantiated; the cell is
+consumed but ignored.</p>
+<p>The derived item becomes the <em>anchor item</em> for all action specifications in the
+list.</p>
+<p><strong>String extractors</strong> (<code>ξ</code>) transform the raw cell text before item creation.
+Extractors are applied in order and may be chained:</p>
+<table>
+<thead>
+<tr>
+<th>Extractor</th>
+<th>RTL notation</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Whitespace normalisation</td>
+<td><code>=NORM</code></td>
+<td>Trim + collapse internal whitespace</td>
+</tr>
+<tr>
+<td>Upper case</td>
+<td><code>=UC</code></td>
+<td>Convert to upper case</td>
+</tr>
+<tr>
+<td>Lower case</td>
+<td><code>=LC</code></td>
+<td>Convert to lower case</td>
+</tr>
+<tr>
+<td>Trimmed</td>
+<td><code>=TRIM</code></td>
+<td>Strip leading/trailing whitespace only</td>
+</tr>
+<tr>
+<td>Substring</td>
+<td><code>=SUBSTR(n,m)</code></td>
+<td>Extract characters at positions <code>n</code> to <code>m</code></td>
+</tr>
+<tr>
+<td>Replaced</td>
+<td><code>=REPL("a","b")</code></td>
+<td>Replace all occurrences of <code>"a"</code> with <code>"b"</code></td>
+</tr>
+</tbody>
+</table>
+<p>Chained example: <code>=REPL("x","").NORM</code> — first removes <code>"x"</code>, then normalises whitespace.</p>
+<details class="note">
+<summary>API mapping — AtomicContentSpec and StringExtractor</summary>
+<table>
+<thead>
+<tr>
+<th>Concept</th>
+<th>Python</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>idd = VAL</code></td>
+<td><code>AtomicContentSpec.val(actionSpecs…)</code></td>
+</tr>
+<tr>
+<td><code>idd = ATTR</code></td>
+<td><code>AtomicContentSpec.attr(actionSpecs…)</code></td>
+</tr>
+<tr>
+<td><code>idd = AUX</code></td>
+<td><code>AtomicContentSpec.aux(actionSpecs…)</code></td>
+</tr>
+<tr>
+<td><code>idd = SKIP</code></td>
+<td><code>AtomicContentSpec.skip()</code> or <code>CellPattern.skip()</code></td>
+</tr>
+</tbody>
+</table>
+<p>StringExtractor constants and factories:</p>
+<table>
+<thead>
+<tr>
+<th>RTL notation</th>
+<th>Python</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>=NORM</code></td>
+<td><code>StringExtractor.whitespace_normalized()</code></td>
+</tr>
+<tr>
+<td><code>=UC</code></td>
+<td><code>StringExtractor.upper_case()</code></td>
+</tr>
+<tr>
+<td><code>=LC</code></td>
+<td><code>StringExtractor.lower_case()</code></td>
+</tr>
+<tr>
+<td><code>=TRIM</code></td>
+<td><code>StringExtractor.trimmed()</code></td>
+</tr>
+<tr>
+<td><code>=SUBSTR(n,m)</code></td>
+<td><code>StringExtractor.substring(n, m)</code></td>
+</tr>
+<tr>
+<td><code>=REPL("a","b")</code></td>
+<td><code>StringExtractor.replaced("a", "b")</code></td>
+</tr>
+<tr>
+<td>chained <code>=X.Y</code></td>
+<td><code>StringExtractor.chain(x, y)</code></td>
+</tr>
+</tbody>
+</table>
+<p>Pass the extractor to the spec factory:
+<code>AtomicContentSpec.val(StringExtractor.whitespace_normalized(), actionSpecs…)</code>.</p>
+</details>
+<h3 id="delimited-content-specification">Delimited content specification</h3>
+<p>A <strong>delimited content specification</strong> splits the cell text by a delimiter <code>δ</code> and
+applies the same atomic specification to each resulting substring:</p>
+<div class="highlight"><pre><span></span><code>S_delim = (δ, S_atom)
+</code></pre></div>
+<p>If the cell text decomposes as <code>s₁ · δ · s₂ · δ · … · δ · sₙ</code>, then <code>S_atom</code> is
+applied independently to each <code>sₖ</code>, deriving one item per substring.  This is
+used, for example, when a single cell contains a comma-separated list of values.</p>
+<details class="note">
+<summary>API mapping — DelimitedContentSpec</summary>
+<div class="highlight"><pre><span></span><code><span class="n">DelimitedContentSpec</span><span class="o">.</span><span class="n">of</span><span class="p">(</span><span class="n">atomSpec</span><span class="p">,</span> <span class="n">delimiter</span><span class="p">)</span>
+</code></pre></div>
+<p>Example — comma-separated list of VAL items, each tagged AVP to <code>"CODES"</code>:
+<div class="highlight"><pre><span></span><code><span class="n">DelimitedContentSpec</span><span class="o">.</span><span class="n">of</span><span class="p">(</span>
+    <span class="n">AtomicContentSpec</span><span class="o">.</span><span class="n">val</span><span class="p">(</span><span class="n">ActionSpec</span><span class="o">.</span><span class="n">avp</span><span class="p">(</span><span class="s2">&quot;CODES&quot;</span><span class="p">)),</span>
+    <span class="s2">&quot;,&quot;</span>
+<span class="p">)</span>
+</code></pre></div></p>
+</details>
+<h3 id="compound-content-specification">Compound content specification</h3>
+<p>A <strong>compound content specification</strong> describes a cell whose text contains multiple
+semantically distinct parts separated by known delimiters:</p>
+<div class="highlight"><pre><span></span><code>S_comp = (δ₀, S_x¹, δ₁, S_x², δ₂, …, S_xⁿ, δₙ)
+</code></pre></div>
+<p>where each <code>S_xⁱ</code> is either an atomic or a delimited content specification, and
+each <code>δᵢ ∈ Σ*</code> is a (possibly empty) delimiter string.  The raw cell text must
+match the pattern <code>δ₀ · s₁ · δ₁ · s₂ · δ₂ · … · sₙ · δₙ</code>; each substring <code>sᵢ</code> is
+passed to the corresponding <code>S_xⁱ</code> as its input text.</p>
+<p>This is used, for example, when a cell contains a value and a unit separated by a
+space: <code>"42 km"</code> → <code>S_atom³</code> receives <code>"42"</code>, <code>S_atom⁴</code> receives <code>"km"</code>.</p>
+<details class="note">
+<summary>API mapping — CompoundContentSpec</summary>
+<div class="highlight"><pre><span></span><code><span class="n">CompoundContentSpec</span><span class="o">.</span><span class="n">of</span><span class="p">(</span>
+    <span class="n">headerAtomSpec</span><span class="p">,</span>
+    <span class="n">Segment</span><span class="o">.</span><span class="n">of</span><span class="p">(</span><span class="n">delimiter1</span><span class="p">,</span> <span class="n">atomSpec2</span><span class="p">),</span>
+    <span class="n">Segment</span><span class="o">.</span><span class="n">of</span><span class="p">(</span><span class="n">delimiter2</span><span class="p">,</span> <span class="n">atomSpec3</span><span class="p">),</span>
+    <span class="err">…</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>The <code>headerAtomSpec</code> corresponds to <code>S_x¹</code>; each <code>Segment(δ, S_x)</code> corresponds to
+one <code>(δᵢ, S_xⁱ⁺¹)</code> pair.  Empty leading delimiter <code>δ₀</code> is implied.</p>
+</details>
+<h3 id="conditional-content-specification">Conditional content specification</h3>
+<p>A <strong>conditional content specification</strong> selects between two alternative
+specifications based on whether the matched cell satisfies a condition <code>λ</code>:</p>
+<div class="highlight"><pre><span></span><code>S_cond = (λ, S_x⁺, S_x⁻)
+</code></pre></div>
+<p>If <code>c ⊨ λ</code> then <code>S_x⁺</code> governs the cell; otherwise <code>S_x⁻</code> governs it.  Each
+branch may be atomic, delimited, or compound.</p>
+<details class="note">
+<summary>API mapping — ConditionalContentSpec</summary>
+<div class="highlight"><pre><span></span><code><span class="n">ConditionalContentSpec</span><span class="o">.</span><span class="n">of</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="n">thenSpec</span><span class="p">,</span> <span class="n">elseSpec</span><span class="p">)</span>
+</code></pre></div>
+<p>where <code>condition</code> is a <code>CellMatchCondition</code> and <code>thenSpec</code> / <code>elseSpec</code> are any
+content specification instances.</p>
+</details>
+<hr />
+<h2 id="item-provider-specifications">Item provider specifications</h2>
+<p>An <strong>item provider specification</strong> <code>S_prov</code> is a template for constructing an item
+provider at match time.  Two forms exist.</p>
+<p><strong>Cell-derived provider specification:</strong></p>
+<div class="highlight"><pre><span></span><code>S_prov = (ipt, k, τ, κ)
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ipt</code></td>
+<td>Provider type: <code>VAL</code>, <code>ATTR</code>, or <code>AUX</code></td>
+</tr>
+<tr>
+<td><code>k</code></td>
+<td>Cardinality (max items to retrieve); use <code>UNBOUNDED</code> for <code>∞</code></td>
+</tr>
+<tr>
+<td><code>τ</code></td>
+<td>Traversal order: <code>→</code> (row-major), <code>←</code> (reverse), <code>↓</code> (col-major), <code>↑</code> (reverse col-major)</td>
+</tr>
+<tr>
+<td><code>κ</code></td>
+<td>Filter condition — a Boolean combination of spatial and content constraints</td>
+</tr>
+</tbody>
+</table>
+<p>The constructed provider retrieves items of the indicated type that satisfy <code>κ</code>
+relative to the anchor, ordered by <code>τ</code>, up to <code>k</code> items.</p>
+<p><strong>Context-derived provider specification:</strong></p>
+<div class="highlight"><pre><span></span><code>S_prov = (ipt, s⃗)
+</code></pre></div>
+<p>where <code>ipt</code> is the provider type and <code>s⃗ = ⟨s₁, …, sₙ⟩</code> is a non-empty sequence
+of string constants.  The constructed provider always returns a fixed sequence of
+context-derived items regardless of the anchor — effectively injecting constants
+into the interpretation.</p>
+<p>See <a href="../itm/#item-providers">ITM — Item providers</a> for the complete <code>ProviderSpec</code>
+API and the table of 27 atomic filter terms (<code>FilterTerm</code>).</p>
+<hr />
+<h2 id="interpretation-action-specifications">Interpretation action specifications</h2>
+<p>An <strong>interpretation action specification</strong> <code>S_act</code> is a template from which a
+concrete interpretation action is instantiated at match time, with the derived item
+bound as the anchor.  Two forms exist.</p>
+<p><strong>Cell-derived anchor form</strong> (the common case):</p>
+<div class="highlight"><pre><span></span><code>S_act = (op, ⟨S_prov¹, …, S_provⁿ⟩)
+</code></pre></div>
+<p><strong>Context-derived anchor form</strong> (the anchor is a string constant):</p>
+<div class="highlight"><pre><span></span><code>S_act = (op, s, ⟨S_prov¹, …, S_provⁿ⟩)
+</code></pre></div>
+<p>In both forms, <code>op</code> is one of the six working-state update operations (<code>FILL</code>,
+<code>PREFIX</code>, <code>SUFFIX</code>, <code>AVP</code>, <code>REC</code>, <code>JOIN</code>) and <code>S_prov¹ … S_provⁿ</code> are item
+provider specifications whose types must satisfy the consistency constraints for the
+chosen operation (see <a href="../itm/#interpretation-actions">ITM — Interpretation actions</a>).</p>
+<details class="note">
+<summary>API mapping — ActionSpec</summary>
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th>Python factory</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>REC</code></td>
+<td><code>ActionSpec.rec(providers…)</code></td>
+<td>anchor → first field; providers supply remaining fields</td>
+</tr>
+<tr>
+<td><code>REC(n)</code></td>
+<td><code>ActionSpec.rec(int n, providers…)</code></td>
+<td>adds <code>AnchorAttributeAtPosition</code> post-step</td>
+</tr>
+<tr>
+<td><code>REC('s')</code></td>
+<td><code>ActionSpec.rec(String delim, providers…)</code></td>
+<td>adds <code>DelimitedFieldSplit</code> post-step</td>
+</tr>
+<tr>
+<td><code>AVP</code></td>
+<td><code>ActionSpec.avp(provider)</code></td>
+<td>associates VAL anchor with ATTR item</td>
+</tr>
+<tr>
+<td><code>AVP "name"</code></td>
+<td><code>ActionSpec.avp("ATTR_NAME")</code></td>
+<td>context-derived ATTR constant</td>
+</tr>
+<tr>
+<td><code>JOIN</code></td>
+<td><code>ActionSpec.join(providers…)</code></td>
+<td>joins records, dedup by named attribute</td>
+</tr>
+<tr>
+<td><code>JOIN(K)</code></td>
+<td><code>ActionSpec.join(Set.of(k…), providers…)</code></td>
+<td>joins with key positions K dropped</td>
+</tr>
+<tr>
+<td><code>FILL</code></td>
+<td><code>ActionSpec.fill(delimiter, providers…)</code></td>
+<td>fills anchor value from providers</td>
+</tr>
+<tr>
+<td><code>PREFIX</code></td>
+<td><code>ActionSpec.prefix(delimiter, providers…)</code></td>
+<td>prepends provider values</td>
+</tr>
+<tr>
+<td><code>SUFFIX</code></td>
+<td><code>ActionSpec.suffix(delimiter, providers…)</code></td>
+<td>appends provider values</td>
+</tr>
+</tbody>
+</table>
+<p>Lambda form: providers may be written as <code>(anchor, candidate) -&gt; candidate.same_col(anchor)</code>
+when passed directly to <code>ActionSpec.rec(…)</code> (shorthand matching <code>ProviderSpec.val(…)</code>).</p>
+</details>
+<hr />
+<h2 id="matching-atp-against-itm">Matching ATP against ITM</h2>
+<p>Matching is the process that bridges the ATP and ITM models.  It proceeds in two
+stages.</p>
+<h3 id="stage-1-syntactic-layer-matching">Stage 1 — Syntactic layer matching</h3>
+<p>The pattern hierarchy of the ATP instance is structurally matched against the rows
+and cells of the ITM instance.  This:</p>
+<ul>
+<li>partitions the rows of the table into subtables, guided by subtable patterns;</li>
+<li>partitions the cells of each row into subrows, guided by subrow patterns;</li>
+<li>produces a correspondence <code>M</code> between cell patterns and individual cells.</li>
+</ul>
+<p>Matching proceeds <em>top-down</em> through the hierarchy using a <strong>greedy strategy with
+backtracking</strong>:</p>
+<ol>
+<li>A pattern with a non-exact quantifier (<code>+</code>, <code>*</code>, or <code>?</code>) attempts to consume as
+   many consecutive rows (or cells) as possible.</li>
+<li>If a subsequent sibling pattern then fails to match, the algorithm backtracks by
+   releasing one row (or cell) at a time until a valid assignment is found or all
+   possibilities are exhausted.</li>
+<li>Matching fails if any required pattern cannot be satisfied (minimum count not
+   reached, or condition violated).</li>
+</ol>
+<p>The table-level condition (if present) is checked first: if any cell in the table
+violates it, matching fails immediately.</p>
+<p>A match is <em>complete</em> at the top level only when <em>all</em> rows of the ITM instance
+have been consumed by the subtable patterns.</p>
+<p>All accumulated pattern–substructure pairs are applied to the ITM instance only
+after the entire syntactic matching succeeds; if matching fails, the ITM instance
+is left unmodified.</p>
+<h3 id="stage-2-semantic-layer-construction">Stage 2 — Semantic layer construction</h3>
+<p>After a successful syntactic match, each cell pattern–cell pair <code>(P_cell, c) ∈ M</code>
+is processed in the order induced by the pattern hierarchy:</p>
+<p><strong>Phase 1 — Content resolution:</strong> the content specification of <code>P_cell</code> is applied
+to cell <code>c</code>:</p>
+<ul>
+<li>An <em>atomic</em> spec is used directly, deriving one item from the raw cell text.</li>
+<li>A <em>delimited</em> spec splits the cell text by its delimiter and derives one item per
+  substring.</li>
+<li>A <em>compound</em> spec parses the cell text according to its delimiter structure and
+  derives items from each component substring.</li>
+<li>A <em>conditional</em> spec evaluates its condition against <code>c</code> and applies the
+  appropriate branch.</li>
+</ul>
+<p>For each resulting atomic spec with <code>idd ≠ SKIP</code>, a cell-derived item is created
+(with the optional string extractor applied) and added to the ITM instance's item
+set of the corresponding type (VAL, ATTR, or AUX).</p>
+<p>If the cell text does not conform to the expected structure (e.g. a required
+delimiter is missing), phase 1 fails and matching is aborted.</p>
+<p><strong>Phase 2 — Action instantiation:</strong> for each item derived in phase 1, every action
+specification in its atomic spec is instantiated into a concrete interpretation
+action with the derived item as the anchor.  Context-derived items referenced by
+provider specifications are also created at this point and added to the ITM
+instance.  The resulting actions are added to the ITM instance's action set <code>A</code>.</p>
+<p>Once all pairs in <code>M</code> are processed successfully, <a href="../itm/#table-interpretation">table
+interpretation</a> is executed.  Matching is
+considered successful only if table interpretation produces a valid recordset; if it
+fails, the ITM instance is not modified.</p>
+<hr />
+<h2 id="end-to-end-example">End-to-end example</h2>
+<p>This section shows how to build an ATP instance for a concrete table class and how
+it is matched against a table.  The <a href="../itm/#end-to-end-example">Table interpretation</a>
+page continues the trace through working state completion and recordset extraction.</p>
+<h3 id="table-class-and-goal">Table class and goal</h3>
+<p>Assume a class <code>C</code> of tables listing the numbers of departures operated by airlines
+from airports in certain months.  All tables share the same structure: the first row
+contains an empty first cell followed by one or more airline codes; each remaining
+row contains an airport code in the leftmost cell followed by one or more cells each
+containing a departure count and a month name separated by a space:</p>
+<table>
+<thead>
+<tr>
+<th>(empty)</th>
+<th>SU</th>
+<th>…</th>
+<th>YC</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ARH</td>
+<td>11 Jan</td>
+<td>…</td>
+<td>0 Dec</td>
+</tr>
+<tr>
+<td>⋮</td>
+<td>⋮</td>
+<td>⋱</td>
+<td>⋮</td>
+</tr>
+<tr>
+<td>YKS</td>
+<td>27 Jan</td>
+<td>…</td>
+<td>0 Dec</td>
+</tr>
+</tbody>
+</table>
+<p>Goal: extract a recordset with schema <code>S = ⟨ND, AIRLINE, AIRPORT, MON⟩</code>.</p>
+<h3 id="atp-pattern">ATP pattern</h3>
+<p>The table pattern <code>P_tbl</code> consists of a single subtable pattern <code>P_st¹</code> with two
+row patterns.</p>
+<p><strong>Header row</strong> (<code>P_row¹</code>, matched exactly once):</p>
+<ul>
+<li><code>P_cell¹</code> — one skipped cell (the empty top-left corner).</li>
+<li><code>P_cell²</code> — one or more cells (<code>+</code>), each matched by atomic spec <code>S_atom¹</code>:
+  derive a VAL item from the cell text, attach AVP action with context-derived ATTR
+  constant <code>"AIRLINE"</code>.</li>
+</ul>
+<p><strong>Data rows</strong> (<code>P_row²</code>, matched one or more times):</p>
+<ul>
+<li><code>P_cell³</code> — one cell matched by <code>S_atom²</code>: derive a VAL item, attach AVP action
+  with <code>"AIRPORT"</code>.</li>
+<li><code>P_cell⁴</code> — one or more cells (<code>+</code>), each matched by compound spec
+  <code>S_comp = (S_atom³, " ", S_atom⁴)</code>:<ul>
+<li><code>S_atom³</code> (before the space) — derive VAL item for the departure count;
+  attach two actions:<ol>
+<li>REC action with three providers: same-column VAL (airline header),
+   same-row VAL (airport), same-cell VAL (month);</li>
+<li>AVP action with <code>"ND"</code>.</li>
+</ol>
+</li>
+<li><code>S_atom⁴</code> (after the space) — derive VAL item for the month; attach AVP
+  action with <code>"MON"</code>.</li>
+</ul>
+</li>
+</ul>
+<h3 id="syntactic-match-on-a-concrete-table">Syntactic match on a concrete table</h3>
+<p>For the 3 × 3 instance <code>t₀</code>:</p>
+<table>
+<thead>
+<tr>
+<th>(empty)</th>
+<th>CA</th>
+<th>HU</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>IKT</td>
+<td>0 Jan</td>
+<td>8 Feb</td>
+</tr>
+<tr>
+<td>SVO</td>
+<td>31 Jan</td>
+<td>40 Feb</td>
+</tr>
+</tbody>
+</table>
+<p>The subtable pattern <code>P_st¹</code> consumes all three rows.  The cell-pattern assignment
+is:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>col 0</th>
+<th>col 1</th>
+<th>col 2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>row 0</strong></td>
+<td><code>P_cell¹</code> (skip)</td>
+<td><code>P_cell²</code></td>
+<td><code>P_cell²</code></td>
+</tr>
+<tr>
+<td><strong>row 1</strong></td>
+<td><code>P_cell³</code></td>
+<td><code>P_cell⁴</code></td>
+<td><code>P_cell⁴</code></td>
+</tr>
+<tr>
+<td><strong>row 2</strong></td>
+<td><code>P_cell³</code></td>
+<td><code>P_cell⁴</code></td>
+<td><code>P_cell⁴</code></td>
+</tr>
+</tbody>
+</table>
+<p>Content spec resolution:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>col 0</th>
+<th>col 1</th>
+<th>col 2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>row 0</strong></td>
+<td>—</td>
+<td><code>S_atom¹</code></td>
+<td><code>S_atom¹</code></td>
+</tr>
+<tr>
+<td><strong>row 1</strong></td>
+<td><code>S_atom²</code></td>
+<td><code>S_atom³</code> + <code>" "</code> + <code>S_atom⁴</code></td>
+<td><code>S_atom³</code> + <code>" "</code> + <code>S_atom⁴</code></td>
+</tr>
+<tr>
+<td><strong>row 2</strong></td>
+<td><code>S_atom²</code></td>
+<td><code>S_atom³</code> + <code>" "</code> + <code>S_atom⁴</code></td>
+<td><code>S_atom³</code> + <code>" "</code> + <code>S_atom⁴</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="python-implementation">Python implementation</h3>
+<div class="highlight"><pre><span></span><code><span class="n">TablePattern</span><span class="o">.</span><span class="n">of</span><span class="p">(</span>
+  <span class="n">SubtablePattern</span><span class="o">.</span><span class="n">of</span><span class="p">(</span>
+    <span class="n">RowPattern</span><span class="o">.</span><span class="n">of</span><span class="p">(</span>
+      <span class="n">CellPattern</span><span class="o">.</span><span class="n">skip</span><span class="p">(),</span>
+      <span class="n">CellPattern</span><span class="o">.</span><span class="n">of</span><span class="p">(</span><span class="n">Quantifier</span><span class="o">.</span><span class="n">one_or_more</span><span class="p">(),</span>
+        <span class="n">AtomicContentSpec</span><span class="o">.</span><span class="n">val</span><span class="p">(</span>
+          <span class="n">ActionSpec</span><span class="o">.</span><span class="n">avp</span><span class="p">(</span><span class="s2">&quot;AIRLINE&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+      <span class="p">)</span>
+    <span class="p">),</span>
+    <span class="n">RowPattern</span><span class="o">.</span><span class="n">of</span><span class="p">(</span><span class="n">Quantifier</span><span class="o">.</span><span class="n">one_or_more</span><span class="p">(),</span>
+      <span class="n">CellPattern</span><span class="o">.</span><span class="n">of</span><span class="p">(</span>
+        <span class="n">AtomicContentSpec</span><span class="o">.</span><span class="n">val</span><span class="p">(</span>
+          <span class="n">ActionSpec</span><span class="o">.</span><span class="n">avp</span><span class="p">(</span><span class="s2">&quot;AIRPORT&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+      <span class="p">),</span>
+      <span class="n">CellPattern</span><span class="o">.</span><span class="n">of</span><span class="p">(</span><span class="n">Quantifier</span><span class="o">.</span><span class="n">one_or_more</span><span class="p">(),</span>
+        <span class="n">CompoundContentSpec</span><span class="o">.</span><span class="n">of</span><span class="p">(</span>
+          <span class="n">AtomicContentSpec</span><span class="o">.</span><span class="n">val</span><span class="p">(</span>
+            <span class="n">ActionSpec</span><span class="o">.</span><span class="n">rec</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span>
+              <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">c</span><span class="o">.</span><span class="n">same_col</span><span class="p">(</span><span class="n">a</span><span class="p">),</span>
+              <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">c</span><span class="o">.</span><span class="n">same_row</span><span class="p">(</span><span class="n">a</span><span class="p">),</span>
+              <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">c</span><span class="o">.</span><span class="n">same_cell</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+            <span class="p">),</span>
+            <span class="n">ActionSpec</span><span class="o">.</span><span class="n">avp</span><span class="p">(</span><span class="s2">&quot;ND&quot;</span><span class="p">)</span>
+          <span class="p">),</span>
+          <span class="n">Segment</span><span class="o">.</span><span class="n">of</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span>
+            <span class="n">AtomicContentSpec</span><span class="o">.</span><span class="n">val</span><span class="p">(</span>
+              <span class="n">ActionSpec</span><span class="o">.</span><span class="n">avp</span><span class="p">(</span><span class="s2">&quot;MON&quot;</span><span class="p">)</span>
+            <span class="p">)</span>
+          <span class="p">)</span>
+        <span class="p">)</span>
+      <span class="p">)</span>
+    <span class="p">)</span>
+  <span class="p">)</span>
+<span class="p">);</span>
+</code></pre></div>
+<p>This pattern is implemented as <code>AtpIllustrativeExampleTest</code> in the pyRegTab test
+suite.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.sections", "navigation.top", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

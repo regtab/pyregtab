@@ -1,0 +1,2429 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Pattern-driven data extraction from tables — Python port of jRegTab with a native Rust core">
+      
+      
+      
+        <link rel="canonical" href="https://regtab.icc.ru/pyregtab/model/itm/">
+      
+      
+        <link rel="prev" href="../../ide-support/">
+      
+      
+        <link rel="next" href="../atp/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/favicon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>ITM - pyRegTab</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#interpretable-table-model-itm" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="pyRegTab" class="md-header__button md-logo" aria-label="pyRegTab" data-md-component="logo">
+      
+  <img src="../../assets/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            pyRegTab
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              ITM
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/regtab/pyregtab" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="pyRegTab" class="md-nav__button md-logo" aria-label="pyRegTab" data-md-component="logo">
+      
+  <img src="../../assets/logo.svg" alt="logo">
+
+    </a>
+    pyRegTab
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/regtab/pyregtab" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../rtl-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RTL reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../embedded-rtl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Embedded RTL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ide-support/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IDE support
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Formal model
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Formal model
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ITM
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ITM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#syntactic-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Syntactic layer
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Syntactic layer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#layout-hierarchy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layout hierarchy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#formatting-properties" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Formatting properties
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#content-properties" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Content properties
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#semantic-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Semantic layer
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Semantic layer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#items" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Items
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#item-providers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Item providers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#working-state-and-update-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Working state and update operations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#interpretation-actions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Interpretation actions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recordset-and-schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recordset and schema
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#table-interpretation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table interpretation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Table interpretation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-working-state-initialisation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1 — Working state initialisation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-working-state-completion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2 — Working state completion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-recordset-extraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3 — Recordset extraction
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-4-recordset-transformation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 4 — Recordset transformation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#end-to-end-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        End-to-end example
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="End-to-end example">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#source-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source table
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#items-derived-from-the-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Items derived from the table
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#working-state-completion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Working state completion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#extracted-recordset" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Extracted recordset
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../atp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ATP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#syntactic-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Syntactic layer
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Syntactic layer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#layout-hierarchy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layout hierarchy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#formatting-properties" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Formatting properties
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#content-properties" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Content properties
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#semantic-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Semantic layer
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Semantic layer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#items" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Items
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#item-providers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Item providers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#working-state-and-update-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Working state and update operations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#interpretation-actions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Interpretation actions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recordset-and-schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recordset and schema
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#table-interpretation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table interpretation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Table interpretation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-working-state-initialisation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1 — Working state initialisation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-working-state-completion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2 — Working state completion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-recordset-extraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3 — Recordset extraction
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-4-recordset-transformation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 4 — Recordset transformation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#end-to-end-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        End-to-end example
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="End-to-end example">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#source-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source table
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#items-derived-from-the-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Items derived from the table
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#working-state-completion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Working state completion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#extracted-recordset" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Extracted recordset
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="interpretable-table-model-itm">Interpretable Table Model (ITM)</h1>
+<p>The <strong>Interpretable Table Model (ITM)</strong> is the formal model that pyRegTab uses to represent a
+document table at two complementary levels: a <em>syntactic layer</em> that captures the raw
+structure, formatting, and content of cells, and a <em>semantic layer</em> that records the items
+derived from those cells together with the interpretation actions that relate items to
+one another and ultimately to a structured recordset.</p>
+<p>A table represented as a complete ITM instance (both layers populated) can be
+automatically interpreted to extract a recordset conforming to a target schema.</p>
+<hr />
+<h2 id="syntactic-layer">Syntactic layer</h2>
+<p>The syntactic layer <code>L_syn = (C, P)</code> consists of a finite set of cells <code>C</code> and a set of
+cell properties <code>P = P_layout ∪ P_format ∪ P_content</code>.</p>
+<h3 id="layout-hierarchy">Layout hierarchy</h3>
+<p>ITM organises a table as a row-oriented hierarchy of nested substructures:</p>
+<div class="highlight"><pre><span></span><code>Table
+└── Subtable+       (one or more consecutive groups of rows)
+    └── Row+        (one or more consecutive rows)
+        └── Subrow+ (one or more consecutive column slices per row)
+            └── Cell+
+</code></pre></div>
+<p>Each cell <code>c ∈ C</code> occupies a unique position <code>pos(c) = (row(c), col(c))</code> in the
+row-column grid.  Merged cells from the source document are <em>normalised</em>: a
+distinct cell object is created for each covered grid position, with the
+formatting and content of the original merged cell replicated in every copy.  The
+original bounding box is preserved in the <code>bbox(c)</code> property so that the merge
+geometry is not lost.</p>
+<details class="note">
+<summary>API mapping — syntactic layer</summary>
+<p><strong>Definition (Syntactic layer):</strong> <code>L_syn = (C, P)</code> where <code>C</code> is the finite set of
+cells and <code>P = P_layout ∪ P_format ∪ P_content</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Formal concept</th>
+<th>Python class / field</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cell set <code>C</code></td>
+<td><code>TableSyntax</code> — cells accessed via <code>cell(row, col)</code></td>
+</tr>
+<tr>
+<td>Primary position <code>pos(c) = (row, col)</code></td>
+<td><code>Cell.row()</code>, <code>Cell.col()</code></td>
+</tr>
+<tr>
+<td>Merged-cell bounding box <code>bbox(c)</code></td>
+<td><code>Cell.bbox()</code> → <code>BoundingBox</code></td>
+</tr>
+<tr>
+<td>Merge flag <code>merg(c)</code></td>
+<td><code>Cell.isMerged()</code></td>
+</tr>
+<tr>
+<td>Subtable membership <code>subtable(c)</code></td>
+<td><code>Cell.subtable()</code> → <code>Subtable</code></td>
+</tr>
+<tr>
+<td>Subrow membership <code>subrow(c)</code></td>
+<td><code>Cell.subrow()</code> → <code>Subrow</code></td>
+</tr>
+</tbody>
+</table>
+<p>Substructure hierarchy traversal:</p>
+<table>
+<thead>
+<tr>
+<th>Formal concept</th>
+<th>Python</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Subtable set <code>ST</code></td>
+<td><code>TableSyntax.subtables()</code> → <code>List&lt;Subtable&gt;</code></td>
+</tr>
+<tr>
+<td>Row set (within subtable)</td>
+<td><code>Subtable.rows()</code> → <code>List&lt;Row&gt;</code></td>
+</tr>
+<tr>
+<td>Subrow set <code>SR</code></td>
+<td><code>Row.subrows()</code> → <code>List&lt;Subrow&gt;</code></td>
+</tr>
+<tr>
+<td>Cell set (within subrow)</td>
+<td><code>Subrow.cells()</code> → <code>List&lt;Cell&gt;</code></td>
+</tr>
+</tbody>
+</table>
+</details>
+<h3 id="formatting-properties">Formatting properties</h3>
+<p>Each cell carries a set of formatting properties:</p>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Values</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fntFamily</code></td>
+<td><code>SERIF</code>, <code>SANS_SERIF</code>, <code>MONOSPACED</code></td>
+</tr>
+<tr>
+<td><code>fntBold</code>, <code>fntItalic</code>, <code>fntStrikeout</code>, <code>fntUnderline</code></td>
+<td>Boolean</td>
+</tr>
+<tr>
+<td><code>horzAlign</code></td>
+<td><code>LEFT</code>, <code>CENTER</code>, <code>RIGHT</code>, <code>JUSTIFY</code></td>
+</tr>
+<tr>
+<td><code>vertAlign</code></td>
+<td><code>TOP</code>, <code>CENTER</code>, <code>BOTTOM</code>, <code>JUSTIFY</code></td>
+</tr>
+<tr>
+<td><code>ltBorder</code>, <code>tpBorder</code>, <code>rtBorder</code>, <code>bmBorder</code></td>
+<td>Boolean (presence of each border edge)</td>
+</tr>
+<tr>
+<td><code>bgColor</code>, <code>fgColor</code></td>
+<td>RGB triple in [0, 255]³</td>
+</tr>
+<tr>
+<td><code>rotat</code></td>
+<td>Angle in [0°, 360°)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="content-properties">Content properties</h3>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>txt</code></td>
+<td>Raw text of the cell (possibly empty)</td>
+</tr>
+<tr>
+<td><code>txtBlank</code></td>
+<td><code>true</code> when the text is empty or whitespace-only</td>
+</tr>
+<tr>
+<td><code>txtMultiline</code></td>
+<td><code>true</code> when the text spans multiple lines</td>
+</tr>
+<tr>
+<td><code>txtIndent</code></td>
+<td>Number of leading spaces</td>
+</tr>
+</tbody>
+</table>
+<details class="note">
+<summary>API mapping — formatting and content</summary>
+<table>
+<thead>
+<tr>
+<th>Formal property</th>
+<th>Python accessor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fntFamily</code></td>
+<td><code>Cell.fontFamily()</code> → <code>FontFamily</code> (SERIF / SANS_SERIF / MONOSPACED)</td>
+</tr>
+<tr>
+<td><code>fntBold</code>, <code>fntItalic</code>, <code>fntStrikeout</code>, <code>fntUnderline</code></td>
+<td><code>Cell.isBold()</code>, <code>Cell.isItalic()</code>, …</td>
+</tr>
+<tr>
+<td><code>horzAlign</code></td>
+<td><code>Cell.horzAlign()</code> → <code>HorizontalAlignment</code></td>
+</tr>
+<tr>
+<td><code>vertAlign</code></td>
+<td><code>Cell.vertAlign()</code> → <code>VerticalAlignment</code></td>
+</tr>
+<tr>
+<td><code>ltBorder</code>, <code>tpBorder</code>, <code>rtBorder</code>, <code>bmBorder</code></td>
+<td><code>Cell.hasLeftBorder()</code>, <code>Cell.hasTopBorder()</code>, …</td>
+</tr>
+<tr>
+<td><code>bgColor</code>, <code>fgColor</code></td>
+<td><code>Cell.bgColor()</code>, <code>Cell.fgColor()</code> → <code>CellColor</code></td>
+</tr>
+<tr>
+<td><code>txt</code></td>
+<td><code>Cell.text()</code></td>
+</tr>
+<tr>
+<td><code>txtBlank</code></td>
+<td><code>Cell.isBlank()</code></td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<h2 id="semantic-layer">Semantic layer</h2>
+<p>The semantic layer <code>L_sem = (I_tbl, I_ctx, A)</code> adds interpretive meaning to the
+syntactic structure.  It is absent in a freshly loaded table and is populated by
+the matching process (see <a href="../atp/">Table patterns (ATP)</a>).</p>
+<h3 id="items">Items</h3>
+<p>An <strong>item</strong> is the atomic unit of information in the semantic layer.  There are two
+kinds:</p>
+<p><strong>Cell-derived item</strong> — a triple <code>(s, u⃗, i)</code> where <code>s</code> is a string extracted or
+transformed from the source cell text, <code>u⃗</code> is a (possibly empty) sequence of
+user-defined tags, and <code>i</code> is the zero-based index of the item within the cell.
+Every cell-derived item is permanently associated with exactly one cell; a single
+cell may yield one or more items (e.g. when its text is split by a delimiter).</p>
+<p><strong>Context-derived item</strong> — a string constant <code>s</code> supplied from the external
+context (constants, dictionary entries, etc.) rather than from any cell.</p>
+<p>Each item belongs to exactly one of three <strong>item types</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Symbol</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Value-associated</td>
+<td><code>VAL</code></td>
+<td>Atomic data value (number, date, string, …)</td>
+</tr>
+<tr>
+<td>Attribute-associated</td>
+<td><code>ATTR</code></td>
+<td>Symbolic name for a semantic role</td>
+</tr>
+<tr>
+<td>Auxiliary</td>
+<td><code>AUX</code></td>
+<td>Supporting information used during interpretation</td>
+</tr>
+</tbody>
+</table>
+<details class="note">
+<summary>API mapping — items</summary>
+<p><strong>Definition (Semantic layer):</strong> <code>L_sem = (I_tbl, I_ctx, A)</code> where <code>I_tbl</code> is the set
+of cell-derived items, <code>I_ctx</code> is the set of context-derived items, and <code>A</code> is the
+set of interpretation actions.</p>
+<table>
+<thead>
+<tr>
+<th>Formal concept</th>
+<th>Python class / method</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cell-derived item <code>(s, u⃗, i)</code></td>
+<td><code>CellDerivedItem</code></td>
+</tr>
+<tr>
+<td>String <code>str(ι)</code></td>
+<td><code>CellDerivedItem.str()</code></td>
+</tr>
+<tr>
+<td>Tags <code>tags(ι)</code></td>
+<td><code>CellDerivedItem.tags()</code></td>
+</tr>
+<tr>
+<td>Index <code>pos(ι)</code></td>
+<td><code>CellDerivedItem.index()</code></td>
+</tr>
+<tr>
+<td>Source cell <code>cell(ι)</code></td>
+<td><code>CellDerivedItem.cell()</code></td>
+</tr>
+<tr>
+<td>Item type (VAL / ATTR / AUX)</td>
+<td><code>CellDerivedItem.type()</code> → <code>ItemType</code></td>
+</tr>
+<tr>
+<td>Context-derived item <code>s</code></td>
+<td><code>ContextDerivedItem</code></td>
+</tr>
+<tr>
+<td>Semantic layer container <code>L_sem</code></td>
+<td><code>TableSemantics</code></td>
+</tr>
+</tbody>
+</table>
+</details>
+<h3 id="item-providers">Item providers</h3>
+<p>An <strong>item provider</strong> retrieves a sequence of items that are <em>relevant</em> to a given
+<em>anchor item</em> at interpretation time.  Two families exist:</p>
+<p><strong>Cell-derived item provider</strong> <code>Υ(τ, κ, J, k)</code> — parameterised by:</p>
+<ul>
+<li>a traversal order <code>τ ∈ {→, ←, ↓, ↑}</code> (row-major, reverse row-major,
+  column-major, reverse column-major);</li>
+<li>a filter condition <code>κ(ι_anch, ι_cand)</code> — a Boolean combination of spatial and
+  content constraints on the candidate item relative to the anchor;</li>
+<li>a target item set <code>J ⊆ I_tbl</code> (VAL, ATTR, or AUX items);</li>
+<li>a cardinality <code>k ∈ ℕ ∪ {∞}</code> — the maximum number of items to return.</li>
+</ul>
+<p>The provider returns the first <code>k</code> items of <code>J ∖ {ι_anch}</code> that satisfy <code>κ</code>,
+sorted by <code>τ</code>.</p>
+<p>Three standard instances are recognised:</p>
+<table>
+<thead>
+<tr>
+<th>Instance</th>
+<th>Anchor type</th>
+<th>Target set <code>J</code></th>
+<th><code>k</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Υ_val</code> — value-associated provider</td>
+<td>VAL</td>
+<td>VAL items</td>
+<td><code>k</code> (any)</td>
+</tr>
+<tr>
+<td><code>Υ_attr</code> — attribute-associated provider</td>
+<td>VAL</td>
+<td>ATTR items</td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>Υ_aux</code> — auxiliary provider</td>
+<td>VAL or ATTR</td>
+<td>all items</td>
+<td><code>k</code> (any)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Context-derived item provider</strong> — always returns the same fixed sequence of
+context-derived items regardless of the anchor, effectively injecting a constant
+into the computation.</p>
+<details class="note">
+<summary>API — ProviderSpec</summary>
+<p><strong>Item filter condition:</strong> a predicate <code>κ : I_tbl × I_tbl → {false, true}</code> taking
+an anchor item and a candidate item.</p>
+<table>
+<thead>
+<tr>
+<th>Concept</th>
+<th>Python</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Filter condition <code>κ</code></td>
+<td><code>ItemFilterCondition</code> (functional interface), <code>ItemFilterConditionSpec</code> (structured)</td>
+</tr>
+<tr>
+<td>Filter <code>Φ_κ(ι_anch, J)</code></td>
+<td><code>ItemFilter.filter(anchor, items)</code></td>
+</tr>
+<tr>
+<td>Cell-derived provider spec <code>S_prov = (ipt, k, τ, κ)</code></td>
+<td><code>ProviderSpec</code> (record: <code>cardinality</code>, <code>traversalOrder</code>, <code>filterCondition</code>, <code>targetItemKind</code>)</td>
+</tr>
+<tr>
+<td>Cardinality <code>k</code></td>
+<td><code>ProviderSpec.cardinality()</code> — use <code>ProviderSpec.UNBOUNDED</code> for ∞</td>
+</tr>
+<tr>
+<td>Traversal order <code>τ</code></td>
+<td><code>ProviderSpec.traversalOrder()</code> → <code>TraversalOrder</code> (ROW_MAJOR / REVERSE_ROW_MAJOR / COLUMN_MAJOR / REVERSE_COLUMN_MAJOR)</td>
+</tr>
+<tr>
+<td>Typed VAL provider <code>Υ_tbl^val</code></td>
+<td><code>ProviderSpec.val(…)</code></td>
+</tr>
+<tr>
+<td>Typed ATTR provider <code>Υ_tbl^attr</code></td>
+<td><code>ProviderSpec.attr(…)</code> — always cardinality 1</td>
+</tr>
+<tr>
+<td>Typed AUX provider <code>Υ_tbl^aux</code></td>
+<td><code>ProviderSpec.aux(…)</code></td>
+</tr>
+<tr>
+<td>Unrestricted provider</td>
+<td><code>ProviderSpec.any(…)</code></td>
+</tr>
+<tr>
+<td>Context-derived provider</td>
+<td><code>ProviderSpec.ctx_attr(text)</code>, <code>ProviderSpec.ctx_val(text)</code>, <code>ProviderSpec.ctx_aux(text)</code></td>
+</tr>
+<tr>
+<td>Runtime provider</td>
+<td><code>ItemProvider</code> (functional: <code>provide(anchor)</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>Compound conditions: <code>ItemFilterConditionSpec.and(terms…)</code> → <code>(c1 &amp; c2 &amp; …)</code>;
+<code>ItemFilterConditionSpec.or(groups…)</code> → <code>(g1 | g2 | …)</code>.</p>
+</details>
+<details class="note">
+<summary>API — Filter terms (FilterTerm)</summary>
+<p>These implement the atomic constraints of filter condition <code>κ</code> and mirror the
+RTL <code>spatConstr</code> / <code>contConstr</code> tokens.</p>
+<table>
+<thead>
+<tr>
+<th>FilterTerm</th>
+<th>RTL token</th>
+<th>Condition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SameSubtable</code></td>
+<td><code>ST</code></td>
+<td><code>same_subtable(a) &amp;&amp; !same_cell(a)</code></td>
+</tr>
+<tr>
+<td><code>SameSubrow</code></td>
+<td><code>SR</code></td>
+<td><code>same_subrow(a) &amp;&amp; !same_cell(a)</code></td>
+</tr>
+<tr>
+<td><code>SameSubcol</code></td>
+<td><code>SC</code></td>
+<td><code>same_subcol(a) &amp;&amp; !same_cell(a)</code></td>
+</tr>
+<tr>
+<td><code>SameCell</code></td>
+<td><code>CL</code></td>
+<td><code>same_cell(a)</code></td>
+</tr>
+<tr>
+<td><code>NotSameCell</code></td>
+<td><code>NCL</code></td>
+<td><code>!same_cell(a)</code></td>
+</tr>
+<tr>
+<td><code>SameRow</code></td>
+<td><code>ROW</code></td>
+<td><code>same_row(a) &amp;&amp; !same_cell(a)</code></td>
+</tr>
+<tr>
+<td><code>SameCol</code></td>
+<td><code>COL</code></td>
+<td><code>same_col(a) &amp;&amp; !same_cell(a)</code></td>
+</tr>
+<tr>
+<td><code>RightOf</code></td>
+<td><code>RT</code></td>
+<td><code>same_subrow(a) &amp;&amp; col &gt; col(a)</code></td>
+</tr>
+<tr>
+<td><code>LeftOf</code></td>
+<td><code>LT</code></td>
+<td><code>same_subrow(a) &amp;&amp; col &lt; col(a)</code></td>
+</tr>
+<tr>
+<td><code>Below</code></td>
+<td><code>BW</code></td>
+<td><code>same_subcol(a) &amp;&amp; row &gt; row(a)</code></td>
+</tr>
+<tr>
+<td><code>Above</code></td>
+<td><code>AV</code></td>
+<td><code>same_subcol(a) &amp;&amp; row &lt; row(a)</code></td>
+</tr>
+<tr>
+<td><code>ColExact(n)</code></td>
+<td><code>Cn</code></td>
+<td><code>col == n</code></td>
+</tr>
+<tr>
+<td><code>ColOffset(d)</code></td>
+<td><code>C+n</code> / <code>C-n</code></td>
+<td><code>col == col(a) + d</code></td>
+</tr>
+<tr>
+<td><code>ColRange(f,t)</code></td>
+<td><code>C+n..m</code></td>
+<td><code>col(a)+f ≤ col ≤ col(a)+t</code></td>
+</tr>
+<tr>
+<td><code>ColAbsoluteRange(lo,hi)</code></td>
+<td><code>Clo..hi</code></td>
+<td><code>lo ≤ col ≤ hi</code></td>
+</tr>
+<tr>
+<td><code>RowExact(n)</code></td>
+<td><code>Rn</code></td>
+<td><code>row == n</code></td>
+</tr>
+<tr>
+<td><code>RowOffset(d)</code></td>
+<td><code>R+n</code> / <code>R-n</code></td>
+<td><code>row == row(a) + d</code></td>
+</tr>
+<tr>
+<td><code>PosExact(n)</code></td>
+<td><code>Pn</code></td>
+<td><code>index == n</code></td>
+</tr>
+<tr>
+<td><code>PosOffset(d)</code></td>
+<td><code>P+n</code> / <code>P-n</code></td>
+<td><code>index == index(a) + d</code></td>
+</tr>
+<tr>
+<td><code>PosRange(lo,hi)</code></td>
+<td><code>Plo..hi</code></td>
+<td><code>lo ≤ index ≤ hi</code></td>
+</tr>
+<tr>
+<td><code>RegexMatched(pat)</code></td>
+<td><code>"pat"</code></td>
+<td><code>str.matches(pat)</code></td>
+</tr>
+<tr>
+<td><code>NotRegexMatched(pat)</code></td>
+<td><code>!"pat"</code></td>
+<td><code>!str.matches(pat)</code></td>
+</tr>
+<tr>
+<td><code>Contains(sub)</code></td>
+<td><code>~"sub"</code></td>
+<td><code>str.contains(sub)</code></td>
+</tr>
+<tr>
+<td><code>NotContains(sub)</code></td>
+<td><code>!~"sub"</code></td>
+<td><code>!str.contains(sub)</code></td>
+</tr>
+<tr>
+<td><code>Blank</code></td>
+<td><code>BLANK</code></td>
+<td><code>blankStr()</code></td>
+</tr>
+<tr>
+<td><code>NotBlank</code></td>
+<td><code>!BLANK</code></td>
+<td><code>!blankStr()</code></td>
+</tr>
+<tr>
+<td><code>Tagged(tags)</code></td>
+<td><code>TAG #t1 #t2</code></td>
+<td>any tag matches (OR)</td>
+</tr>
+<tr>
+<td><code>NotTagged(tags)</code></td>
+<td><code>!TAG #t1 #t2</code></td>
+<td>no tag matches</td>
+</tr>
+<tr>
+<td><code>SameStr</code></td>
+<td><code>STR</code></td>
+<td><code>sameStr(a)</code></td>
+</tr>
+</tbody>
+</table>
+</details>
+<h3 id="working-state-and-update-operations">Working state and update operations</h3>
+<p>During interpretation, semantic information is accumulated in a <strong>working state</strong>
+<code>(V, A, val, attr, avp, rec)</code>:</p>
+<ul>
+<li><code>V ⊆ Σ*</code> — the set of values;</li>
+<li><code>A ⊆ Σ⁺</code> — the set of attributes;</li>
+<li><code>val(ι)</code> — maps each VAL item to a value in <code>V</code>;</li>
+<li><code>attr(ι)</code> — maps each ATTR item to an attribute in <code>A</code>;</li>
+<li><code>avp(ι)</code> — partial map from VAL items to <code>(attribute, value)</code> pairs;</li>
+<li><code>rec(ι)</code> — partial map from cell-derived VAL items to sequences of VAL items
+  (the <em>item-based records</em>).</li>
+</ul>
+<p>Six <strong>working-state update operations</strong> populate or modify the working state:</p>
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th>Symbol</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Fill</td>
+<td><code>O_fill^δ</code></td>
+<td>Replaces the anchor's value/attribute with the concatenation (delimited by <code>δ</code>) of the provider items' strings</td>
+</tr>
+<tr>
+<td>Prefix</td>
+<td><code>O_prefix^δ</code></td>
+<td>Prepends provider strings (joined by <code>δ</code>) to the anchor's value/attribute</td>
+</tr>
+<tr>
+<td>Suffix</td>
+<td><code>O_suffix^δ</code></td>
+<td>Appends provider strings (joined by <code>δ</code>) to the anchor's value/attribute</td>
+</tr>
+<tr>
+<td>AVP construction</td>
+<td><code>O_avp</code></td>
+<td>Creates an attribute-value pair <code>(attr(ι₁), val(ι_anch))</code> for the anchor VAL item using the single ATTR item <code>ι₁</code> returned by the provider</td>
+</tr>
+<tr>
+<td>Record construction</td>
+<td><code>O_rec</code></td>
+<td>Creates an item-based record with the anchor VAL item as its first element and the provided VAL items as the remaining elements</td>
+</tr>
+<tr>
+<td>Record join</td>
+<td><code>O_join^K</code></td>
+<td>Merges previously created records; key positions <code>K</code> are dropped from joined records, duplicate named attributes are removed, and the merged result is stored under the anchor</td>
+</tr>
+</tbody>
+</table>
+<details class="note">
+<summary>API mapping — WorkingState</summary>
+<p><strong>Definition (Working state):</strong> <code>ws = (V, A, val, attr, avp, rec)</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Formal component</th>
+<th>Python</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Value set <code>V ⊆ Σ*</code></td>
+<td><code>WorkingState.allVal()</code> → <code>Map&lt;Item, String&gt;</code></td>
+</tr>
+<tr>
+<td>Attribute set <code>A ⊆ Σ⁺</code></td>
+<td><code>WorkingState.allAttr()</code> → <code>Map&lt;Item, String&gt;</code></td>
+</tr>
+<tr>
+<td><code>val(ι)</code></td>
+<td><code>WorkingState.val(item)</code></td>
+</tr>
+<tr>
+<td><code>attr(ι)</code></td>
+<td><code>WorkingState.attr(item)</code></td>
+</tr>
+<tr>
+<td><code>avp(ι)</code></td>
+<td><code>WorkingState.avp(item)</code> → <code>AttributeValuePair(attribute, value)</code></td>
+</tr>
+<tr>
+<td><code>rec(ι)</code></td>
+<td><code>WorkingState.rec(item)</code> → <code>List&lt;Item&gt;</code></td>
+</tr>
+<tr>
+<td>Derived <code>assoc(ι)</code></td>
+<td><code>WorkingState.assoc(item)</code> — attribute of <code>avp(ι)</code>, or <code>null</code></td>
+</tr>
+</tbody>
+</table>
+<p>Six working-state update operations:</p>
+<table>
+<thead>
+<tr>
+<th>Formal operation</th>
+<th>Python factory</th>
+<th>Anchor type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>O_fill^δ</code></td>
+<td><code>WorkingState.applyFill(anchor, items, delimiter)</code></td>
+<td>VAL or ATTR</td>
+</tr>
+<tr>
+<td><code>O_prefix^δ</code></td>
+<td><code>WorkingState.applyPrefix(anchor, items, delimiter)</code></td>
+<td>VAL or ATTR</td>
+</tr>
+<tr>
+<td><code>O_suffix^δ</code></td>
+<td><code>WorkingState.applySuffix(anchor, items, delimiter)</code></td>
+<td>VAL or ATTR</td>
+</tr>
+<tr>
+<td><code>O_avp</code></td>
+<td><code>WorkingState.applyAvp(anchor, items)</code></td>
+<td>VAL</td>
+</tr>
+<tr>
+<td><code>O_rec</code></td>
+<td><code>WorkingState.applyRec(anchor, items)</code></td>
+<td>cell-derived VAL</td>
+</tr>
+<tr>
+<td><code>O_join^K</code></td>
+<td><code>WorkingState.applyJoin(anchor, items, keyPositions)</code></td>
+<td>cell-derived VAL</td>
+</tr>
+</tbody>
+</table>
+<p>Consistency predicates:</p>
+<table>
+<thead>
+<tr>
+<th>Predicate</th>
+<th>Python factory</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Basic consistency: <code>rec(ι)[0] = ι</code> and <code>avp(ι) = (a,v) ⟹ val(ι) = v</code></td>
+<td><code>WorkingState.isConsistent()</code></td>
+</tr>
+<tr>
+<td>Recordset-consistency: uniform anchor attribute + distinct per-record attributes</td>
+<td><code>WorkingState.isRecordsetConsistent()</code></td>
+</tr>
+</tbody>
+</table>
+</details>
+<h3 id="interpretation-actions">Interpretation actions</h3>
+<p>An <strong>interpretation action</strong> <code>(ι_anch, π⃗, o)</code> combines:</p>
+<ul>
+<li>an anchor item <code>ι_anch</code>;</li>
+<li>a sequence of item providers <code>π⃗ = ⟨π₁, …, πₙ⟩</code> that supply the operand items;</li>
+<li>a working-state update operation <code>o</code>.</li>
+</ul>
+<p>When executed, the action first collects a concatenated item sequence
+<code>ι⃗ = π₁(ι_anch) · … · πₙ(ι_anch)</code>, then applies <code>o</code> to the working state with
+<code>ι_anch</code> as the anchor and <code>ι⃗</code> as the operand sequence.</p>
+<p>Actions must be <em>consistent</em>: the provider types and resulting item counts must
+satisfy the constraints of the chosen operation (Tab. I in the paper):</p>
+<table>
+<thead>
+<tr>
+<th>Action subset</th>
+<th>Anchor type</th>
+<th>Provider type</th>
+<th><code>|ι⃗|</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>String modification</td>
+<td>VAL or ATTR (cell-derived)</td>
+<td>any</td>
+<td>≥ 1</td>
+</tr>
+<tr>
+<td>AVP construction</td>
+<td>VAL (cell- or context-derived)</td>
+<td>ATTR provider</td>
+<td>= 1</td>
+</tr>
+<tr>
+<td>Record construction</td>
+<td>VAL (cell-derived)</td>
+<td>VAL providers</td>
+<td>≥ 0</td>
+</tr>
+<tr>
+<td>Record join</td>
+<td>VAL (cell-derived)</td>
+<td>VAL providers (cell-derived)</td>
+<td>≥ 0</td>
+</tr>
+</tbody>
+</table>
+<details class="note">
+<summary>API — ActionSpec</summary>
+<p><strong>Action spec:</strong> <code>S_act = (op, ⟨S_prov¹, …, S_provⁿ⟩)</code> where <code>op</code> is a
+working-state update operation.</p>
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th>Python factory</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>REC</code></td>
+<td><code>ActionSpec.rec(providers…)</code></td>
+<td>Anchor item → record; providers supply the remaining fields</td>
+</tr>
+<tr>
+<td><code>AVP</code></td>
+<td><code>ActionSpec.avp(provider)</code></td>
+<td>Associates a VAL item (anchor) with an ATTR item from the provider</td>
+</tr>
+<tr>
+<td><code>JOIN</code></td>
+<td><code>ActionSpec.join(providers…)</code></td>
+<td>Joins item-based records; dedup by named attribute (K=∅)</td>
+</tr>
+<tr>
+<td><code>JOIN(K)</code></td>
+<td><code>ActionSpec.join(Set.of(0), providers…)</code></td>
+<td>Joins with key positions K dropped (e.g. <code>JOIN(0)</code> drops the anchor position)</td>
+</tr>
+<tr>
+<td><code>FILL</code></td>
+<td><code>ActionSpec.fill(delimiter, providers…)</code></td>
+<td>Fills anchor value using provider values</td>
+</tr>
+<tr>
+<td><code>PREFIX</code></td>
+<td><code>ActionSpec.prefix(delimiter, providers…)</code></td>
+<td>Prepends provider values to the anchor</td>
+</tr>
+<tr>
+<td><code>SUFFIX</code></td>
+<td><code>ActionSpec.suffix(delimiter, providers…)</code></td>
+<td>Appends provider values to the anchor</td>
+</tr>
+<tr>
+<td>AVP with literal</td>
+<td><code>ActionSpec.avp("ATTR_NAME")</code></td>
+<td>Context-derived ATTR constant</td>
+</tr>
+</tbody>
+</table>
+<p><code>ActionSpec.rec(int anchorPos, providers…)</code> adds an <code>AnchorAttributeAtPosition</code>
+post-processing step (RTL: <code>REC(n)</code>).
+<code>ActionSpec.rec(String splitDelimiter, providers…)</code> adds a <code>DelimitedFieldSplit</code>
+step (RTL: <code>REC('s')</code>).</p>
+</details>
+<hr />
+<h2 id="recordset-and-schema">Recordset and schema</h2>
+<p><strong>Definition (Recordset):</strong> given a schema <code>S = ⟨a₁, …, aₙ⟩</code>, a <em>record</em> is an
+n-tuple <code>⟨(a₁,v₁), …, (aₙ,vₙ)⟩</code>; a <em>recordset</em> is a finite sequence of records.</p>
+<details class="note">
+<summary>API mapping — Schema, Record, Recordset</summary>
+<table>
+<thead>
+<tr>
+<th>Formal concept</th>
+<th>Python class / method</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Schema <code>S = ⟨a₁, …, aₙ⟩</code></td>
+<td><code>Schema</code> — <code>attributes()</code> → <code>List&lt;String&gt;</code></td>
+</tr>
+<tr>
+<td>Record <code>⟨(a₁,v₁), …, (aₙ,vₙ)⟩</code></td>
+<td><code>Record</code> — <code>get(attribute)</code>, <code>get(index)</code></td>
+</tr>
+<tr>
+<td>Recordset</td>
+<td><code>Recordset</code> — <code>schema()</code>, <code>records()</code>, <code>size()</code>, <code>get(index)</code></td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<h2 id="table-interpretation">Table interpretation</h2>
+<p>Given a fully populated ITM instance (both layers), table interpretation proceeds
+in four sequential phases.</p>
+<h3 id="phase-1-working-state-initialisation">Phase 1 — Working state initialisation</h3>
+<p>An initial working state <code>ws₀</code> is constructed directly from the semantic layer:</p>
+<ul>
+<li>each VAL item is assigned its value <code>val(ι) ∈ V</code>;</li>
+<li>each ATTR item is assigned its attribute <code>attr(ι) ∈ A</code>;</li>
+<li><code>dom(avp)</code> and <code>dom(rec)</code> are initialised to empty.</li>
+</ul>
+<h3 id="phase-2-working-state-completion">Phase 2 — Working state completion</h3>
+<p>The interpretation actions <code>A</code> are applied to <code>ws₀</code> in a fixed order:</p>
+<ol>
+<li>String-modification actions (<code>O_fill</code>, <code>O_prefix</code>, <code>O_suffix</code>);</li>
+<li>AVP-construction actions (<code>O_avp</code>);</li>
+<li>Record-construction actions (<code>O_rec</code>);</li>
+<li>Record-join actions (<code>O_join</code>).</li>
+</ol>
+<p>Within each phase, actions are applied in <em>traversal order</em> over their anchor
+items.  The default strategy visits anchors in row-major order
+(<strong>row-first</strong>, <code>Γ_row</code>); a <strong>column-first</strong> strategy <code>Γ_col</code> is also available.</p>
+<p>The result is the <em>completed working state</em> <code>ws_comp</code>.</p>
+<h3 id="phase-3-recordset-extraction">Phase 3 — Recordset extraction</h3>
+<p>Recordset extraction from <code>ws_comp</code> has two steps.</p>
+<p><strong>Schema construction</strong> collects the set of named attributes that appear across all
+item-based records:</p>
+<ol>
+<li>Determine the <em>anchor attribute</em> <code>a₁</code>: if any anchor item has an associated
+   attribute (via <code>avp</code>), all such anchors share the same attribute by a
+   consistency invariant, and that attribute becomes <code>a₁</code>; otherwise a fresh
+   <em>anonymous attribute</em> is generated for position 1.</li>
+<li>Visit all non-anchor items in the order defined by the <em>schema construction
+   strategy</em> (default: <strong>record-first</strong> <code>Γ_rec</code>, which visits items record by
+   record; <strong>position-first</strong> <code>Γ_pos</code> groups items by their position across
+   records).  Each new named attribute encountered is appended to the schema
+   <code>S = ⟨a₁, a₂, …, aₙ⟩</code>; unnamed items receive a fresh anonymous attribute for
+   their position.</li>
+</ol>
+<p><strong>Record generation</strong> iterates over <code>dom(rec)</code> in the order in which record-construction
+actions were applied:</p>
+<ul>
+<li>For each anchor <code>ι</code>, initialise all <code>n</code> field values to a <em>missing value</em> (via
+  an optional user-defined handler <code>μ</code>; default: <code>⊥</code>).</li>
+<li>For each item <code>ι'</code> in <code>rec(ι)</code> that has an associated attribute in <code>S</code>, fill in
+  <code>val(ι')</code> at the corresponding position.</li>
+<li>Emit the resulting record <code>⟨(a₁, v₁), …, (aₙ, vₙ)⟩</code>.</li>
+</ul>
+<h3 id="phase-4-recordset-transformation">Phase 4 — Recordset transformation</h3>
+<p>The extracted recordset may be further post-processed by optional operations:</p>
+<ul>
+<li><strong>Schema reordering</strong> — rearranges the columns of the schema according to a
+  user-defined order.</li>
+<li><strong>Field splitting</strong> — splits a field that contains a delimited value (e.g.
+  <code>"v1/v2/v3"</code>) into multiple atomic fields using the same delimiter as the
+  string-modification operations.</li>
+<li><strong>Whitespace normalisation</strong> — trims leading and trailing whitespace and
+  collapses internal whitespace to a single space across all values.</li>
+</ul>
+<details class="note">
+<summary>API mapping — TableInterpreter</summary>
+<p><code>TableInterpreter.interpret(table)</code> executes all four phases.</p>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Entry point</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 — Working state initialisation</td>
+<td><code>initWorkingState(sem)</code> (private)</td>
+</tr>
+<tr>
+<td>2 — Working state completion</td>
+<td><code>completeWorkingState(ws, actions)</code> (private)</td>
+</tr>
+<tr>
+<td>3 — Recordset extraction</td>
+<td><code>extractRecordset(ws)</code> → <code>constructSchema</code> + <code>generateRecords</code></td>
+</tr>
+<tr>
+<td>4 — Recordset transformation</td>
+<td><code>transformRecordset(recordset)</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Strategies and options</strong> (all configurable via <code>TableInterpreter.with*(…)</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Python type</th>
+<th>Values</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Action application strategy <code>Γ_row</code> / <code>Γ_col</code></td>
+<td><code>ActionApplicationStrategy</code></td>
+<td><code>ROW_FIRST</code> (default), <code>COLUMN_FIRST</code></td>
+</tr>
+<tr>
+<td>Schema construction strategy <code>Γ_rec</code> / <code>Γ_pos</code></td>
+<td><code>SchemaConstructionStrategy</code></td>
+<td><code>RECORD_FIRST</code> (default), <code>POSITION_FIRST</code></td>
+</tr>
+<tr>
+<td>Anonymous attribute template</td>
+<td><code>String</code></td>
+<td>Pattern with <code>%i</code> placeholder; default <code>"$a_%i"</code></td>
+</tr>
+<tr>
+<td>Missing value handler <code>μ</code></td>
+<td><code>MissingValueHandler</code></td>
+<td>Functional interface; default returns <code>null</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Recordset transformations</strong> (<code>RecordsetTransformation</code> sealed interface):</p>
+<table>
+<thead>
+<tr>
+<th>Transformation</th>
+<th>Python class</th>
+<th>RTL / API trigger</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Schema reordering</td>
+<td><code>SchemaReordering</code></td>
+<td>explicit attribute list</td>
+</tr>
+<tr>
+<td>Delimited field split</td>
+<td><code>DelimitedFieldSplit</code></td>
+<td><code>ActionSpec.rec(String delimiter, …)</code> — RTL <code>REC('s')</code></td>
+</tr>
+<tr>
+<td>Field splitting</td>
+<td><code>FieldSplitting</code></td>
+<td>explicit split spec</td>
+</tr>
+<tr>
+<td>Whitespace normalisation</td>
+<td><code>WhitespaceNormalization</code></td>
+<td><code>with_transformations(…)</code></td>
+</tr>
+<tr>
+<td>Anchor attribute at position</td>
+<td><code>AnchorAttributeAtPosition</code></td>
+<td><code>ActionSpec.rec(int pos, …)</code> — RTL <code>REC(n)</code></td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<h2 id="end-to-end-example">End-to-end example</h2>
+<p>This section traces the full lifecycle of a concrete table through ITM.
+The <a href="../atp/#end-to-end-example">Table patterns (ATP)</a> page shows the ATP pattern and
+the syntactic matching step that precede interpretation.</p>
+<h3 id="source-table">Source table</h3>
+<p>Consider a 3 × 3 table <code>t₀</code> listing the number of airline departures from airports
+in certain months.  Its first row contains an empty cell followed by two airline
+codes; each remaining row contains an airport code followed by two cells each
+containing a departure count and a month name separated by a space:</p>
+<table>
+<thead>
+<tr>
+<th>(empty)</th>
+<th>CA</th>
+<th>HU</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>IKT</td>
+<td>0 Jan</td>
+<td>8 Feb</td>
+</tr>
+<tr>
+<td>SVO</td>
+<td>31 Jan</td>
+<td>40 Feb</td>
+</tr>
+</tbody>
+</table>
+<p>Target schema: <code>S = ⟨ND, AIRLINE, AIRPORT, MON⟩</code>.</p>
+<h3 id="items-derived-from-the-table">Items derived from the table</h3>
+<p>After syntactic matching, the following cell-derived items (all VAL) are created and
+added to <code>I_tbl^val</code> (subscripts denote row, column; superscripts denote index
+within the cell):</p>
+<table>
+<thead>
+<tr>
+<th>Cell</th>
+<th>Items</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>c(0,1)</code></td>
+<td><code>ι(0,1)</code> = <code>"CA"</code></td>
+</tr>
+<tr>
+<td><code>c(0,2)</code></td>
+<td><code>ι(0,2)</code> = <code>"HU"</code></td>
+</tr>
+<tr>
+<td><code>c(1,0)</code></td>
+<td><code>ι(1,0)</code> = <code>"IKT"</code></td>
+</tr>
+<tr>
+<td><code>c(1,1)</code></td>
+<td><code>ι(1,1)⁰</code> = <code>"0"</code>,  <code>ι(1,1)¹</code> = <code>"Jan"</code></td>
+</tr>
+<tr>
+<td><code>c(1,2)</code></td>
+<td><code>ι(1,2)⁰</code> = <code>"8"</code>,  <code>ι(1,2)¹</code> = <code>"Feb"</code></td>
+</tr>
+<tr>
+<td><code>c(2,0)</code></td>
+<td><code>ι(2,0)</code> = <code>"SVO"</code></td>
+</tr>
+<tr>
+<td><code>c(2,1)</code></td>
+<td><code>ι(2,1)⁰</code> = <code>"31"</code>, <code>ι(2,1)¹</code> = <code>"Jan"</code></td>
+</tr>
+<tr>
+<td><code>c(2,2)</code></td>
+<td><code>ι(2,2)⁰</code> = <code>"40"</code>, <code>ι(2,2)¹</code> = <code>"Feb"</code></td>
+</tr>
+</tbody>
+</table>
+<p>The cell <code>c(0,0)</code> is matched by a skip cell pattern — no item is derived.</p>
+<p>Four context-derived ATTR items are also created from string constants embedded in
+the action specifications: <code>α(ND)</code>, <code>α(AIRLINE)</code>, <code>α(AIRPORT)</code>, <code>α(MON)</code>.</p>
+<h3 id="working-state-completion">Working state completion</h3>
+<p><strong>AVP-construction actions</strong> (O_avp) assign an attribute to every VAL item:</p>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>avp</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ι(0,1)</code></td>
+<td><code>(AIRLINE, "CA")</code></td>
+</tr>
+<tr>
+<td><code>ι(0,2)</code></td>
+<td><code>(AIRLINE, "HU")</code></td>
+</tr>
+<tr>
+<td><code>ι(1,0)</code></td>
+<td><code>(AIRPORT, "IKT")</code></td>
+</tr>
+<tr>
+<td><code>ι(2,0)</code></td>
+<td><code>(AIRPORT, "SVO")</code></td>
+</tr>
+<tr>
+<td><code>ι(1,1)⁰</code></td>
+<td><code>(ND, "0")</code></td>
+</tr>
+<tr>
+<td><code>ι(1,2)⁰</code></td>
+<td><code>(ND, "8")</code></td>
+</tr>
+<tr>
+<td><code>ι(2,1)⁰</code></td>
+<td><code>(ND, "31")</code></td>
+</tr>
+<tr>
+<td><code>ι(2,2)⁰</code></td>
+<td><code>(ND, "40")</code></td>
+</tr>
+<tr>
+<td><code>ι(1,1)¹</code></td>
+<td><code>(MON, "Jan")</code></td>
+</tr>
+<tr>
+<td><code>ι(1,2)¹</code></td>
+<td><code>(MON, "Feb")</code></td>
+</tr>
+<tr>
+<td><code>ι(2,1)¹</code></td>
+<td><code>(MON, "Jan")</code></td>
+</tr>
+<tr>
+<td><code>ι(2,2)¹</code></td>
+<td><code>(MON, "Feb")</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Record-construction actions</strong> (O_rec) build four item-based records.  The anchor
+of each record is a departure-count item; the remaining fields are collected by
+three providers: <em>same column</em> (airline), <em>same row</em> (airport), <em>same cell</em> (month):</p>
+<table>
+<thead>
+<tr>
+<th>Anchor</th>
+<th>rec(anchor)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ι(1,1)⁰</code></td>
+<td><code>⟨ι(1,1)⁰, ι(0,1), ι(1,0), ι(1,1)¹⟩</code> → <code>⟨"0",  "CA", "IKT", "Jan"⟩</code></td>
+</tr>
+<tr>
+<td><code>ι(1,2)⁰</code></td>
+<td><code>⟨ι(1,2)⁰, ι(0,2), ι(1,0), ι(1,2)¹⟩</code> → <code>⟨"8",  "HU", "IKT", "Feb"⟩</code></td>
+</tr>
+<tr>
+<td><code>ι(2,1)⁰</code></td>
+<td><code>⟨ι(2,1)⁰, ι(0,1), ι(2,0), ι(2,1)¹⟩</code> → <code>⟨"31", "CA", "SVO", "Jan"⟩</code></td>
+</tr>
+<tr>
+<td><code>ι(2,2)⁰</code></td>
+<td><code>⟨ι(2,2)⁰, ι(0,2), ι(2,0), ι(2,2)¹⟩</code> → <code>⟨"40", "HU", "SVO", "Feb"⟩</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="extracted-recordset">Extracted recordset</h3>
+<p>Schema construction collects the attributes in the order they appear across records
+(record-first strategy), yielding <code>S = ⟨ND, AIRLINE, AIRPORT, MON⟩</code>.  Record
+generation produces:</p>
+<table>
+<thead>
+<tr>
+<th>ND</th>
+<th>AIRLINE</th>
+<th>AIRPORT</th>
+<th>MON</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>CA</td>
+<td>IKT</td>
+<td>Jan</td>
+</tr>
+<tr>
+<td>8</td>
+<td>HU</td>
+<td>IKT</td>
+<td>Feb</td>
+</tr>
+<tr>
+<td>31</td>
+<td>CA</td>
+<td>SVO</td>
+<td>Jan</td>
+</tr>
+<tr>
+<td>40</td>
+<td>HU</td>
+<td>SVO</td>
+<td>Feb</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.sections", "navigation.top", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
