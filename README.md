@@ -170,11 +170,16 @@ v0.4.1).
 
 ## IDE support
 
-`ide/vscode/` is a VS Code extension (and IntelliJ/PyCharm TextMate bundle)
-that highlights `.rtl` files and RTL embedded in Python strings passed to
-`RtlCompiler.compile(...)`. See [`ide/README.md`](ide/README.md). RTL is also
-validated at compile time: `RtlCompiler.compile(...)` raises `RtlCompileError`
-with a `line:col` position on an invalid pattern.
+Install **[Regular Table Language (RTL)](https://marketplace.visualstudio.com/items?itemName=regtab.regtab)**
+from the VS Code Marketplace (`ext install regtab.regtab`): syntax highlighting
+for `.rtl` files and for RTL embedded in Python strings passed to
+`RtlCompiler.compile(...)`, plus compile diagnostics and a live match preview
+against CSV fixtures. The extension sources are at
+[regtab/vscode-rtl](https://github.com/regtab/vscode-rtl); a TextMate bundle for
+IntelliJ/PyCharm and other TextMate editors is under [`ide/`](ide/README.md).
+
+RTL is also validated at compile time: `RtlCompiler.compile(...)` raises
+`RtlCompileError` with a `line:col` position on an invalid pattern.
 
 ## Development
 
