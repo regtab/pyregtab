@@ -31,7 +31,7 @@ download the package for your platform from
 highlighting and snippets only, without the bundled language server), then:
 
 ```bash
-code --install-extension regtab-rtl-<version>-<platform>.vsix
+code --install-extension regtab-<version>-<platform>.vsix
 ```
 
 or via the UI: *Extensions panel → ⋯ menu → Install from VSIX…* → pick the file, then reload
