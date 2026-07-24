@@ -15,9 +15,19 @@ text by default. Two layers of tooling improve this:
 
 ### VS Code
 
-Install the [RegTab RTL extension](https://github.com/regtab/vscode-rtl). Until the
-Marketplace listing is live, install it from a VSIX: download the package for your platform
-from [Releases](https://github.com/regtab/vscode-rtl/releases) (the `universal` build ships
+Install the [RegTab RTL extension](https://marketplace.visualstudio.com/items?itemName=regtab.regtab)
+from the Visual Studio Marketplace: open the *Extensions* panel (`Ctrl+Shift+X`), search for
+**RegTab RTL**, and click *Install*. From the command line:
+
+```bash
+code --install-extension regtab.regtab
+```
+
+Marketplace installs update automatically.
+
+If you need a build that is not yet on the Marketplace, install it from a VSIX instead:
+download the package for your platform from
+[Releases](https://github.com/regtab/vscode-rtl/releases) (the `universal` build ships
 highlighting and snippets only, without the bundled language server), then:
 
 ```bash
