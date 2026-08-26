@@ -4,7 +4,7 @@
 use crate::semantics::{ActionInst, CellItem, CtxItem, ItemId, OpInst, ProviderInst, SemanticsCore};
 use crate::spec::*;
 use crate::syntax::SyntaxCore;
-use crate::util::{java_trim, split_literal, CoreErr, CoreResult};
+use crate::util::{split_literal, CoreErr, CoreResult};
 use std::sync::Arc;
 
 // ---------------------------------------------------------------- match state
@@ -386,20 +386,19 @@ fn process_atomic(
     Ok(())
 }
 
-/// Non-empty `java_trim`med parts of a literal split as
-/// (original part position, trimmed part, byte span in the original cell
-/// text); `base` is the offset of `text` within that cell text.
+/// Parts of a literal split, verbatim, as (part position, part text, byte span
+/// in the original cell text); `base` is the offset of `text` within that cell
+/// text. Per `def:delimited-content-spec` parts are passed on untrimmed and empty
+/// parts are kept, so `n` parts always yield indices `0..n-1`; whitespace removal
+/// is opt-in via the atom's extractor (`=TRIM` / `=NORM`).
 fn split_with_spans(delim: &str, text: &str, base: usize) -> Vec<(usize, String, (usize, usize))> {
     let mut out = Vec::new();
     let mut start = 0usize;
     for (i, part) in split_literal(delim, text).into_iter().enumerate() {
-        let trimmed = java_trim(&part);
-        if !trimmed.is_empty() {
-            let lead = part.len() - part.trim_start_matches(|c: char| c <= ' ').len();
-            let from = base + start + lead;
-            out.push((i, trimmed.to_string(), (from, from + trimmed.len())));
-        }
+        let from = base + start;
+        let to = from + part.len();
         start += part.len() + delim.len();
+        out.push((i, part, (from, to)));
     }
     out
 }
@@ -639,5 +638,173 @@ pub fn match_atp(
         Ok(sem) => Ok(Some(sem)),
         Err(SemErr::Match(_)) => Ok(None),
         Err(SemErr::Other(e)) => Err(e),
+    }
+}
+
+// ---------------------------------------------------------------- unit tests
+
+/// `S_delim` (`def:delimited-content-spec`) decomposes the text into substrings
+/// `s_k` in `Sigma*` and applies `S_atom` to each one verbatim: no trimming, no
+/// dropping of empty parts. Whitespace removal is opt-in via the atom's string
+/// extractor. Pinned normatively by `conformance/semantic/`.
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::rtl::{compile, BindingsCore};
+
+    // -------------------------------------------------------- split_with_spans
+
+    /// One expected `split_with_spans` triple.
+    fn part(index: usize, s: &str, from: usize, to: usize) -> (usize, String, (usize, usize)) {
+        (index, s.to_string(), (from, to))
+    }
+
+    #[test]
+    fn split_keeps_token_whitespace() {
+        // "a, b" -> "a", " b": the leading space of the second token survives,
+        // and its span covers the raw token, not a trimmed one.
+        assert_eq!(
+            split_with_spans(",", "a, b", 0),
+            vec![part(0, "a", 0, 1), part(1, " b", 2, 4)]
+        );
+        // Trailing whitespace survives just the same.
+        assert_eq!(
+            split_with_spans(",", "c ,d", 0),
+            vec![part(0, "c ", 0, 2), part(1, "d", 3, 4)]
+        );
+    }
+
+    #[test]
+    fn split_keeps_empty_tokens() {
+        // "a,,b" -> three parts; the middle one is empty with a zero-width span.
+        assert_eq!(
+            split_with_spans(",", "a,,b", 0),
+            vec![part(0, "a", 0, 1), part(1, "", 2, 2), part(2, "b", 3, 4)]
+        );
+    }
+
+    #[test]
+    fn split_keeps_edge_empty_tokens() {
+        // A trailing delimiter yields a trailing empty part (Java `split(_, -1)`).
+        assert_eq!(
+            split_with_spans(",", "a,b,", 0),
+            vec![part(0, "a", 0, 1), part(1, "b", 2, 3), part(2, "", 4, 4)]
+        );
+        // Symmetrically for a leading one.
+        assert_eq!(
+            split_with_spans(",", ",a", 0),
+            vec![part(0, "", 0, 0), part(1, "a", 1, 2)]
+        );
+    }
+
+    #[test]
+    fn split_indices_are_contiguous() {
+        // n parts always derive n items numbered 0..n-1, whatever they contain:
+        // blank and empty parts no longer punch holes in the numbering.
+        let parts = split_with_spans(",", " ,a,,  ,b, ", 0);
+        assert_eq!(parts.len(), 6);
+        assert_eq!(
+            parts.iter().map(|(i, _, _)| *i).collect::<Vec<_>>(),
+            vec![0, 1, 2, 3, 4, 5]
+        );
+    }
+
+    #[test]
+    fn split_spans_are_shifted_by_base() {
+        // The compound path passes `base = pos`, so spans stay in whole-cell
+        // coordinates. Here " b1, c1" sits at offset 3 of "a1, b1, c1".
+        let cell = "a1, b1, c1";
+        let parts = split_with_spans(",", &cell[3..], 3);
+        assert_eq!(parts, vec![part(0, " b1", 3, 6), part(1, " c1", 7, 10)]);
+        // Every span indexes back into the original cell text.
+        for (_, s, (from, to)) in parts {
+            assert_eq!(cell[from..to], s);
+        }
+    }
+
+    #[test]
+    fn split_spans_are_byte_exact_on_multibyte_text() {
+        // "\u{43f}\u{440}, \u{431}" — two bytes per Cyrillic letter.
+        let cell = "\u{43f}\u{440}, \u{431}";
+        let parts = split_with_spans(",", cell, 0);
+        assert_eq!(
+            parts,
+            vec![part(0, "\u{43f}\u{440}", 0, 4), part(1, " \u{431}", 5, 8)]
+        );
+        for (_, s, (from, to)) in parts {
+            assert_eq!(cell[from..to], s);
+        }
+    }
+
+    // ------------------------------------------------------- end to end (ATP)
+
+    /// Items derived from the single cell of a 1x1 table, as (s, span, index).
+    fn items_of(rtl: &str, text: &str) -> Vec<(String, (usize, usize), usize)> {
+        let mut syntax = SyntaxCore::new(1, 1).unwrap();
+        syntax.cell_mut(0, 0).set_text(text.to_string());
+        let pattern = compile(rtl, &BindingsCore::default()).expect("compile");
+        let sem = match_atp(&pattern, &mut syntax, Vec::new())
+            .expect("match")
+            .expect("pattern must match");
+        sem.cell_items
+            .iter()
+            .map(|it| (it.s.clone(), it.span, it.index))
+            .collect()
+    }
+
+    /// One expected `items_of` triple.
+    fn item(s: &str, from: usize, to: usize, index: usize) -> (String, (usize, usize), usize) {
+        (s.to_string(), (from, to), index)
+    }
+
+    #[test]
+    fn delimited_cell_derives_raw_items() {
+        assert_eq!(
+            items_of("[ [(VAL : CL*->REC){','}] ]", "a, b"),
+            vec![item("a", 0, 1, 0), item(" b", 2, 4, 1)]
+        );
+    }
+
+    #[test]
+    fn delimited_cell_derives_an_item_per_empty_token() {
+        assert_eq!(
+            items_of("[ [(VAL : CL*->REC){','}] ]", "a,,b"),
+            vec![item("a", 0, 1, 0), item("", 2, 2, 1), item("b", 3, 4, 2)]
+        );
+    }
+
+    #[test]
+    fn trim_extractor_opts_back_into_trimming() {
+        // `=TRIM` applies to each substring separately, restoring the old values.
+        // Spans stay raw: `CellItem.span` is deliberately pre-extractor.
+        assert_eq!(
+            items_of("[ [(VAL=TRIM : CL*->REC){','}] ]", "a, b"),
+            vec![item("a", 0, 1, 0), item("b", 2, 4, 1)]
+        );
+        // …but it does not resurrect the dropping of empty tokens.
+        assert_eq!(
+            items_of("[ [(VAL=TRIM : CL*->REC){','}] ]", "a, ,b"),
+            vec![item("a", 0, 1, 0), item("", 2, 3, 1), item("b", 4, 5, 2)]
+        );
+    }
+
+    #[test]
+    fn delimited_nested_in_compound_derives_raw_items() {
+        // Segment 1 is atomic ("a1"), the remainder is a delimited segment. The
+        // compound path numbers items with its own running counter, which stays
+        // contiguous, and spans stay in whole-cell coordinates.
+        let cell = "a1, b1, c1";
+        let items = items_of("[ [VAL: CL*->REC ',' (VAL){','}] ]", cell);
+        assert_eq!(
+            items,
+            vec![
+                item("a1", 0, 2, 0),
+                item(" b1", 3, 6, 1),
+                item(" c1", 7, 10, 2),
+            ]
+        );
+        for (s, (from, to), _) in items {
+            assert_eq!(cell[from..to], s);
+        }
     }
 }

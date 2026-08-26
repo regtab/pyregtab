@@ -221,13 +221,13 @@ def test_task029():
 def test_task045():
     assert_mirrors(
         r"""
-        [ [!BLANK? VAL] [!BLANK? (VAL : SR&C0->REC(1)){','}] ]+
+        [ [!BLANK? VAL] [!BLANK? (VAL=TRIM : SR&C0->REC(1)){','}] ]+
         """,
         table(
             subtable(
                 row(
                     cell(not_blank(), VAL),
-                    cell(not_blank(), val(rec(1, SR.and_(C(0)))).split_by(",")),
+                    cell(not_blank(), val(rec(1, SR.and_(C(0)))).extract(TRIM).split_by(",")),
                 ).one_or_more()
             )
         ),
