@@ -268,10 +268,10 @@ VAL: (COL&#'H'*, ROW&#'S'*)->REC  // collect tagged headers into the record
 
 | Extractor | Effect |
 |---|---|
-| `NORM` | Collapse whitespace |
+| `NORM` | Trim + collapse internal whitespace |
 | `UC` | To upper case |
 | `LC` | To lower case |
-| `TRIM` | Trim |
+| `TRIM` | Strip leading/trailing whitespace only |
 | `SUBSTR(n,m)` | Substring starting at position *n*, length *m* |
 | `REPL("a","b")` | Replace *a* with *b* (Java regex) |
 
@@ -320,7 +320,7 @@ same way an atomic or compound cell receives its raw text:
 This matches `pandas.Series.str.split`, which makes patterns over exploded columns
 expressible without post-processing.
 
-To trim, ask for it — add a [string extractor](#atomic--contspec) to the delimited atom.
+To trim, ask for it — add a [string extractor](#atomic-contspec) to the delimited atom.
 It is applied to each token separately:
 
 ```rtl
