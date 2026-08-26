@@ -1,0 +1,2 @@
+[ [ATTR]+ ]
+[ COL->AVP [VAL] [(VAL: ROW*->REC(1)){','}] [VAL] ]+
