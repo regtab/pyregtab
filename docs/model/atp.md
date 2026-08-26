@@ -331,7 +331,7 @@ chosen operation (see [ITM — Interpretation actions](itm.md#interpretation-act
     | Operation | Python factory | Notes |
     |---|---|---|
     | `REC` | `ActionSpec.rec(providers…)` | anchor → first field; providers supply remaining fields |
-    | `REC(n)` | `ActionSpec.rec(int n, providers…)` | adds `AnchorAttributeAtPosition` post-step |
+    | `REC(n)` | `ActionSpec.rec(int n, providers…)` | adds `AnchorAttributeAtPosition` post-step — moves the anchor attribute (name with its values) to position *n* |
     | `REC('s')` | `ActionSpec.rec(String delim, providers…)` | adds `DelimitedFieldSplit` post-step |
     | `AVP` | `ActionSpec.avp(provider)` | associates VAL anchor with ATTR item |
     | `AVP "name"` | `ActionSpec.avp("ATTR_NAME")` | context-derived ATTR constant |

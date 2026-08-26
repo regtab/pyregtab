@@ -4,6 +4,7 @@ interpreter options, transformations (ports of scattered jRegTab unit tests)."""
 import pytest
 
 from pyregtab import (
+    AnchorAttributeAtPosition,
     AtpMatcher,
     Bindings,
     CellColor,
@@ -123,6 +124,10 @@ def test_transformations():
     rs4 = SchemaReordering(["B", "A"]).apply(rs)
     assert rs4.schema.attributes == ["B", "A"]
     assert rs4[0]["B"] == "1/2"
+    # the anchor attribute moves, its name travels with its values
+    rs5 = AnchorAttributeAtPosition(1).apply(rs)
+    assert rs5.schema.attributes == ["B", "A"]
+    assert rs5[0]["A"] == " x  y " and rs5[0]["B"] == "1/2"
 
 
 def test_custom_cell_predicate_matching():

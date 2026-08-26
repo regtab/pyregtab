@@ -1128,6 +1128,19 @@ impl Transformation {
     }
 }
 
+/// Moves the anchor attribute (first in schema) to the given 0-based position.
+///
+/// The *attribute* is moved — its name travels together with its values, so the
+/// attribute-value binding of every record is preserved and only the order of the
+/// schema changes. The rule is the same for named attributes (produced by `AVP`)
+/// and for the anonymous `$a_i` names the interpreter invents: an anonymous name is
+/// *not* renumbered, it moves with its attribute, so a schema `$a_1, $a_2, $a_3`
+/// under `ANCH(2)` becomes `$a_2, $a_3, $a_1` while the values stay in the same
+/// positions as before.
+///
+/// This is [`apply_schema_reordering`] with the order derived from the anchor
+/// position. A position of 0, a position beyond the schema, or a schema of at most
+/// one attribute leaves the recordset unchanged.
 fn apply_anchor_at_position(rs: RecordsetCore, position: i64) -> CoreResult<RecordsetCore> {
     if position < 0 {
         return Err(format!("position must be non-negative: {position}").into());
@@ -1147,6 +1160,8 @@ fn apply_anchor_at_position(rs: RecordsetCore, position: i64) -> CoreResult<Reco
     for i in position..(n - 1) {
         reordered.push(i + 1);
     }
+    let new_attrs: Vec<String> = reordered.iter().map(|&src| attrs[src].clone()).collect();
+    let schema = Schema::new(new_attrs)?;
     let records = rs
         .records
         .iter()
@@ -1154,7 +1169,7 @@ fn apply_anchor_at_position(rs: RecordsetCore, position: i64) -> CoreResult<Reco
             values: reordered.iter().map(|&src| r.values[src].clone()).collect(),
         })
         .collect();
-    Ok(RecordsetCore { schema: rs.schema, records })
+    Ok(RecordsetCore { schema, records })
 }
 
 fn anonymous_attribute(template: &str, index: usize) -> String {
@@ -1317,4 +1332,111 @@ fn apply_schema_reordering(rs: RecordsetCore, order: &[String]) -> CoreResult<Re
         })
         .collect();
     Ok(RecordsetCore { schema, records })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ------------------------------------------- apply_anchor_at_position
+
+    /// A recordset with the given attributes and rows of non-null values.
+    fn recordset(attributes: &[&str], rows: &[&[&str]]) -> RecordsetCore {
+        let schema = Schema::new(attributes.iter().map(|a| a.to_string()).collect()).unwrap();
+        let records = rows
+            .iter()
+            .map(|row| RecordCore {
+                values: row.iter().map(|v| Some(v.to_string())).collect(),
+            })
+            .collect();
+        RecordsetCore { schema, records }
+    }
+
+    /// Values of one record in the order of the recordset's own schema.
+    fn values(rs: &RecordsetCore, record: usize) -> Vec<&str> {
+        rs.records[record]
+            .values
+            .iter()
+            .map(|v| v.as_deref().unwrap_or(""))
+            .collect()
+    }
+
+    #[test]
+    fn named_attributes_keep_their_values() {
+        // The anchor attribute moves to position 2; every name keeps its own value.
+        let rs = recordset(
+            &["Lokaler", "Dato", "Tid"],
+            &[
+                &["AU", "20.05.2019", "08.30-11.30"],
+                &["A2.1", "11.06.2019", "0"],
+            ],
+        );
+        let out = apply_anchor_at_position(rs, 2).unwrap();
+        assert_eq!(out.schema.attributes, vec!["Dato", "Tid", "Lokaler"]);
+        assert_eq!(values(&out, 0), vec!["20.05.2019", "08.30-11.30", "AU"]);
+        assert_eq!(values(&out, 1), vec!["11.06.2019", "0", "A2.1"]);
+    }
+
+    #[test]
+    fn named_attributes_at_position_one() {
+        let rs = recordset(
+            &["Lokaler", "Dato", "Tid"],
+            &[&["AU", "20.05.2019", "08.30-11.30"]],
+        );
+        let out = apply_anchor_at_position(rs, 1).unwrap();
+        assert_eq!(out.schema.attributes, vec!["Dato", "Lokaler", "Tid"]);
+        assert_eq!(values(&out, 0), vec!["20.05.2019", "AU", "08.30-11.30"]);
+    }
+
+    #[test]
+    fn anonymous_attributes_are_not_renumbered() {
+        // The anonymous name travels with its attribute instead of being reassigned
+        // positionally, so $a_1 still names the anchor after the move.
+        let rs = recordset(
+            &["$a_1", "$a_2", "$a_3", "$a_4"],
+            &[&["anchor", "v2", "v3", "v4"]],
+        );
+        let out = apply_anchor_at_position(rs, 2).unwrap();
+        assert_eq!(out.schema.attributes, vec!["$a_2", "$a_3", "$a_1", "$a_4"]);
+        assert_eq!(out.get(0, "$a_1"), Some("anchor"));
+        assert_eq!(out.get(0, "$a_2"), Some("v2"));
+    }
+
+    #[test]
+    fn anonymous_value_order_matches_legacy_behaviour() {
+        // Header-less fixtures compare positionally: this order pins the ANCH/REC(n)
+        // task expectations, which must not move when the schema does.
+        let rs = recordset(
+            &["$a_1", "$a_2", "$a_3", "$a_4"],
+            &[&["anchor", "v2", "v3", "v4"]],
+        );
+        let out = apply_anchor_at_position(rs, 2).unwrap();
+        assert_eq!(values(&out, 0), vec!["v2", "v3", "anchor", "v4"]);
+    }
+
+    #[test]
+    fn mixed_schema_keeps_every_name() {
+        // One rule for named and anonymous attributes alike.
+        let rs = recordset(&["Lokaler", "$a_2", "Klasse"], &[&["AU", "v2", "0"]]);
+        let out = apply_anchor_at_position(rs, 1).unwrap();
+        assert_eq!(out.schema.attributes, vec!["$a_2", "Lokaler", "Klasse"]);
+        assert_eq!(values(&out, 0), vec!["v2", "AU", "0"]);
+    }
+
+    #[test]
+    fn degenerate_cases_return_the_input() {
+        let three = recordset(&["a", "b", "c"], &[&["1", "2", "3"]]);
+        assert_eq!(apply_anchor_at_position(three.clone(), 0).unwrap(), three);
+        assert_eq!(apply_anchor_at_position(three.clone(), 3).unwrap(), three);
+        assert_eq!(apply_anchor_at_position(three.clone(), 7).unwrap(), three);
+
+        let single = recordset(&["a"], &[&["1"]]);
+        assert_eq!(apply_anchor_at_position(single.clone(), 1).unwrap(), single);
+    }
+
+    #[test]
+    fn negative_position_is_rejected() {
+        let rs = recordset(&["a", "b"], &[&["1", "2"]]);
+        assert!(apply_anchor_at_position(rs, -1).is_err());
+    }
 }

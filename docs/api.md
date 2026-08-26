@@ -124,6 +124,9 @@ byte-identical to `RtlCompiler.compile` for lambda-free patterns. See the
 with `pattern.with_transformations(...)` or to an interpreter with
 `.with_transformations([...])`. RTL settings `<NORM, ANCH(n), SPLIT("s")>` and
 inline `REC(n)` / `REC('s')` parameters compile to these transformations.
+`AnchorAttributeAtPosition(pos)` moves the anchor attribute — its name together with
+its values — to 0-based position `pos`; it renames nothing, so every attribute-value
+binding survives and only the schema order changes.
 
 ## RTL bindings
 

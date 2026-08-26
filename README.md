@@ -16,7 +16,7 @@ and interprets the match into a relational **recordset**:
 TableSyntax → RtlCompiler/TablePattern → AtpMatcher → TableInterpreter → Recordset
 ```
 
-**pyRegTab 0.5.0 ≙ jRegTab 0.5.0** (same API, same semantics, same test
+**pyRegTab 0.5.1 ≙ jRegTab 0.5.1** (same API, same semantics, same test
 corpus), including the
 embedded RTL DSL `pyregtab.dsl` — a port of jRegTab's `ru.icc.regtab.dsl`
 (added upstream in jRegTab 0.3.0). Python-side extras on top of the Java API:
@@ -143,7 +143,7 @@ Rust (`pyregtab._core`, built with [PyO3](https://pyo3.rs) and
 
 ## Testing
 
-`pytest tests` runs (1 908 tests):
+`pytest tests` runs (1 925 tests):
 
 - the full benchmark suite — tasks 001–150 (Foofah, RegTab, Baikal),
   every fixture variant, **both** via RTL patterns and via ATP patterns

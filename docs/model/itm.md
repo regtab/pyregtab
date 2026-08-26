@@ -317,7 +317,8 @@ satisfy the constraints of the chosen operation (Tab. I in the paper):
     | AVP with literal | `ActionSpec.avp("ATTR_NAME")` | Context-derived ATTR constant |
 
     `ActionSpec.rec(int anchorPos, providers…)` adds an `AnchorAttributeAtPosition`
-    post-processing step (RTL: `REC(n)`).
+    post-processing step (RTL: `REC(n)`) — it moves the anchor attribute, name and
+    values together, to position `anchorPos` of the schema.
     `ActionSpec.rec(String splitDelimiter, providers…)` adds a `DelimitedFieldSplit`
     step (RTL: `REC('s')`).
 
@@ -431,7 +432,7 @@ The extracted recordset may be further post-processed by optional operations:
     | Delimited field split | `DelimitedFieldSplit` | `ActionSpec.rec(String delimiter, …)` — RTL `REC('s')` |
     | Field splitting | `FieldSplitting` | explicit split spec |
     | Whitespace normalisation | `WhitespaceNormalization` | `with_transformations(…)` |
-    | Anchor attribute at position | `AnchorAttributeAtPosition` | `ActionSpec.rec(int pos, …)` — RTL `REC(n)` |
+    | Anchor attribute at position | `AnchorAttributeAtPosition` | `ActionSpec.rec(int pos, …)` — RTL `REC(n)` / `<ANCH(n)>`; moves the anchor attribute (name with its values) to position `pos`, preserving every attribute-value binding |
 
 ---
 
