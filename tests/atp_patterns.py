@@ -260,7 +260,7 @@ def pattern_044():
 def pattern_045():
     NOT_BLANK = CellMatchCondition(CellPredicate.not_blank())
     SAME_SUBROW_COL0 = ItemFilterConditionSpec.and_(FilterTerm.same_subrow(), FilterTerm.col_exact(0))
-    return TablePattern.of(SubtablePattern.of(Quantifier.one(), RowPattern.of(Quantifier.one_or_more(), CellPattern.of(NOT_BLANK, Quantifier.one(), AtomicContentSpec.val()), CellPattern.of(NOT_BLANK, Quantifier.one(), DelimitedContentSpec(",", AtomicContentSpec.val(ActionSpec.rec(ProviderSpec.val(SAME_SUBROW_COL0, 1), anchor_pos=1)))))))
+    return TablePattern.of(SubtablePattern.of(Quantifier.one(), RowPattern.of(Quantifier.one_or_more(), CellPattern.of(NOT_BLANK, Quantifier.one(), AtomicContentSpec.val()), CellPattern.of(NOT_BLANK, Quantifier.one(), DelimitedContentSpec(",", AtomicContentSpec.val(ActionSpec.rec(ProviderSpec.val(SAME_SUBROW_COL0, 1), anchor_pos=1)).extract(StringExtractor.trimmed()))))))
 
 def pattern_046():
     NOT_BLANK = CellMatchCondition(CellPredicate.not_blank())
@@ -324,7 +324,7 @@ def pattern_054():
 
 def pattern_055():
     SAME_CELL = ItemFilterConditionSpec.same_cell()
-    return TablePattern.of(SubtablePattern.of(Quantifier.one(), RowPattern.of(Quantifier.one_or_more(), CellPattern.of(CompoundContentSpec([("", AtomicContentSpec.val(ActionSpec.rec(ProviderSpec.val(SAME_CELL, UNBOUNDED)))), (",", DelimitedContentSpec(",", AtomicContentSpec.val()))], "")))))
+    return TablePattern.of(SubtablePattern.of(Quantifier.one(), RowPattern.of(Quantifier.one_or_more(), CellPattern.of(CompoundContentSpec([("", AtomicContentSpec.val(ActionSpec.rec(ProviderSpec.val(SAME_CELL, UNBOUNDED)))), (",", DelimitedContentSpec(",", AtomicContentSpec.val().extract(StringExtractor.trimmed())))], "")))))
 
 def pattern_056():
     BELOW = ItemFilterConditionSpec.below()

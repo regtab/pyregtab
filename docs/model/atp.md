@@ -196,6 +196,12 @@ If the cell text decomposes as `s₁ · δ · s₂ · δ · … · δ · sₙ`, 
 applied independently to each `sₖ`, deriving one item per substring.  This is
 used, for example, when a single cell contains a comma-separated list of values.
 
+Each `sₖ ∈ Σ*` is passed to `S_atom` **verbatim**: substrings are not trimmed, and an
+empty substring — produced by adjacent, leading or trailing delimiters — derives an item
+with an empty string value rather than being discarded.  Hence `n` substrings always
+derive exactly `n` items.  Whitespace removal is the job of the atom's string extractor
+`ξ` (`=TRIM`, `=NORM`), which is applied to each substring in turn.
+
 ??? note "API mapping — DelimitedContentSpec"
     ```python
     DelimitedContentSpec.of(atomSpec, delimiter)
@@ -385,7 +391,7 @@ to cell `c`:
 
 - An *atomic* spec is used directly, deriving one item from the raw cell text.
 - A *delimited* spec splits the cell text by its delimiter and derives one item per
-  substring.
+  substring, passing each substring on unmodified.
 - A *compound* spec parses the cell text according to its delimiter structure and
   derives items from each component substring.
 - A *conditional* spec evaluates its condition against `c` and applies the

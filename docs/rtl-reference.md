@@ -170,11 +170,11 @@ When the cell body contains **only** a condition and nothing else, `?` must be o
 Examples from the test suite:
 
 ```rtl
-[ [!BLANK? VAL] [!BLANK? (VAL : SR&C0->REC(1)){','}] ]+
+[ [!BLANK? VAL] [!BLANK? (VAL=TRIM : SR&C0->REC(1)){','}] ]+
 ```
 
 *(Task 45 — both cells of each row are guarded as non-blank; the second is also a delimited
-cell.)*
+cell, whose tokens are trimmed explicitly.)*
 
 ```rtl
 [ [BLANK] [] ]?
@@ -309,6 +309,30 @@ Splits the cell text by `"sep"` and derives one item per token.
 
 *(Task 45 — a cell like `"a,b,c"` yields three VAL items, each forming a record bound to the
 row key via `SR & C0`.)*
+
+**Splitting is verbatim.** Tokens reach the atom exactly as the split produced them, the
+same way an atomic or compound cell receives its raw text:
+
+- surrounding whitespace is **kept** — `"a, b"` yields `"a"` and `" b"`, not `"a"` and `"b"`;
+- empty tokens are **kept** — `"a,,b"` yields three items, the middle one an empty string,
+  and a trailing separator (`"a,b,"`) likewise yields a trailing empty item.
+
+This matches `pandas.Series.str.split`, which makes patterns over exploded columns
+expressible without post-processing.
+
+To trim, ask for it — add a [string extractor](#atomic--contspec) to the delimited atom.
+It is applied to each token separately:
+
+```rtl
+[(VAL=TRIM){','}]            // "a, b"    -> "a", "b"
+[(VAL=NORM){','}]            // "a,  b c" -> "a", "b c"
+```
+
+!!! warning "Changed in 0.5.0"
+
+    Before 0.5.0 every token was trimmed and empty tokens were silently dropped.
+    Patterns that relied on this need `=TRIM` (or `=NORM`) added to the delimited atom:
+    `(VAL){","}` → `(VAL=TRIM){","}`. Atomic and compound specifications are unaffected.
 
 ### Compound
 
