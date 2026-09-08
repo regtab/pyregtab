@@ -19,6 +19,10 @@ pub mod util;
 use pyo3::prelude::*;
 
 #[cfg(feature = "python")]
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
+#[cfg(feature = "python")]
 #[pymodule]
 fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // syntax
