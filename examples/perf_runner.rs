@@ -12,6 +12,7 @@ use pyregtab::matcher::match_atp;
 use pyregtab::recordset::RecordsetCore;
 use pyregtab::rtl::{compile, BindingsCore};
 use pyregtab::syntax::SyntaxCore;
+use pyregtab::util::Text;
 use std::io::Write;
 use std::time::Instant;
 
@@ -53,7 +54,7 @@ fn main() {
         let t = Instant::now();
         let text = String::from_utf8(bytes.clone()).unwrap();
         let text = universal_newlines(&text);
-        let mut syntax = SyntaxCore::from_rows(parse_csv(&text), None).unwrap();
+        let mut syntax = SyntaxCore::from_rows(parse_csv::<Text>(&text), None).unwrap();
         times[0].push(t.elapsed().as_secs_f64());
 
         let t = Instant::now();

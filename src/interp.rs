@@ -169,7 +169,7 @@ fn complete_working_state(
     let mut join_actions: Vec<&ActionInst> = Vec::new();
 
     for action in &sem.actions {
-        match action.op {
+        match action.op() {
             OpInst::Fill(_) | OpInst::Prefix(_) | OpInst::Suffix(_) => str_actions.push(action),
             OpInst::Avp => avp_actions.push(action),
             OpInst::Rec => rec_actions.push(action),
@@ -207,11 +207,11 @@ fn apply_action(
 ) -> CoreResult<()> {
     let anchor = action.anchor;
     items.clear();
-    for provider in &action.providers {
+    for provider in action.providers() {
         provider.provide_into(anchor, sem, env, index, items)?;
     }
     let items: &[ItemId] = items;
-    match &action.op {
+    match action.op() {
         OpInst::Fill(d) => ws.apply_fill(sem, anchor, items, d),
         OpInst::Prefix(d) => ws.apply_prefix(sem, anchor, items, d),
         OpInst::Suffix(d) => ws.apply_suffix(sem, anchor, items, d),
@@ -255,7 +255,7 @@ fn check_records(
     items: &[ItemId],
     operation: &str,
 ) -> CoreResult<()> {
-    if action.inherited {
+    if action.inherited() {
         return Ok(());
     }
     let ItemId::Cell(anchor) = action.anchor else {

@@ -16,11 +16,12 @@ use std::borrow::Cow;
 /// `\r`, `\n`) is ASCII and never occurs inside a multi-byte UTF-8 sequence,
 /// so the field boundaries found on bytes are exactly those the Java/Python
 /// char loops find, and every field is a valid UTF-8 slice.
-pub fn parse_csv(text: &str) -> Vec<Vec<String>> {
+pub fn parse_csv<T: for<'a> From<&'a str>>(text: &str) -> Vec<Vec<T>> {
     let bytes = text.as_bytes();
     let n = bytes.len();
-    let mut rows: Vec<Vec<String>> = Vec::new();
-    let mut fields: Vec<String> = Vec::new();
+    let mut rows: Vec<Vec<T>> = Vec::new();
+    let mut fields: Vec<T> = Vec::new();
+    // Accumulator of the current field (reused; a field is emitted as a `T`).
     let mut cur = String::new();
     let mut in_quotes = false;
     // a quote was seen on this line: "" is a field, not an empty line
@@ -61,7 +62,8 @@ pub fn parse_csv(text: &str) -> Vec<Vec<String>> {
             run = i;
         } else if ch == b',' {
             flush_run!(i);
-            fields.push(std::mem::take(&mut cur));
+            fields.push(T::from(cur.as_str()));
+            cur.clear();
             i += 1;
             run = i;
         } else if ch == b'\r' || ch == b'\n' {
@@ -70,7 +72,7 @@ pub fn parse_csv(text: &str) -> Vec<Vec<String>> {
                 i += 1; // CRLF is one line break
             }
             if !fields.is_empty() || !cur.is_empty() || quoted {
-                fields.push(std::mem::take(&mut cur));
+                fields.push(T::from(cur.as_str()));
                 rows.push(std::mem::take(&mut fields));
             }
             cur.clear();
@@ -83,7 +85,7 @@ pub fn parse_csv(text: &str) -> Vec<Vec<String>> {
     }
     flush_run!(n);
     if !fields.is_empty() || !cur.is_empty() || quoted {
-        fields.push(cur);
+        fields.push(T::from(cur.as_str()));
         rows.push(fields);
     }
     rows
@@ -119,7 +121,7 @@ mod tests {
     use super::*;
 
     fn rows(s: &str) -> Vec<Vec<String>> {
-        parse_csv(s)
+        parse_csv::<String>(s)
     }
 
     fn v(rows: &[&[&str]]) -> Vec<Vec<String>> {

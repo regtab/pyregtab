@@ -4,7 +4,7 @@
 //! replaced by an arena: `SyntaxCore` owns flat vectors, links are indices.
 //! Identity comparisons (`c.subrow() == a.subrow()`) become index equality.
 
-use crate::util::{java_is_blank, CoreResult};
+use crate::util::{java_is_blank, CoreResult, Text};
 
 #[cfg_attr(feature = "python", pyo3::pyclass(eq, eq_int, rename_all = "SCREAMING_SNAKE_CASE"))]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -53,13 +53,15 @@ pub struct BoundingBox {
     pub right_col: usize,
 }
 
-#[derive(Clone, Debug)]
-pub struct CellData {
-    pub row: usize,
-    pub col: usize,
+/// Merged-cell geometry and formatting of a cell. Every field has a default
+/// (the cell's own position, no borders, serif, white on black…); a cell
+/// carries a `CellFormat` only once something was set (`CellData::format_mut`),
+/// so a CSV-loaded million-cell grid does not pay ~60 bytes per cell for
+/// values nobody set.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct CellFormat {
     pub bbox: BoundingBox,
     pub merged: bool,
-    // formatting
     pub font_family: FontFamily,
     pub font_bold: bool,
     pub font_italic: bool,
@@ -74,18 +76,11 @@ pub struct CellData {
     pub bg_color: CellColor,
     pub fg_color: CellColor,
     pub rotation: f64,
-    // content
-    pub text: String,
-    pub text_blank: bool,
-    pub text_multiline: bool,
-    pub text_indent: usize,
 }
 
-impl CellData {
-    fn new(row: usize, col: usize) -> Self {
-        CellData {
-            row,
-            col,
+impl CellFormat {
+    pub fn default_for(row: usize, col: usize) -> Self {
+        CellFormat {
             bbox: BoundingBox {
                 top_row: row,
                 left_col: col,
@@ -107,18 +102,57 @@ impl CellData {
             bg_color: CellColor::WHITE,
             fg_color: CellColor::BLACK,
             rotation: 0.0,
-            text: String::new(),
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct CellData {
+    pub row: usize,
+    pub col: usize,
+    // content
+    pub text: Text,
+    pub text_blank: bool,
+    pub text_multiline: bool,
+    pub text_indent: usize,
+    /// Geometry and formatting; `None` means all defaults.
+    format: Option<Box<CellFormat>>,
+}
+
+impl CellData {
+    fn new(row: usize, col: usize) -> Self {
+        CellData {
+            row,
+            col,
+            text: Text::from(""),
             text_blank: true,
             text_multiline: false,
             text_indent: 0,
+            format: None,
         }
     }
 
-    pub fn set_text(&mut self, text: String) {
+    pub fn set_text(&mut self, text: impl Into<Text>) {
+        let text: Text = text.into();
         self.text_blank = java_is_blank(&text);
         self.text_multiline = text.contains('\n');
         self.text_indent = text.chars().take_while(|&c| c == ' ').count();
         self.text = text;
+    }
+
+    /// The cell's geometry and formatting (defaults when nothing was set).
+    pub fn format(&self) -> CellFormat {
+        match &self.format {
+            Some(f) => **f,
+            None => CellFormat::default_for(self.row, self.col),
+        }
+    }
+
+    /// Mutable geometry and formatting, materialized on first use.
+    pub fn format_mut(&mut self) -> &mut CellFormat {
+        let (row, col) = (self.row, self.col);
+        self.format
+            .get_or_insert_with(|| Box::new(CellFormat::default_for(row, col)))
     }
 }
 
@@ -185,7 +219,7 @@ impl SyntaxCore {
     /// Builds a table from ready rows of cell texts in one pass: `num_rows`
     /// is the number of rows, `num_cols` the given width or the widest row;
     /// shorter rows are padded with empty cells (the CLI runner contract).
-    pub fn from_rows(rows: Vec<Vec<String>>, num_cols: Option<usize>) -> CoreResult<Self> {
+    pub fn from_rows<S: Into<Text>>(rows: Vec<Vec<S>>, num_cols: Option<usize>) -> CoreResult<Self> {
         let num_rows = rows.len();
         let widest = rows.iter().map(Vec::len).max().unwrap_or(0);
         let num_cols = match num_cols {

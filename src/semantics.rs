@@ -241,10 +241,34 @@ pub struct CtxItem {
     pub const_value: Option<Text>,
 }
 
-/// One instantiated interpretation action.
+/// One instantiated interpretation action: an anchor plus the part shared
+/// by every instance of the same `ActionSpec` (the matcher instantiates one
+/// action per matched cell, so a million-cell table holds a million actions
+/// of a handful of specs).
 #[derive(Clone, Debug)]
 pub struct ActionInst {
     pub anchor: ItemId,
+    pub template: std::sync::Arc<ActionTemplate>,
+}
+
+impl ActionInst {
+    #[inline]
+    pub fn providers(&self) -> &[ProviderInst] {
+        &self.template.providers
+    }
+    #[inline]
+    pub fn op(&self) -> &OpInst {
+        &self.template.op
+    }
+    #[inline]
+    pub fn inherited(&self) -> bool {
+        self.template.inherited
+    }
+}
+
+/// The anchor-independent part of an action.
+#[derive(Clone, Debug)]
+pub struct ActionTemplate {
     pub providers: Vec<ProviderInst>,
     pub op: OpInst,
     /// `true` if the action was inherited from the `actSpecs` of a
@@ -285,6 +309,10 @@ pub struct SemanticsCore {
     pub cell_items: Vec<CellItem>,
     pub ctx_items: Vec<CtxItem>,
     pub actions: Vec<ActionInst>,
+    /// Matcher scratch: action templates by `ActionSpec` address, valid only
+    /// while the pattern being matched is alive; cleared when matching ends.
+    #[doc(hidden)]
+    pub action_templates: HashMap<usize, std::sync::Arc<ActionTemplate>>,
 }
 
 impl SemanticsCore {
@@ -292,7 +320,7 @@ impl SemanticsCore {
     /// filter conditions inside instantiated providers).
     pub fn has_py_callbacks(&self) -> bool {
         self.actions.iter().any(|a| {
-            a.providers.iter().any(|p| match p {
+            a.providers().iter().any(|p| match p {
                 ProviderInst::Cell { cond, .. } => cond.has_py(),
                 ProviderInst::Ctx { .. } => false,
             })
@@ -633,7 +661,7 @@ impl ItemIndex {
         col_start[num_cols] = n;
 
         let needs_subtable_col_major = sem.actions.iter().any(|a| {
-            a.providers.iter().any(|p| match p {
+            a.providers().iter().any(|p| match p {
                 ProviderInst::Cell { order, scope, .. } => {
                     scope.same_subtable
                         && matches!(
@@ -949,6 +977,24 @@ impl Diagnostic {
 
 // ---------------------------------------------------------------- WorkingState
 
+/// The records of one anchor: one after `O_rec` / `O_concat` (no vector of
+/// vectors for the common case), several after `O_join`.
+#[derive(Clone, Debug, PartialEq)]
+pub enum Records {
+    One(Vec<ItemId>),
+    Many(Vec<Vec<ItemId>>),
+}
+
+impl Records {
+    #[inline]
+    pub fn as_slice(&self) -> &[Vec<ItemId>] {
+        match self {
+            Records::One(r) => std::slice::from_ref(r),
+            Records::Many(rs) => rs,
+        }
+    }
+}
+
 /// Port of `WorkingState`: `ws = (V, A, val, attr, avp, rec, J)`, insertion-
 /// ordered maps keyed by item identity.
 ///
@@ -973,7 +1019,7 @@ pub struct WorkingState {
     attr_ids: HashMap<Text, u32>,
     /// Keyed by cell-item index; insertion order defines the order of records.
     /// Concatenated-away anchors keep their (stale) entry and are masked by `C`.
-    rec: AnchorMap<Vec<Vec<ItemId>>>,
+    rec: AnchorMap<Records>,
     /// J: joined-away anchors.
     joined: AnchorSet,
     /// C: concatenated-away anchors (removed from `dom(rec)`).
@@ -1054,11 +1100,11 @@ impl WorkingState {
 
     /// rec(ι): the records of the anchor, also for joined-away anchors;
     /// `None` if ι ∉ dom(rec).
-    pub fn rec(&self, anchor: usize) -> Option<&Vec<Vec<ItemId>>> {
+    pub fn rec(&self, anchor: usize) -> Option<&[Vec<ItemId>]> {
         if self.concatenated.contains(&anchor) {
             return None;
         }
-        self.rec.get(&anchor)
+        self.rec.get(&anchor).map(Records::as_slice)
     }
 
     /// ι ∈ J.
@@ -1253,7 +1299,7 @@ impl WorkingState {
             }
             sequence.push(item);
         }
-        self.rec.insert(anchor_idx, vec![sequence]);
+        self.rec.insert(anchor_idx, Records::One(sequence));
         Ok(())
     }
 
@@ -1303,7 +1349,7 @@ impl WorkingState {
         }
         let mut result = anchor_rec.clone();
         for &other in &others {
-            let other_rec = &self.rec[&other][0];
+            let other_rec = &self.rec[&other].as_slice()[0];
             if let Some(problem) = self.key_mismatch(&anchor_rec, other_rec, key) {
                 return self.report(sem, anchor_idx, "CONCAT", problem); // (ii)
             }
@@ -1319,7 +1365,7 @@ impl WorkingState {
                 ),
             ); // (iii)
         }
-        self.rec.insert(anchor_idx, vec![result]);
+        self.rec.insert(anchor_idx, Records::One(result));
         for other in others {
             self.joined.remove(&other);
             self.concatenated.insert(other);
@@ -1351,14 +1397,14 @@ impl WorkingState {
         if items.is_empty() {
             return Ok(());
         }
-        let anchor_recs = anchor_recs.clone();
+        let anchor_recs = anchor_recs.to_vec();
         let others = self.others_with_records(anchor_idx, items);
         if others.is_empty() {
             return Ok(());
         }
         let mut joined_recs: Vec<Vec<ItemId>> = Vec::new();
         for &other in &others {
-            joined_recs.extend(self.rec[&other].iter().cloned());
+            joined_recs.extend(self.rec[&other].as_slice().iter().cloned());
         }
 
         let mut result: Vec<Vec<ItemId>> = Vec::new();
@@ -1384,7 +1430,7 @@ impl WorkingState {
                 ),
             )?;
         } else {
-            self.rec.insert(anchor_idx, result);
+            self.rec.insert(anchor_idx, Records::Many(result));
         }
         self.joined.extend(others);
         Ok(())
@@ -1574,7 +1620,7 @@ impl WorkingState {
             if self.joined.contains(anchor_idx) || self.concatenated.contains(anchor_idx) {
                 continue;
             }
-            for sequence in records {
+            for sequence in records.as_slice() {
                 if self.duplicate_attribute_in(sequence, &mut seen).is_some() {
                     return false;
                 }
@@ -1615,6 +1661,7 @@ mod tests {
                 .collect(),
             ctx_items: Vec::new(),
             actions: Vec::new(),
+            action_templates: HashMap::new(),
         }
     }
 
@@ -1659,7 +1706,7 @@ mod tests {
 
         ws.apply_concat(&sem, ItemId::Cell(0), &cells(&[2]), &key_pos(&[0])).unwrap();
 
-        assert_eq!(ws.rec(0), Some(&vec![cells(&[0, 1, 3])]));
+        assert_eq!(ws.rec(0), Some(&*vec![cells(&[0, 1, 3])]));
         assert!(!ws.has_rec(2), "the concatenated anchor is removed from dom(rec)");
         assert!(ws.is_concatenated(2));
         assert_eq!(ws.live_anchors(), vec![0]);
@@ -1681,7 +1728,7 @@ mod tests {
 
         ws.apply_concat(&sem, ItemId::Cell(0), &cells(&[2, 4]), &key_pos(&[0])).unwrap();
 
-        assert_eq!(ws.rec(0), Some(&vec![cells(&[0, 1, 3, 5])]));
+        assert_eq!(ws.rec(0), Some(&*vec![cells(&[0, 1, 3, 5])]));
         assert!(!ws.has_rec(2) && !ws.has_rec(4));
         assert!(ws.diagnostics().is_empty());
     }
@@ -1701,8 +1748,8 @@ mod tests {
 
         ws.apply_concat(&sem, ItemId::Cell(0), &cells(&[2]), &key_pos(&[0])).unwrap();
 
-        assert_eq!(ws.rec(0), Some(&vec![cells(&[0, 1])]), "anchor record unchanged");
-        assert_eq!(ws.rec(2), Some(&vec![cells(&[2, 3])]), "the other record is kept: both survive");
+        assert_eq!(ws.rec(0), Some(&*vec![cells(&[0, 1])]), "anchor record unchanged");
+        assert_eq!(ws.rec(2), Some(&*vec![cells(&[2, 3])]), "the other record is kept: both survive");
         assert_eq!(ws.live_anchors().len(), 2);
         assert_eq!(ws.diagnostics().len(), 1);
         let d = &ws.diagnostics()[0];
@@ -1719,7 +1766,7 @@ mod tests {
 
         ws.apply_concat(&sem, ItemId::Cell(0), &cells(&[2]), &key_pos(&[0])).unwrap();
 
-        assert_eq!(ws.rec(0), Some(&vec![cells(&[0, 1])]));
+        assert_eq!(ws.rec(0), Some(&*vec![cells(&[0, 1])]));
         assert!(ws.has_rec(2));
         assert_eq!(ws.diagnostics().len(), 1);
         assert!(ws.diagnostics()[0].message.contains("key position 0"));
@@ -1749,11 +1796,11 @@ mod tests {
         let sem = sem_of(&[("book", 1, 0, 0), ("5", 1, 1, 0), ("book", 2, 0, 0)]);
         let mut ws = init(&sem, false);
         ws.apply_rec(&sem, ItemId::Cell(0), &cells(&[1])).unwrap();
-        let before = ws.rec(0).cloned();
+        let before = ws.rec(0).map(<[_]>::to_vec);
 
         ws.apply_concat(&sem, ItemId::Cell(0), &cells(&[2]), &key_pos(&[0])).unwrap();
 
-        assert_eq!(ws.rec(0).cloned(), before);
+        assert_eq!(ws.rec(0).map(<[_]>::to_vec), before);
         assert!(ws.diagnostics().is_empty(), "no record to concatenate is not a violation");
     }
 
@@ -1776,7 +1823,7 @@ mod tests {
 
         assert_eq!(
             ws.rec(0),
-            Some(&vec![cells(&[0, 1, 2, 5])]),
+            Some(&*vec![cells(&[0, 1, 2, 5])]),
             "the anchor keeps its key; A is dropped from the concatenated record at its own position"
         );
         assert!(!ws.has_rec(3));
@@ -1793,7 +1840,7 @@ mod tests {
 
         ws.apply_concat(&sem, ItemId::Cell(0), &cells(&[2]), &key_names(&["A"])).unwrap();
 
-        assert_eq!(ws.rec(0), Some(&vec![cells(&[0, 1])]));
+        assert_eq!(ws.rec(0), Some(&*vec![cells(&[0, 1])]));
         assert!(ws.has_rec(2), "no effect: both records remain");
         assert_eq!(ws.diagnostics().len(), 1);
         assert!(ws.diagnostics()[0].message.contains("key attribute 'A' is missing"));
@@ -1836,7 +1883,7 @@ mod tests {
 
             ws.apply_concat(&sem, ItemId::Cell(0), &cells(&[5]), &key).unwrap();
 
-            assert_eq!(ws.rec(0), Some(&vec![cells(&[0, 1, 2, 3, 4, 9])]));
+            assert_eq!(ws.rec(0), Some(&*vec![cells(&[0, 1, 2, 3, 4, 9])]));
             assert!(ws.diagnostics().is_empty());
         }
     }
@@ -1871,7 +1918,7 @@ mod tests {
 
         ws.apply_join(&sem, ItemId::Cell(0), &cells(&[2, 3]), &RecordKey::empty()).unwrap();
 
-        assert_eq!(ws.rec(0), Some(&vec![cells(&[0, 2, 4]), cells(&[0, 3, 5])]));
+        assert_eq!(ws.rec(0), Some(&*vec![cells(&[0, 2, 4]), cells(&[0, 3, 5])]));
         assert!(ws.is_joined(2) && ws.is_joined(3));
         assert_eq!(ws.all_joined().iter().collect::<Vec<_>>(), vec![2, 3]);
         assert!(ws.rec(2).is_some(), "a joined-away anchor keeps its records");
@@ -1887,7 +1934,7 @@ mod tests {
         ws.apply_join(&sem, ItemId::Cell(1), &cells(&[2, 3]), &RecordKey::empty()).unwrap();
 
         assert_eq!(ws.rec(0).unwrap().len(), 2);
-        assert_eq!(ws.rec(1), Some(&vec![cells(&[1, 2, 4]), cells(&[1, 3, 5])]));
+        assert_eq!(ws.rec(1), Some(&*vec![cells(&[1, 2, 4]), cells(&[1, 3, 5])]));
         assert!(
             ws.is_recordset_consistent(),
             "the 'value' attribute of the joined-away anchors does not break uniformity"
@@ -1920,7 +1967,7 @@ mod tests {
 
         assert_eq!(
             ws.rec(0),
-            Some(&vec![
+            Some(&*vec![
                 cells(&[0, 2, 4, 6]), cells(&[0, 2, 4, 7]),
                 cells(&[0, 3, 5, 6]), cells(&[0, 3, 5, 7]),
             ])
@@ -1945,7 +1992,7 @@ mod tests {
 
         ws.apply_join(&sem, ItemId::Cell(0), &cells(&[2, 4]), &key_pos(&[0])).unwrap();
 
-        assert_eq!(ws.rec(0), Some(&vec![cells(&[0, 1, 3])]));
+        assert_eq!(ws.rec(0), Some(&*vec![cells(&[0, 1, 3])]));
         assert!(ws.diagnostics().is_empty());
     }
 
@@ -1960,7 +2007,7 @@ mod tests {
 
         ws.apply_join(&sem, ItemId::Cell(0), &cells(&[2]), &key_pos(&[0])).unwrap();
 
-        assert_eq!(ws.rec(0), Some(&vec![cells(&[0, 1])]));
+        assert_eq!(ws.rec(0), Some(&*vec![cells(&[0, 1])]));
         assert!(ws.is_joined(2), "J is still extended");
         assert_eq!(ws.diagnostics().len(), 1);
         assert_eq!(ws.diagnostics()[0].operation, "JOIN");
@@ -2009,7 +2056,7 @@ mod tests {
 
         ws.apply_join(&sem, ItemId::Cell(0), &cells(&[6]), &RecordKey::empty()).unwrap();
 
-        assert_eq!(ws.rec(0), Some(&vec![cells(&[0])]));
+        assert_eq!(ws.rec(0), Some(&*vec![cells(&[0])]));
         assert!(ws.all_joined().is_empty());
         assert!(ws.diagnostics().is_empty());
     }
@@ -2035,7 +2082,7 @@ mod tests {
 
         assert_eq!(
             ws.rec(0),
-            Some(&vec![cells(&[0, 1, 2, 4])]),
+            Some(&*vec![cells(&[0, 1, 2, 4])]),
             "only the pair carrying Year on both sides survives; the joined key is not repeated"
         );
         assert_eq!(ws.all_joined().iter().collect::<Vec<_>>(), vec![2, 5]);
@@ -2203,17 +2250,19 @@ mod tests {
             // the index must serve subtable-scoped column-major providers too
             sem.actions.push(ActionInst {
                 anchor: ItemId::Cell(0),
-                providers: vec![ProviderInst::Cell {
-                    cond: FilterCond::Bare(FilterTerm::SameSubtable),
-                    order: TraversalOrder::ColumnMajor,
-                    cardinality: UNBOUNDED,
-                    kind: CellKind::Unrestricted,
-                    exclude_anchor: true,
-                    lenient: true,
-                    scope: CandidateScope::subtable(),
-                }],
-                op: OpInst::Rec,
-                inherited: false,
+                template: std::sync::Arc::new(ActionTemplate {
+                    providers: vec![ProviderInst::Cell {
+                        cond: FilterCond::Bare(FilterTerm::SameSubtable),
+                        order: TraversalOrder::ColumnMajor,
+                        cardinality: UNBOUNDED,
+                        kind: CellKind::Unrestricted,
+                        exclude_anchor: true,
+                        lenient: true,
+                        scope: CandidateScope::subtable(),
+                    }],
+                    op: OpInst::Rec,
+                    inherited: false,
+                }),
             });
             let index = ItemIndex::build(&sem, &syntax);
             for _ in 0..60 {

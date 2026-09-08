@@ -252,7 +252,7 @@ impl PyTableSyntax {
         };
         let core = py.allow_threads(|| {
             let text = crate::csv::universal_newlines(&text);
-            SyntaxCore::from_rows(crate::csv::parse_csv(&text), None)
+            SyntaxCore::from_rows(crate::csv::parse_csv::<Text>(&text), None)
         });
         Ok(PyTableSyntax { core: core.map_err(core_err)? })
     }
@@ -260,7 +260,7 @@ impl PyTableSyntax {
     /// `from_csv` for CSV text already in memory (no newline translation).
     #[staticmethod]
     fn from_csv_text(py: Python<'_>, text: &str) -> PyResult<Self> {
-        let core = py.allow_threads(|| SyntaxCore::from_rows(crate::csv::parse_csv(text), None));
+        let core = py.allow_threads(|| SyntaxCore::from_rows(crate::csv::parse_csv::<Text>(text), None));
         Ok(PyTableSyntax { core: core.map_err(core_err)? })
     }
 
@@ -354,10 +354,18 @@ macro_rules! cell_get {
         t.core.cell($self.row, $self.col).$field.clone()
     }};
 }
+/// Formatting getters/setters go through `CellData::format()` /
+/// `format_mut()` (formatting is materialized per cell on first write).
+macro_rules! fmt_get {
+    ($self:ident, $py:ident, $field:ident) => {{
+        let t = $self.table.bind($py).borrow();
+        t.core.cell($self.row, $self.col).format().$field
+    }};
+}
 macro_rules! cell_set {
     ($self:ident, $py:ident, $field:ident, $value:expr) => {{
         let mut t = $self.table.bind($py).borrow_mut();
-        t.core.cell_mut($self.row, $self.col).$field = $value;
+        t.core.cell_mut($self.row, $self.col).format_mut().$field = $value;
     }};
 }
 
@@ -378,7 +386,7 @@ impl PyCell0 {
     #[getter]
     fn bbox(&self, py: Python<'_>) -> PyBoundingBox {
         let t = self.table.bind(py).borrow();
-        let b = t.core.cell(self.row, self.col).bbox;
+        let b = t.core.cell(self.row, self.col).format().bbox;
         PyBoundingBox {
             top_row: b.top_row,
             left_col: b.left_col,
@@ -388,13 +396,14 @@ impl PyCell0 {
     }
     #[getter]
     fn merged(&self, py: Python<'_>) -> bool {
-        cell_get!(self, py, merged)
+        fmt_get!(self, py, merged)
     }
 
     // --- content ---
     #[getter]
     fn text(&self, py: Python<'_>) -> String {
-        cell_get!(self, py, text)
+        let t = self.table.bind(py).borrow();
+        t.core.cell(self.row, self.col).text.to_string()
     }
     #[setter(text)]
     fn set_text_prop(&self, py: Python<'_>, text: String) {
@@ -420,7 +429,7 @@ impl PyCell0 {
     // --- formatting ---
     #[getter]
     fn font_family(&self, py: Python<'_>) -> FontFamily {
-        cell_get!(self, py, font_family)
+        fmt_get!(self, py, font_family)
     }
     #[setter(font_family)]
     fn set_font_family(&self, py: Python<'_>, v: FontFamily) {
@@ -428,7 +437,7 @@ impl PyCell0 {
     }
     #[getter]
     fn font_bold(&self, py: Python<'_>) -> bool {
-        cell_get!(self, py, font_bold)
+        fmt_get!(self, py, font_bold)
     }
     #[setter(font_bold)]
     fn set_font_bold(&self, py: Python<'_>, v: bool) {
@@ -436,7 +445,7 @@ impl PyCell0 {
     }
     #[getter]
     fn font_italic(&self, py: Python<'_>) -> bool {
-        cell_get!(self, py, font_italic)
+        fmt_get!(self, py, font_italic)
     }
     #[setter(font_italic)]
     fn set_font_italic(&self, py: Python<'_>, v: bool) {
@@ -444,7 +453,7 @@ impl PyCell0 {
     }
     #[getter]
     fn font_strikeout(&self, py: Python<'_>) -> bool {
-        cell_get!(self, py, font_strikeout)
+        fmt_get!(self, py, font_strikeout)
     }
     #[setter(font_strikeout)]
     fn set_font_strikeout(&self, py: Python<'_>, v: bool) {
@@ -452,7 +461,7 @@ impl PyCell0 {
     }
     #[getter]
     fn font_underline(&self, py: Python<'_>) -> bool {
-        cell_get!(self, py, font_underline)
+        fmt_get!(self, py, font_underline)
     }
     #[setter(font_underline)]
     fn set_font_underline(&self, py: Python<'_>, v: bool) {
@@ -460,7 +469,7 @@ impl PyCell0 {
     }
     #[getter]
     fn horz_align(&self, py: Python<'_>) -> HorizontalAlignment {
-        cell_get!(self, py, horz_align)
+        fmt_get!(self, py, horz_align)
     }
     #[setter(horz_align)]
     fn set_horz_align(&self, py: Python<'_>, v: HorizontalAlignment) {
@@ -468,7 +477,7 @@ impl PyCell0 {
     }
     #[getter]
     fn vert_align(&self, py: Python<'_>) -> VerticalAlignment {
-        cell_get!(self, py, vert_align)
+        fmt_get!(self, py, vert_align)
     }
     #[setter(vert_align)]
     fn set_vert_align(&self, py: Python<'_>, v: VerticalAlignment) {
@@ -476,7 +485,7 @@ impl PyCell0 {
     }
     #[getter]
     fn left_border(&self, py: Python<'_>) -> bool {
-        cell_get!(self, py, left_border)
+        fmt_get!(self, py, left_border)
     }
     #[setter(left_border)]
     fn set_left_border(&self, py: Python<'_>, v: bool) {
@@ -484,7 +493,7 @@ impl PyCell0 {
     }
     #[getter]
     fn top_border(&self, py: Python<'_>) -> bool {
-        cell_get!(self, py, top_border)
+        fmt_get!(self, py, top_border)
     }
     #[setter(top_border)]
     fn set_top_border(&self, py: Python<'_>, v: bool) {
@@ -492,7 +501,7 @@ impl PyCell0 {
     }
     #[getter]
     fn right_border(&self, py: Python<'_>) -> bool {
-        cell_get!(self, py, right_border)
+        fmt_get!(self, py, right_border)
     }
     #[setter(right_border)]
     fn set_right_border(&self, py: Python<'_>, v: bool) {
@@ -500,7 +509,7 @@ impl PyCell0 {
     }
     #[getter]
     fn bottom_border(&self, py: Python<'_>) -> bool {
-        cell_get!(self, py, bottom_border)
+        fmt_get!(self, py, bottom_border)
     }
     #[setter(bottom_border)]
     fn set_bottom_border(&self, py: Python<'_>, v: bool) {
@@ -508,7 +517,7 @@ impl PyCell0 {
     }
     #[getter]
     fn bg_color(&self, py: Python<'_>) -> PyCellColor {
-        cell_get!(self, py, bg_color).into()
+        fmt_get!(self, py, bg_color).into()
     }
     #[setter(bg_color)]
     fn set_bg_color(&self, py: Python<'_>, v: PyCellColor) {
@@ -516,7 +525,7 @@ impl PyCell0 {
     }
     #[getter]
     fn fg_color(&self, py: Python<'_>) -> PyCellColor {
-        cell_get!(self, py, fg_color).into()
+        fmt_get!(self, py, fg_color).into()
     }
     #[setter(fg_color)]
     fn set_fg_color(&self, py: Python<'_>, v: PyCellColor) {
@@ -524,7 +533,7 @@ impl PyCell0 {
     }
     #[getter]
     fn rotation(&self, py: Python<'_>) -> f64 {
-        cell_get!(self, py, rotation)
+        fmt_get!(self, py, rotation)
     }
     #[setter(rotation)]
     fn set_rotation(&self, py: Python<'_>, v: f64) {
@@ -3301,7 +3310,7 @@ impl PyAtpToRtlSerializer {
 /// CRLF/CR/LF end a row; empty lines are skipped.
 #[pyfunction]
 pub fn parse_csv(py: Python<'_>, text: &str) -> Vec<Vec<String>> {
-    py.allow_threads(|| crate::csv::parse_csv(text))
+    py.allow_threads(|| crate::csv::parse_csv::<String>(text))
 }
 
 #[pyfunction]
