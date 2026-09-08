@@ -16,6 +16,7 @@ use pyo3::exceptions::{PyException, PyIndexError, PyKeyError, PyRuntimeError, Py
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyTuple};
 use std::collections::BTreeSet;
+use std::io::Write;
 use std::sync::Arc;
 
 create_exception!(pyregtab, RtlCompileError, PyException);
@@ -884,47 +885,29 @@ impl PyRecordset {
     #[pyo3(signature = (path=None, *, sep=",", missing="", quote_all=false, newline="\r\n"))]
     fn to_csv(
         &self,
+        py: Python<'_>,
         path: Option<std::path::PathBuf>,
         sep: &str,
         missing: &str,
         quote_all: bool,
         newline: &str,
     ) -> PyResult<Option<String>> {
-        fn field(out: &mut String, s: &str, sep: &str, quote_all: bool) {
-            if quote_all || s.contains(sep) || s.contains('"') || s.contains('\n') || s.contains('\r') {
-                out.push('"');
-                out.push_str(&s.replace('"', "\"\""));
-                out.push('"');
-            } else {
-                out.push_str(s);
-            }
-        }
-        let mut csv = String::new();
-        for (i, a) in self.core.schema.attributes.iter().enumerate() {
-            if i > 0 {
-                csv.push_str(sep);
-            }
-            field(&mut csv, a, sep, quote_all);
-        }
-        csv.push_str(newline);
-        for r in &self.core.records {
-            for (i, v) in r.values.iter().enumerate() {
-                if i > 0 {
-                    csv.push_str(sep);
-                }
-                field(&mut csv, v.as_deref().unwrap_or(missing), sep, quote_all);
-            }
-            csv.push_str(newline);
-        }
         match path {
-            None => Ok(Some(csv)),
+            None => Ok(Some(self.core.to_csv_string(sep, missing, quote_all, newline))),
             Some(p) => {
-                std::fs::write(&p, csv.as_bytes()).map_err(|e| {
+                let err = |e: std::io::Error| {
                     PyErr::new::<pyo3::exceptions::PyOSError, _>(format!(
                         "cannot write {}: {e}",
                         p.display()
                     ))
-                })?;
+                };
+                let file = std::fs::File::create(&p).map_err(err)?;
+                let mut w = std::io::BufWriter::with_capacity(1 << 20, file);
+                py.allow_threads(|| {
+                    self.core.write_csv(&mut w, sep, missing, quote_all, newline)?;
+                    w.flush()
+                })
+                .map_err(err)?;
                 Ok(None)
             }
         }

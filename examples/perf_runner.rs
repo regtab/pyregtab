@@ -17,21 +17,8 @@ use std::time::Instant;
 
 fn write_csv(path: &str, rs: &RecordsetCore) {
     let mut out = std::io::BufWriter::with_capacity(1 << 20, std::fs::File::create(path).unwrap());
-    let row = |out: &mut dyn Write, fields: &mut dyn Iterator<Item = &str>| {
-        for (i, f) in fields.enumerate() {
-            if i > 0 {
-                out.write_all(b",").unwrap();
-            }
-            out.write_all(b"\"").unwrap();
-            out.write_all(f.replace('"', "\"\"").as_bytes()).unwrap();
-            out.write_all(b"\"").unwrap();
-        }
-        out.write_all(b"\n").unwrap();
-    };
-    row(&mut out, &mut rs.schema.attributes.iter().map(String::as_str));
-    for r in &rs.records {
-        row(&mut out, &mut r.values.iter().map(|v| v.as_deref().unwrap_or("")));
-    }
+    rs.write_csv(&mut out, ",", "", true, "
+").unwrap();
     out.flush().unwrap();
 }
 

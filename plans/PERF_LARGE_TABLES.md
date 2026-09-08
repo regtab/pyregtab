@@ -92,7 +92,16 @@ recordset 1,56 с; итого 3,21 с в Rust против 3,83 с в фазе `
   пик RSS 1656 → 1238 МБ. `explode_test22`: `transform` 0,49 → 0,12 с, wall 1,00 → 0,39 с.
   Проверки: pytest 2012, cargo test 49+49, clippy 0, differential 750/750, bytecmp 244/244.
 
-### 3.3. Потоковый `to_csv` — ПЛАН
+### 3.3. Потоковый `to_csv` — СДЕЛАНО
+
+- `RecordsetCore::write_csv(w, sep, missing, quote_all, newline)` — запись записей по одной
+  в любой `Write`, удвоение кавычек без промежуточной строки; `to_csv_string` — то же в
+  строку. `Recordset.to_csv(path)` пишет через `BufWriter<File>` (1 МБ) с отпущенным GIL;
+  `to_csv()` без пути по-прежнему возвращает `str`. Формат байт-в-байт прежний
+  (bytecmp 244/244, тест `test_to_csv_file_equals_string`).
+- Результат: `write` на `stack_test11` 0,17 с → 0,05 с (jRegTab 0,22 с), без выбросов в
+  6 запусках подряд (max 1,94 с wall при медиане 1,92 с); при k = 4 0,70 с → 0,17 с
+  (jRegTab 0,91 с). Пик RSS не изменился — он достигается во время интерпретации.
 
 ### 3.4. Память — ПЛАН
 

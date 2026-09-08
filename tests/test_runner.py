@@ -202,3 +202,21 @@ def test_write_csv_format(tmp_path: Path) -> None:
     p = tmp_path / "o.csv"
     write_csv(p, rs)
     assert p.read_bytes() == b'"a","b"\n"x",""\n"q""","y\nz"\n'
+
+
+def test_to_csv_file_equals_string(tmp_path: Path) -> None:
+    """The streamed file output is byte for byte the string output."""
+    from pyregtab import Recordset, Schema
+
+    rs = Recordset(Schema(["a", "b,c"]), [
+        {"a": 'say "hi"', "b,c": "x\ny"},
+        {"a": None, "b,c": "plain"},
+        {"a": "", "b,c": "\r\nend"},
+    ])
+    for kwargs in ({}, {"quote_all": True, "newline": "\n"}, {"sep": ";", "missing": "NULL"}):
+        text = rs.to_csv(**kwargs)
+        p = tmp_path / "o.csv"
+        assert rs.to_csv(p, **kwargs) is None
+        assert p.read_bytes() == text.encode("utf-8"), kwargs
+    with pytest.raises(OSError):
+        rs.to_csv(tmp_path / "no_such_dir" / "o.csv")
