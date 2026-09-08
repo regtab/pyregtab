@@ -16,7 +16,7 @@ and interprets the match into a relational **recordset**:
 TableSyntax → RtlCompiler/TablePattern → AtpMatcher → TableInterpreter → Recordset
 ```
 
-**pyRegTab 0.7.1 ≙ jRegTab 0.7.1** (same API, same semantics, same test
+**pyRegTab 0.7.2 ≙ jRegTab 0.7.1** (same API, same semantics, same test
 corpus), including the
 embedded RTL DSL `pyregtab.dsl` — a port of jRegTab's `ru.icc.regtab.dsl`
 (added upstream in jRegTab 0.3.0). Python-side extras on top of the Java API:
@@ -185,7 +185,9 @@ provider against the reference definition Υ^{J,k}_{τ,κ} (full scan + sort).
 Differential testing against the Java reference (`tools/differential.py` +
 `tools/RecordsetDumpMain.java`) compares recordsets cell-by-cell on all 750
 task variants; the 244 ATBench solutions of regtab-eval-on-atbench are
-byte-identical between the jRegTab 0.7.1 runner and `python -m pyregtab.runner`.
+byte-identical between the jRegTab 0.7.1 runner and `python -m pyregtab.runner`
+(`tools/atbench_bytecmp.py` runs both runners on every solution and compares
+exit codes and `output.csv` bytes; the Java outputs are cached).
 
 ## IDE support
 
@@ -214,6 +216,34 @@ match, 2 — invalid usage), same CSV parsing (RFC 4180 with multi-line quoted
 cells, ragged rows padded); on the 244 ATBench solutions of that project the
 two runners produce byte-identical `output.csv`. `--input`/`--output` override
 the file names, `--strict` turns interpreter diagnostics into errors.
+
+The runner loads the table in one native call (`TableSyntax.from_csv(path)`;
+`TableSyntax.from_rows(rows)` and `TableSyntax.from_csv_text(text)` do the same
+for rows or text already in memory, `pyregtab.runner.parse_csv` exposes the
+RFC 4180 parser) and writes the recordset record by record
+(`Recordset.to_csv(path)` streams through a buffered file instead of building
+one string).
+
+### Performance on large tables
+
+Measured with the `comp-on-large-tables` experiment (the 10 largest ATBench
+inputs, 98 thousand to 1.19 million cells, the same RTL solutions for both
+engines, one process per run with the `input.csv → output.csv` contract,
+medians of 5 runs, peak RSS of the process, Core Ultra 7 155H). On the largest
+input (`stack_test11`: 1.19 million cells and 1.19 million output records)
+pyRegTab 0.7.2 takes 1.1 s wall and 0.52 GB peak against 6.1 s and 1.66 GB in
+0.7.1 and 5.0 s and 2.1 GB for the jRegTab 0.7.1 runner; on the other nine
+inputs it is 2.4–3.4× faster than 0.7.1 and 4–6× faster than jRegTab with
+2–2.5× less memory than 0.7.1 (3–5× less than jRegTab). Inside the process on
+`stack_test11`: CSV → `TableSyntax` 0.13 s (Java 0.18 s), matching 0.23 s
+(1.10 s), interpretation 0.55 s (3.30 s), writing 40 MB of CSV 0.05 s
+(0.25 s). Repeating the data rows up to 4.75 million cells the phases grow by
+×1.95–2.10 per doubling (interpretation of `explode` ×2.1–2.35) and the peak
+stays at 2.1 GB where 0.7.1 needed 6.6 GB. The design — one native call for
+loading, a dense working state with interned attribute names and text shared
+between items, state and records, action templates shared by all anchors of a
+spec, compact cells, streamed output — is documented in
+[`plans/PERF_LARGE_TABLES.md`](plans/PERF_LARGE_TABLES.md).
 
 ## Development
 

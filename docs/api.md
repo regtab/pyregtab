@@ -50,6 +50,8 @@ sequentially under the GIL, like `match`.
 | Class | Notes |
 |---|---|
 | `TableSyntax(num_rows, num_cols)` | grid of pre-created cells; `cell(r, c)`, `row(i)`, `rows()`, `subtables()`, `all_cells()`, `define_subtables(*starts)`, `define_subrow(row, c0, c1)` |
+| `TableSyntax.from_rows(rows, *, num_cols=None)` | the grid from rows of cell texts in one call (`num_cols` defaults to the widest row; shorter rows are padded with empty cells) |
+| `TableSyntax.from_csv(path)`, `TableSyntax.from_csv_text(text)` | the grid from a CSV file (UTF-8, universal newlines) or text with the CLI runner's rules — RFC 4180 (quoted fields may hold commas, doubled quotes and line breaks), empty lines skipped, ragged rows padded; `pyregtab.runner.parse_csv(text)` returns the parsed rows |
 | `Cell` | properties: `text` (get/set, plus `set_text()`), `text_blank`, `text_multiline`, `text_indent`, `row`, `col`, `pos`, `bbox`, `merged`, formatting (`font_*`, `horz_align`, `vert_align`, borders, `bg_color`, `fg_color`, `rotation`), structure (`parent_row`, `subtable`, `subrow`) |
 | `Row`, `Subrow`, `Subtable` | structural handles (`subrows()`, `cells()`, `rows()`) |
 | `GridPosition`, `BoundingBox`, `CellColor` | value types; enums `FontFamily`, `HorizontalAlignment`, `VerticalAlignment` |
@@ -62,7 +64,7 @@ sequentially under the GIL, like `match`.
 | `TableSemantics` | `cell_derived_items()`, `context_derived_items()` |
 | `CellDerivedItem` | `.str`, `.tags`, `.index`, `.cell`, `.span` (byte range of the item's source segment within the raw cell text, before extractors); passed to filter callbacks |
 | `ContextDerivedItem(s, ItemType, const_value=None)` | external context items for `AtpMatcher.match` |
-| `Recordset` | `.schema`, `.records`, `len(rs)`, `rs[i]`, `to_pandas()`, `to_csv(path=None, sep=",", missing="")` (RFC 4180; returns the CSV text when `path` is None) |
+| `Recordset` | `.schema`, `.records`, `len(rs)`, `rs[i]`, `to_pandas()`, `to_csv(path=None, sep=",", missing="", quote_all=False, newline="\r\n")` (RFC 4180; returns the CSV text when `path` is None, otherwise streams the records into the file) |
 | `Record` | `rec[attr]`, `rec[i]`, `.get(...)`, `.values()`; missing value → `None` |
 | `Schema` | `.attributes`, `index_of`, `contains` |
 
