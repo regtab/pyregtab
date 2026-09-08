@@ -8,7 +8,7 @@
 
 use crate::recordset::{RecordCore, RecordsetCore, Schema};
 use crate::semantics::{ActionInst, Diagnostic, ItemId, ItemIndex, OpInst, SemanticsCore, WorkingState};
-use crate::spec::{EvalEnv, ItemType, PyFunc, Transformation};
+use crate::spec::{EvalEnv, PyFunc, Transformation};
 use crate::syntax::SyntaxCore;
 use crate::util::{CoreResult, Text};
 use std::collections::HashMap;
@@ -84,32 +84,11 @@ pub fn interpret_timed(
         clock = std::time::Instant::now();
     };
 
-    // Phase 1: working state initialization
+    // Phase 1: working state initialization — val(ι) = s(ι) for value items
+    // and attr(ι) = s(ι) for attribute items hold by default (the state
+    // stores overrides only), so only the storage is sized here.
     let mut ws = WorkingState::new(cfg.strict_preconditions);
     ws.reserve(sem.cell_items.len(), sem.ctx_items.len());
-    for (i, item) in sem.cell_items.iter().enumerate() {
-        match item.ty {
-            ItemType::Value => {
-                ws.val.insert(ItemId::Cell(i), item.s.clone());
-            }
-            ItemType::Attribute => {
-                ws.attr.insert(ItemId::Cell(i), item.s.clone());
-            }
-            ItemType::Auxiliary => {}
-        }
-    }
-    for (i, item) in sem.ctx_items.iter().enumerate() {
-        match item.ty {
-            ItemType::Value => {
-                ws.val.insert(ItemId::Ctx(i), item.s.clone());
-            }
-            ItemType::Attribute => {
-                ws.attr.insert(ItemId::Ctx(i), item.s.clone());
-            }
-            ItemType::Auxiliary => {}
-        }
-    }
-
     lap(&mut phases[0]);
 
     // Phase 2: working state completion
@@ -140,10 +119,10 @@ fn anchor_pos(sem: &SemanticsCore, action: &ActionInst) -> Option<(usize, usize)
     }
 }
 
-fn sort_actions(cfg: &InterpreterCfg, sem: &SemanticsCore, actions: &mut [&ActionInst]) {
-    actions.sort_by(|a, b| {
-        let pa = anchor_pos(sem, a);
-        let pb = anchor_pos(sem, b);
+fn sort_actions(cfg: &InterpreterCfg, sem: &SemanticsCore, actions: &mut [u32]) {
+    actions.sort_by(|&a, &b| {
+        let pa = anchor_pos(sem, &sem.actions[a as usize]);
+        let pb = anchor_pos(sem, &sem.actions[b as usize]);
         match (pa, pb) {
             (Some((r1, c1)), Some((r2, c2))) => match cfg.action_strategy {
                 ActionStrategy::RowFirst => r1.cmp(&r2).then(c1.cmp(&c2)),
@@ -162,36 +141,30 @@ fn complete_working_state(
     sem: &SemanticsCore,
     env: &EvalEnv,
 ) -> CoreResult<()> {
-    let mut str_actions: Vec<&ActionInst> = Vec::new();
-    let mut avp_actions: Vec<&ActionInst> = Vec::new();
-    let mut rec_actions: Vec<&ActionInst> = Vec::new();
-    let mut concat_actions: Vec<&ActionInst> = Vec::new();
-    let mut join_actions: Vec<&ActionInst> = Vec::new();
-
-    for action in &sem.actions {
-        match action.op() {
-            OpInst::Fill(_) | OpInst::Prefix(_) | OpInst::Suffix(_) => str_actions.push(action),
-            OpInst::Avp => avp_actions.push(action),
-            OpInst::Rec => rec_actions.push(action),
-            OpInst::Concat(_) => concat_actions.push(action),
-            OpInst::Join(_) => join_actions.push(action),
-        }
+    // Action indices by operation group (a million actions: indices, not refs).
+    let mut groups: [Vec<u32>; 5] = Default::default();
+    for (i, action) in sem.actions.iter().enumerate() {
+        let g = match action.op() {
+            OpInst::Fill(_) | OpInst::Prefix(_) | OpInst::Suffix(_) => 0,
+            OpInst::Avp => 1,
+            OpInst::Rec => 2,
+            OpInst::Concat(_) => 3,
+            OpInst::Join(_) => 4,
+        };
+        groups[g].push(i as u32);
     }
-
-    sort_actions(cfg, sem, &mut str_actions);
-    sort_actions(cfg, sem, &mut avp_actions);
-    sort_actions(cfg, sem, &mut rec_actions);
-    sort_actions(cfg, sem, &mut concat_actions);
-    sort_actions(cfg, sem, &mut join_actions);
+    for group in groups.iter_mut() {
+        sort_actions(cfg, sem, group);
+    }
 
     // One spatial index per interpretation, shared by all providers.
     let index = ItemIndex::build(sem, env.syntax);
 
     // One provider buffer for all actions.
     let mut items: Vec<ItemId> = Vec::new();
-    for group in [str_actions, avp_actions, rec_actions, concat_actions, join_actions] {
-        for action in group {
-            apply_action(ws, sem, env, &index, action, &mut items)?;
+    for group in groups.iter() {
+        for &i in group {
+            apply_action(ws, sem, env, &index, &sem.actions[i as usize], &mut items)?;
         }
     }
     Ok(())
@@ -218,7 +191,7 @@ fn apply_action(
         // Empty items (e.g. lenient inherited provider) → skip
         OpInst::Avp => {
             if !items.is_empty() {
-                ws.apply_avp(anchor, items)
+                ws.apply_avp(sem, anchor, items)
             } else {
                 Ok(())
             }
@@ -294,26 +267,33 @@ fn extract_recordset(
     if !ws.is_recordset_consistent() {
         return Err("Working state is not recordset-consistent".into());
     }
-    let schema = construct_schema(cfg, ws)?;
-    let records = generate_records(cfg, ws, sem, &schema)?;
+    let anchors: Vec<usize> = ws.live_anchors();
+    let schema = construct_schema(cfg, ws, sem, &anchors)?;
+    let records = generate_records(cfg, ws, sem, &anchors, &schema)?;
     Ok(RecordsetCore { schema, records })
 }
 
-/// Visit order of `(anchor, record, position)` triples for schema construction
+/// Visits the `(anchor, record, position)` triples of schema construction
 /// (port of `SchemaConstructionStrategy.buildVisitOrder`): the records of an
-/// anchor are always visited in their sequence order.
-fn visit_order(
+/// anchor are always visited in their sequence order. The visitor may name
+/// items (which does not change the records), so the working state is
+/// re-borrowed for every triple instead of materializing them.
+fn visit_schema(
     strategy: SchemaStrategy,
     anchors: &[usize],
-    ws: &WorkingState,
-) -> Vec<(usize, usize, usize)> {
-    let mut out = Vec::new();
+    ws: &mut WorkingState,
+    mut visit: impl FnMut(&mut WorkingState, usize, usize, usize),
+) {
+    let n_records = |ws: &WorkingState, anchor: usize| ws.rec(anchor).map(|r| r.len()).unwrap_or(0);
+    let rec_len = |ws: &WorkingState, anchor: usize, r: usize| {
+        ws.rec(anchor).and_then(|rs| rs.get(r)).map(|seq| seq.len()).unwrap_or(0)
+    };
     match strategy {
         SchemaStrategy::RecordFirst => {
             for (a, &anchor) in anchors.iter().enumerate() {
-                for (r, seq) in ws.rec(anchor).into_iter().flatten().enumerate() {
-                    for i in 1..seq.len() {
-                        out.push((a, r, i));
+                for r in 0..n_records(ws, anchor) {
+                    for i in 1..rec_len(ws, anchor, r) {
+                        visit(ws, a, r, i);
                     }
                 }
             }
@@ -321,26 +301,27 @@ fn visit_order(
         SchemaStrategy::PositionFirst => {
             let mut max_len = 0;
             for &anchor in anchors {
-                for seq in ws.rec(anchor).into_iter().flatten() {
-                    max_len = max_len.max(seq.len());
+                for r in 0..n_records(ws, anchor) {
+                    max_len = max_len.max(rec_len(ws, anchor, r));
                 }
             }
             for i in 1..max_len {
                 for (a, &anchor) in anchors.iter().enumerate() {
-                    let n = ws.rec(anchor).map(|rs| rs.len()).unwrap_or(0);
-                    for r in 0..n {
-                        out.push((a, r, i));
+                    for r in 0..n_records(ws, anchor) {
+                        visit(ws, a, r, i);
                     }
                 }
             }
         }
     }
-    out
 }
 
-fn construct_schema(cfg: &InterpreterCfg, ws: &mut WorkingState) -> CoreResult<Schema> {
-    let anchors: Vec<usize> = ws.live_anchors();
-
+fn construct_schema(
+    cfg: &InterpreterCfg,
+    ws: &mut WorkingState,
+    sem: &SemanticsCore,
+    anchors: &[usize],
+) -> CoreResult<Schema> {
     let mut schema_attrs: Vec<String> = Vec::new();
     // Anonymous attribute (by position) → its interned id.
     let mut anon_map: HashMap<usize, u32> = HashMap::new();
@@ -358,7 +339,7 @@ fn construct_schema(cfg: &InterpreterCfg, ws: &mut WorkingState) -> CoreResult<S
     }
 
     let mut a1: Option<String> = None;
-    for &anchor in &anchors {
+    for &anchor in anchors {
         if let Some(a) = ws.assoc(ItemId::Cell(anchor)) {
             a1 = Some(a.to_string());
             break;
@@ -369,9 +350,9 @@ fn construct_schema(cfg: &InterpreterCfg, ws: &mut WorkingState) -> CoreResult<S
         None => {
             let a1 = anonymous_attribute(cfg, 1);
             let id = ws.intern_attr(&a1);
-            for &anchor in &anchors {
-                if let Some(v) = ws.val.get(&ItemId::Cell(anchor)).cloned() {
-                    ws.set_avp_id(ItemId::Cell(anchor), id, v);
+            for &anchor in anchors {
+                if ws.val(sem, ItemId::Cell(anchor)).is_some() {
+                    ws.set_avp_id(ItemId::Cell(anchor), id);
                 }
             }
             a1
@@ -380,13 +361,11 @@ fn construct_schema(cfg: &InterpreterCfg, ws: &mut WorkingState) -> CoreResult<S
     mark(&mut in_schema, ws.intern_attr(&a1));
     schema_attrs.push(a1);
 
-    let triples = visit_order(cfg.strategy, &anchors, ws);
-
-    for (a, rec_idx, pos_idx) in triples {
+    visit_schema(cfg.strategy, anchors, ws, |ws, a, rec_idx, pos_idx| {
         let anchor = anchors[a];
         let item = match ws.rec(anchor).and_then(|rs| rs.get(rec_idx)) {
             Some(seq) if pos_idx < seq.len() => seq[pos_idx],
-            _ => continue,
+            _ => return,
         };
         match ws.attr_id(item) {
             Some(id) => {
@@ -407,12 +386,12 @@ fn construct_schema(cfg: &InterpreterCfg, ws: &mut WorkingState) -> CoreResult<S
                     }
                     std::collections::hash_map::Entry::Occupied(e) => *e.get(),
                 };
-                if let Some(v) = ws.val.get(&item).cloned() {
-                    ws.set_avp_id(item, id, v);
+                if ws.val(sem, item).is_some() {
+                    ws.set_avp_id(item, id);
                 }
             }
         }
-    }
+    });
 
     Schema::new(schema_attrs)
 }
@@ -420,11 +399,11 @@ fn construct_schema(cfg: &InterpreterCfg, ws: &mut WorkingState) -> CoreResult<S
 fn generate_records(
     cfg: &InterpreterCfg,
     ws: &WorkingState,
-    _sem: &SemanticsCore,
+    sem: &SemanticsCore,
+    anchors: &[usize],
     schema: &Schema,
 ) -> CoreResult<Vec<RecordCore>> {
     let n = schema.attributes.len();
-    let anchors = ws.live_anchors();
     // Interned attribute id → position in the schema.
     let mut index: Vec<Option<usize>> = vec![None; ws.attr_count()];
     for (i, a) in schema.attributes.iter().enumerate() {
@@ -444,13 +423,14 @@ fn generate_records(
         }
     };
     let mut records = Vec::with_capacity(anchors.len());
-    for anchor in anchors {
-        for sequence in ws.rec(anchor).into_iter().flatten() {
+    for &anchor in anchors {
+        let Some(recs) = ws.rec(anchor) else { continue };
+        for sequence in recs.iter() {
             let mut values = missing.clone();
             for &item in sequence {
                 if let Some(id) = ws.attr_id(item) {
                     if let Some(idx) = index[id as usize] {
-                        values[idx] = ws.val.get(&item).cloned();
+                        values[idx] = ws.val(sem, item).cloned();
                     }
                 }
             }

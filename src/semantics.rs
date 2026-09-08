@@ -977,30 +977,85 @@ impl Diagnostic {
 
 // ---------------------------------------------------------------- WorkingState
 
-/// The records of one anchor: one after `O_rec` / `O_concat` (no vector of
-/// vectors for the common case), several after `O_join`.
+/// The records of one anchor, as ranges of the working state's record
+/// arena: one range after `O_rec` / `O_concat`, several after `O_join`.
 #[derive(Clone, Debug, PartialEq)]
-pub enum Records {
-    One(Vec<ItemId>),
-    Many(Vec<Vec<ItemId>>),
+pub enum RecEntry {
+    One { start: u32, len: u32 },
+    Many(Box<[(u32, u32)]>),
 }
 
-impl Records {
-    #[inline]
-    pub fn as_slice(&self) -> &[Vec<ItemId>] {
-        match self {
-            Records::One(r) => std::slice::from_ref(r),
-            Records::Many(rs) => rs,
+/// The records of an anchor: a view over the arena.
+#[derive(Clone, Copy)]
+pub struct RecordsRef<'a> {
+    arena: &'a [ItemId],
+    entry: &'a RecEntry,
+}
+
+impl<'a> RecordsRef<'a> {
+    /// Number of records.
+    pub fn len(&self) -> usize {
+        match self.entry {
+            RecEntry::One { .. } => 1,
+            RecEntry::Many(ranges) => ranges.len(),
         }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    /// The `i`-th record.
+    pub fn get(&self, i: usize) -> Option<&'a [ItemId]> {
+        let (start, len) = match self.entry {
+            RecEntry::One { start, len } => {
+                if i != 0 {
+                    return None;
+                }
+                (*start, *len)
+            }
+            RecEntry::Many(ranges) => *ranges.get(i)?,
+        };
+        Some(&self.arena[start as usize..(start + len) as usize])
+    }
+
+    /// The records in sequence order.
+    pub fn iter(&self) -> impl Iterator<Item = &'a [ItemId]> + 'a {
+        let (arena, entry) = (self.arena, self.entry);
+        let ranges: &'a [(u32, u32)] = match entry {
+            RecEntry::One { .. } => &[],
+            RecEntry::Many(ranges) => ranges,
+        };
+        let one = match entry {
+            RecEntry::One { start, len } => Some((*start, *len)),
+            RecEntry::Many(_) => None,
+        };
+        one.into_iter()
+            .chain(ranges.iter().copied())
+            .map(move |(s, l)| &arena[s as usize..(s + l) as usize])
+    }
+
+    /// The records as owned vectors (tests, `O_join`).
+    pub fn to_vec(&self) -> Vec<Vec<ItemId>> {
+        self.iter().map(<[ItemId]>::to_vec).collect()
     }
 }
 
 /// Port of `WorkingState`: `ws = (V, A, val, attr, avp, rec, J)`, insertion-
 /// ordered maps keyed by item identity.
 ///
+/// `val` and `attr` are stored as *overrides* of the item strings: by
+/// default `val(ι) = s(ι)` for a value item and `attr(ι) = s(ι)` for an
+/// attribute item (the working state initialization of the formal model);
+/// only string operations and context constants write into the maps. The
+/// value of an avp is not stored either: every avp is created from
+/// `val(ι)` after all string operations were applied, so `avp(ι) =
+/// (a, val(ι))` holds throughout.
+///
 /// `rec` maps an anchor (cell-item index) to a *non-empty sequence* of
 /// item-based records: a single record after `O_rec` / `O_concat`, several
-/// after `O_join` (the record product). `J` — the *joined-away anchors* — are
+/// after `O_join` (the record product). Records live in one arena (`items`);
+/// an anchor holds ranges into it. `J` — the *joined-away anchors* — are
 /// items whose records have been consumed by a join; they stay in `rec` (a
 /// later join may consume the same records again, irrespective of action
 /// order) but are excluded from recordset extraction. `C` — the
@@ -1010,16 +1065,20 @@ impl Records {
 /// anchor that never had a record.
 #[derive(Default, Debug)]
 pub struct WorkingState {
-    pub val: ItemMap<Text>,
-    pub attr: ItemMap<Text>,
-    /// avp(ι) = (attribute, value); the attribute is an index into
-    /// `attr_names` (interned: a million records share one name).
-    avp: ItemMap<(u32, Text)>,
+    /// Overrides of `val(ι)` (string operations, context constants).
+    val_over: ItemMap<Text>,
+    /// Overrides of `attr(ι)` (string operations on attribute items).
+    attr_over: ItemMap<Text>,
+    /// avp(ι): the attribute as an index into `attr_names` (interned: a
+    /// million records share one name); the value is `val(ι)`.
+    avp: ItemMap<u32>,
     attr_names: Vec<Text>,
     attr_ids: HashMap<Text, u32>,
     /// Keyed by cell-item index; insertion order defines the order of records.
     /// Concatenated-away anchors keep their (stale) entry and are masked by `C`.
-    rec: AnchorMap<Records>,
+    rec: AnchorMap<RecEntry>,
+    /// The record arena: every record is a contiguous range of it.
+    items: Vec<ItemId>,
     /// J: joined-away anchors.
     joined: AnchorSet,
     /// C: concatenated-away anchors (removed from `dom(rec)`).
@@ -1035,12 +1094,57 @@ impl WorkingState {
         WorkingState { strict_preconditions, ..Default::default() }
     }
 
-    /// Pre-sizes the per-item storage for a semantics layer.
-    pub fn reserve(&mut self, cell_items: usize, ctx_items: usize) {
-        self.val.reserve(cell_items, ctx_items);
-        self.attr.reserve(cell_items, ctx_items);
-        self.avp.reserve(cell_items, ctx_items);
+    /// Pre-sizes the per-anchor storage for a semantics layer.
+    pub fn reserve(&mut self, cell_items: usize, _ctx_items: usize) {
+        self.avp.reserve(cell_items, 0);
         self.rec.reserve(cell_items);
+        self.items.reserve(cell_items * 2);
+    }
+
+    // --- val / attr ---
+
+    /// val(ι): the override, else the item string of a value item.
+    #[inline]
+    pub fn val<'a>(&'a self, sem: &'a SemanticsCore, item: ItemId) -> Option<&'a Text> {
+        if let Some(v) = self.val_over.get(&item) {
+            return Some(v);
+        }
+        match item {
+            ItemId::Cell(i) => {
+                let it = &sem.cell_items[i];
+                (it.ty == ItemType::Value).then_some(&it.s)
+            }
+            ItemId::Ctx(i) => {
+                let it = &sem.ctx_items[i];
+                (it.ty == ItemType::Value).then_some(&it.s)
+            }
+        }
+    }
+
+    /// attr(ι): the override, else the item string of an attribute item.
+    #[inline]
+    pub fn attr<'a>(&'a self, sem: &'a SemanticsCore, item: ItemId) -> Option<&'a Text> {
+        if let Some(a) = self.attr_over.get(&item) {
+            return Some(a);
+        }
+        match item {
+            ItemId::Cell(i) => {
+                let it = &sem.cell_items[i];
+                (it.ty == ItemType::Attribute).then_some(&it.s)
+            }
+            ItemId::Ctx(i) => {
+                let it = &sem.ctx_items[i];
+                (it.ty == ItemType::Attribute).then_some(&it.s)
+            }
+        }
+    }
+
+    pub fn set_val(&mut self, item: ItemId, value: Text) {
+        self.val_over.insert(item, value);
+    }
+
+    pub fn set_attr(&mut self, item: ItemId, value: Text) {
+        self.attr_over.insert(item, value);
     }
 
     // --- attribute names (interned) ---
@@ -1074,21 +1178,28 @@ impl WorkingState {
     /// The attribute id of the item's avp, if any.
     #[inline]
     pub fn attr_id(&self, item: ItemId) -> Option<u32> {
-        self.avp.get(&item).map(|(a, _)| *a)
+        self.avp.get(&item).copied()
     }
 
     /// The attribute name of the item's avp, if any.
     pub fn assoc(&self, item: ItemId) -> Option<&str> {
-        self.avp.get(&item).map(|(a, _)| self.attr_name(*a))
-    }
-
-    /// The avp of the item as `(attribute, value)`, if any.
-    pub fn avp(&self, item: ItemId) -> Option<(&str, &str)> {
-        self.avp.get(&item).map(|(a, v)| (self.attr_name(*a), &**v))
+        self.avp.get(&item).map(|&a| self.attr_name(a))
     }
 
     pub fn has_avp(&self, item: ItemId) -> bool {
         self.avp.contains_key(&item)
+    }
+
+    /// Names the item: avp(ι) := (attribute, val(ι)). The caller guarantees
+    /// that ι has a value.
+    pub fn set_avp(&mut self, item: ItemId, attribute: &str) {
+        let id = self.intern_attr(attribute);
+        self.avp.insert(item, id);
+    }
+
+    /// [`Self::set_avp`] with an already interned attribute name.
+    pub fn set_avp_id(&mut self, item: ItemId, attribute: u32) {
+        self.avp.insert(item, attribute);
     }
 
     // --- rec accessors ---
@@ -1100,11 +1211,18 @@ impl WorkingState {
 
     /// rec(ι): the records of the anchor, also for joined-away anchors;
     /// `None` if ι ∉ dom(rec).
-    pub fn rec(&self, anchor: usize) -> Option<&[Vec<ItemId>]> {
+    pub fn rec(&self, anchor: usize) -> Option<RecordsRef<'_>> {
         if self.concatenated.contains(&anchor) {
             return None;
         }
-        self.rec.get(&anchor).map(Records::as_slice)
+        self.rec.get(&anchor).map(|entry| RecordsRef { arena: &self.items, entry })
+    }
+
+    /// Appends one record to the arena.
+    fn push_record(&mut self, record: &[ItemId]) -> (u32, u32) {
+        let start = self.items.len() as u32;
+        self.items.extend_from_slice(record);
+        (start, record.len() as u32)
     }
 
     /// ι ∈ J.
@@ -1167,13 +1285,11 @@ impl WorkingState {
     fn get_val_or_attr(&self, sem: &SemanticsCore, anchor: ItemId) -> CoreResult<Text> {
         match sem.item_type(anchor) {
             ItemType::Value => self
-                .val
-                .get(&anchor)
+                .val(sem, anchor)
                 .cloned()
                 .ok_or_else(|| format!("No value for: {anchor:?}").into()),
             ItemType::Attribute => self
-                .attr
-                .get(&anchor)
+                .attr(sem, anchor)
                 .cloned()
                 .ok_or_else(|| format!("No attribute for: {anchor:?}").into()),
             ItemType::Auxiliary => {
@@ -1185,11 +1301,11 @@ impl WorkingState {
     fn set_val_or_attr(&mut self, sem: &SemanticsCore, anchor: ItemId, value: String) -> CoreResult<()> {
         match sem.item_type(anchor) {
             ItemType::Value => {
-                self.val.insert(anchor, Text::from(value));
+                self.val_over.insert(anchor, Text::from(value));
                 Ok(())
             }
             ItemType::Attribute => {
-                self.attr.insert(anchor, Text::from(value));
+                self.attr_over.insert(anchor, Text::from(value));
                 Ok(())
             }
             ItemType::Auxiliary => {
@@ -1251,7 +1367,7 @@ impl WorkingState {
 
     // --- O_avp ---
 
-    pub fn apply_avp(&mut self, anchor: ItemId, items: &[ItemId]) -> CoreResult<()> {
+    pub fn apply_avp(&mut self, sem: &SemanticsCore, anchor: ItemId, items: &[ItemId]) -> CoreResult<()> {
         if self.avp.contains_key(&anchor) {
             return Ok(());
         }
@@ -1260,17 +1376,14 @@ impl WorkingState {
         }
         let attr_item = items[0];
         let a = self
-            .attr
-            .get(&attr_item)
+            .attr(sem, attr_item)
             .cloned()
             .ok_or_else(|| format!("No attribute for item: {attr_item:?}"))?;
-        let v = self
-            .val
-            .get(&anchor)
-            .cloned()
-            .ok_or_else(|| format!("No value for anchor: {anchor:?}"))?;
+        if self.val(sem, anchor).is_none() {
+            return Err(format!("No value for anchor: {anchor:?}").into());
+        }
         let id = self.intern_attr(&a);
-        self.avp.insert(anchor, (id, v));
+        self.avp.insert(anchor, id);
         Ok(())
     }
 
@@ -1280,26 +1393,27 @@ impl WorkingState {
         let ItemId::Cell(anchor_idx) = anchor else {
             return Err("O_rec requires a cell-derived anchor".into());
         };
-        if !self.val.contains_key(&anchor) {
+        if self.val(sem, anchor).is_none() {
             return Ok(());
         }
         if self.rec.contains_key(&anchor_idx) {
             return Ok(());
         }
-        let mut sequence = Vec::with_capacity(items.len() + 1);
-        sequence.push(anchor);
+        let start = self.items.len() as u32;
+        self.items.push(anchor);
         for &item in items {
             if let ItemId::Ctx(ci) = item {
                 let ctx = &sem.ctx_items[ci];
                 if let Some(cv) = &ctx.const_value {
-                    self.val.insert(item, cv.clone());
+                    self.val_over.insert(item, cv.clone());
                     let id = self.intern_attr(&ctx.s);
-                    self.avp.insert(item, (id, cv.clone()));
+                    self.avp.insert(item, id);
                 }
             }
-            sequence.push(item);
+            self.items.push(item);
         }
-        self.rec.insert(anchor_idx, Records::One(sequence));
+        let len = self.items.len() as u32 - start;
+        self.rec.insert(anchor_idx, RecEntry::One { start, len });
         Ok(())
     }
 
@@ -1342,18 +1456,18 @@ impl WorkingState {
         if items.is_empty() {
             return Ok(());
         }
-        let anchor_rec = anchor_recs[0].clone();
+        let anchor_rec: Vec<ItemId> = anchor_recs.get(0).expect("non-empty").to_vec();
         let others = self.others_with_records(anchor_idx, items);
         if others.is_empty() {
             return Ok(()); // (i)
         }
         let mut result = anchor_rec.clone();
         for &other in &others {
-            let other_rec = &self.rec[&other].as_slice()[0];
-            if let Some(problem) = self.key_mismatch(&anchor_rec, other_rec, key) {
+            let other_rec: Vec<ItemId> = self.rec(other).expect("has_rec").get(0).expect("non-empty").to_vec();
+            if let Some(problem) = self.key_mismatch(sem, &anchor_rec, &other_rec, key) {
                 return self.report(sem, anchor_idx, "CONCAT", problem); // (ii)
             }
-            result.extend(self.drop_k(other_rec, key));
+            result.extend(self.drop_k(&other_rec, key));
         }
         if let Some(duplicate) = self.duplicate_attribute(&result) {
             return self.report(
@@ -1365,7 +1479,8 @@ impl WorkingState {
                 ),
             ); // (iii)
         }
-        self.rec.insert(anchor_idx, Records::One(result));
+        let (start, len) = self.push_record(&result);
+        self.rec.insert(anchor_idx, RecEntry::One { start, len });
         for other in others {
             self.joined.remove(&other);
             self.concatenated.insert(other);
@@ -1404,14 +1519,14 @@ impl WorkingState {
         }
         let mut joined_recs: Vec<Vec<ItemId>> = Vec::new();
         for &other in &others {
-            joined_recs.extend(self.rec[&other].as_slice().iter().cloned());
+            joined_recs.extend(self.rec(other).expect("has_rec").to_vec());
         }
 
         let mut result: Vec<Vec<ItemId>> = Vec::new();
         let mut dropped = 0usize;
         for rho in &anchor_recs {
             for rho2 in &joined_recs {
-                if self.key_mismatch(rho, rho2, key).is_some() || !self.agree(rho, rho2) {
+                if self.key_mismatch(sem, rho, rho2, key).is_some() || !self.agree(sem, rho, rho2) {
                     dropped += 1;
                     continue;
                 }
@@ -1430,7 +1545,8 @@ impl WorkingState {
                 ),
             )?;
         } else {
-            self.rec.insert(anchor_idx, Records::Many(result));
+            let ranges: Vec<(u32, u32)> = result.iter().map(|r| self.push_record(r)).collect();
+            self.rec.insert(anchor_idx, RecEntry::Many(ranges.into_boxed_slice()));
         }
         self.joined.extend(others);
         Ok(())
@@ -1466,10 +1582,10 @@ impl WorkingState {
     /// dedup(ρ̄): keeps the first occurrence of each named attribute; items
     /// without avp are always kept.
     fn dedup(&self, sequence: &[ItemId]) -> Vec<ItemId> {
-        let mut seen: HashSet<&str> = HashSet::new();
+        let mut seen: HashSet<u32> = HashSet::new();
         let mut result = Vec::with_capacity(sequence.len());
         for &item in sequence {
-            match self.assoc(item) {
+            match self.attr_id(item) {
                 Some(a) => {
                     if seen.insert(a) {
                         result.push(item);
@@ -1481,7 +1597,14 @@ impl WorkingState {
         result
     }
 
-    fn pair_text(&self, pair: &(u32, Text)) -> String {
+    /// avp(ι) as `(attribute id, value)`.
+    #[inline]
+    fn pair<'a>(&'a self, sem: &'a SemanticsCore, item: ItemId) -> Option<(u32, &'a Text)> {
+        let a = self.attr_id(item)?;
+        Some((a, self.val(sem, item).expect("a named item has a value")))
+    }
+
+    fn pair_text(&self, pair: (u32, &Text)) -> String {
         format!("AttributeValuePair[attribute={}, value={}]", self.attr_name(pair.0), pair.1)
     }
 
@@ -1490,14 +1613,20 @@ impl WorkingState {
     /// attribute-value pair, or both unnamed with the same value), and for
     /// every key attribute name both records carry the name with the same
     /// attribute-value pair; otherwise a description of the first mismatch.
-    fn key_mismatch(&self, rho: &[ItemId], rho2: &[ItemId], key: &RecordKey) -> Option<String> {
+    fn key_mismatch(
+        &self,
+        sem: &SemanticsCore,
+        rho: &[ItemId],
+        rho2: &[ItemId],
+        key: &RecordKey,
+    ) -> Option<String> {
         for &k in &key.positions {
             let k = k as usize;
             if k >= rho.len() || k >= rho2.len() {
                 return Some(format!("key position {k} is beyond the end of a record"));
             }
             let (a, b) = (rho[k], rho2[k]);
-            match (self.avp.get(&a), self.avp.get(&b)) {
+            match (self.pair(sem, a), self.pair(sem, b)) {
                 (Some(pa), Some(pb)) => {
                     if pa != pb {
                         return Some(format!(
@@ -1508,11 +1637,11 @@ impl WorkingState {
                     }
                 }
                 (None, None) => {
-                    if self.val.get(&a) != self.val.get(&b) {
+                    if self.val(sem, a) != self.val(sem, b) {
                         return Some(format!(
                             "key position {k} differs: '{}' vs '{}'",
-                            self.val.get(&a).map(|s| &**s).unwrap_or("null"),
-                            self.val.get(&b).map(|s| &**s).unwrap_or("null")
+                            self.val(sem, a).map(|s| &**s).unwrap_or("null"),
+                            self.val(sem, b).map(|s| &**s).unwrap_or("null")
                         ));
                     }
                 }
@@ -1527,7 +1656,10 @@ impl WorkingState {
             let (Some(i), Some(j)) = (i, j) else {
                 return Some(format!("key attribute '{name}' is missing in a record"));
             };
-            let (pa, pb) = (&self.avp[&rho[i]], &self.avp[&rho2[j]]);
+            let (pa, pb) = (
+                self.pair(sem, rho[i]).expect("named"),
+                self.pair(sem, rho2[j]).expect("named"),
+            );
             if pa != pb {
                 return Some(format!(
                     "key attribute '{name}' differs: {} vs {}",
@@ -1541,16 +1673,16 @@ impl WorkingState {
 
     /// agree(ρ, ρ'): every named attribute appearing in both records carries
     /// the same value.
-    fn agree(&self, rho: &[ItemId], rho2: &[ItemId]) -> bool {
+    fn agree(&self, sem: &SemanticsCore, rho: &[ItemId], rho2: &[ItemId]) -> bool {
         let mut named: HashMap<u32, &Text> = HashMap::new();
         for &item in rho {
-            if let Some((a, v)) = self.avp.get(&item) {
-                named.entry(*a).or_insert(v);
+            if let Some((a, v)) = self.pair(sem, item) {
+                named.entry(a).or_insert(v);
             }
         }
         for &item in rho2 {
-            if let Some((a, v)) = self.avp.get(&item) {
-                if let Some(&existing) = named.get(a) {
+            if let Some((a, v)) = self.pair(sem, item) {
+                if let Some(&existing) = named.get(&a) {
                     if existing != v {
                         return false;
                     }
@@ -1582,16 +1714,6 @@ impl WorkingState {
         None
     }
 
-    pub fn set_avp(&mut self, item: ItemId, attribute: String, value: Text) {
-        let id = self.intern_attr(&attribute);
-        self.avp.insert(item, (id, value));
-    }
-
-    /// [`Self::set_avp`] with an already interned attribute name.
-    pub fn set_avp_id(&mut self, item: ItemId, attribute: u32, value: Text) {
-        self.avp.insert(item, (attribute, value));
-    }
-
     // --- consistency checks (over the live anchors) ---
 
     pub fn is_anchor_attribute_uniform(&self) -> bool {
@@ -1616,11 +1738,12 @@ impl WorkingState {
 
     pub fn is_record_attributes_distinct(&self) -> bool {
         let mut seen: Vec<u32> = Vec::new();
-        for (anchor_idx, records) in self.rec.iter() {
+        for (anchor_idx, entry) in self.rec.iter() {
             if self.joined.contains(anchor_idx) || self.concatenated.contains(anchor_idx) {
                 continue;
             }
-            for sequence in records.as_slice() {
+            let records = RecordsRef { arena: &self.items, entry };
+            for sequence in records.iter() {
                 if self.duplicate_attribute_in(sequence, &mut seen).is_some() {
                     return false;
                 }
@@ -1665,16 +1788,13 @@ mod tests {
         }
     }
 
-    fn init(sem: &SemanticsCore, strict: bool) -> WorkingState {
-        let mut ws = WorkingState::new(strict);
-        for (i, it) in sem.cell_items.iter().enumerate() {
-            ws.val.insert(ItemId::Cell(i), it.s.clone());
-        }
-        ws
+    fn init(_sem: &SemanticsCore, strict: bool) -> WorkingState {
+        // val(ι) = s(ι) for every value item holds by default
+        WorkingState::new(strict)
     }
 
-    fn name(ws: &mut WorkingState, sem: &SemanticsCore, item: usize, attribute: &str) {
-        ws.set_avp(ItemId::Cell(item), attribute.to_string(), sem.cell_items[item].s.clone());
+    fn name(ws: &mut WorkingState, _sem: &SemanticsCore, item: usize, attribute: &str) {
+        ws.set_avp(ItemId::Cell(item), attribute);
     }
 
     fn cells(ids: &[usize]) -> Vec<ItemId> {
@@ -1706,7 +1826,7 @@ mod tests {
 
         ws.apply_concat(&sem, ItemId::Cell(0), &cells(&[2]), &key_pos(&[0])).unwrap();
 
-        assert_eq!(ws.rec(0), Some(&*vec![cells(&[0, 1, 3])]));
+        assert_eq!(ws.rec(0).map(|r| r.to_vec()), Some(vec![cells(&[0, 1, 3])]));
         assert!(!ws.has_rec(2), "the concatenated anchor is removed from dom(rec)");
         assert!(ws.is_concatenated(2));
         assert_eq!(ws.live_anchors(), vec![0]);
@@ -1728,7 +1848,7 @@ mod tests {
 
         ws.apply_concat(&sem, ItemId::Cell(0), &cells(&[2, 4]), &key_pos(&[0])).unwrap();
 
-        assert_eq!(ws.rec(0), Some(&*vec![cells(&[0, 1, 3, 5])]));
+        assert_eq!(ws.rec(0).map(|r| r.to_vec()), Some(vec![cells(&[0, 1, 3, 5])]));
         assert!(!ws.has_rec(2) && !ws.has_rec(4));
         assert!(ws.diagnostics().is_empty());
     }
@@ -1748,8 +1868,8 @@ mod tests {
 
         ws.apply_concat(&sem, ItemId::Cell(0), &cells(&[2]), &key_pos(&[0])).unwrap();
 
-        assert_eq!(ws.rec(0), Some(&*vec![cells(&[0, 1])]), "anchor record unchanged");
-        assert_eq!(ws.rec(2), Some(&*vec![cells(&[2, 3])]), "the other record is kept: both survive");
+        assert_eq!(ws.rec(0).map(|r| r.to_vec()), Some(vec![cells(&[0, 1])]), "anchor record unchanged");
+        assert_eq!(ws.rec(2).map(|r| r.to_vec()), Some(vec![cells(&[2, 3])]), "the other record is kept: both survive");
         assert_eq!(ws.live_anchors().len(), 2);
         assert_eq!(ws.diagnostics().len(), 1);
         let d = &ws.diagnostics()[0];
@@ -1766,7 +1886,7 @@ mod tests {
 
         ws.apply_concat(&sem, ItemId::Cell(0), &cells(&[2]), &key_pos(&[0])).unwrap();
 
-        assert_eq!(ws.rec(0), Some(&*vec![cells(&[0, 1])]));
+        assert_eq!(ws.rec(0).map(|r| r.to_vec()), Some(vec![cells(&[0, 1])]));
         assert!(ws.has_rec(2));
         assert_eq!(ws.diagnostics().len(), 1);
         assert!(ws.diagnostics()[0].message.contains("key position 0"));
@@ -1796,11 +1916,11 @@ mod tests {
         let sem = sem_of(&[("book", 1, 0, 0), ("5", 1, 1, 0), ("book", 2, 0, 0)]);
         let mut ws = init(&sem, false);
         ws.apply_rec(&sem, ItemId::Cell(0), &cells(&[1])).unwrap();
-        let before = ws.rec(0).map(<[_]>::to_vec);
+        let before = ws.rec(0).map(|r| r.to_vec());
 
         ws.apply_concat(&sem, ItemId::Cell(0), &cells(&[2]), &key_pos(&[0])).unwrap();
 
-        assert_eq!(ws.rec(0).map(<[_]>::to_vec), before);
+        assert_eq!(ws.rec(0).map(|r| r.to_vec()), before);
         assert!(ws.diagnostics().is_empty(), "no record to concatenate is not a violation");
     }
 
@@ -1822,8 +1942,8 @@ mod tests {
         ws.apply_concat(&sem, ItemId::Cell(0), &cells(&[3]), &key).unwrap();
 
         assert_eq!(
-            ws.rec(0),
-            Some(&*vec![cells(&[0, 1, 2, 5])]),
+            ws.rec(0).map(|r| r.to_vec()),
+            Some(vec![cells(&[0, 1, 2, 5])]),
             "the anchor keeps its key; A is dropped from the concatenated record at its own position"
         );
         assert!(!ws.has_rec(3));
@@ -1840,7 +1960,7 @@ mod tests {
 
         ws.apply_concat(&sem, ItemId::Cell(0), &cells(&[2]), &key_names(&["A"])).unwrap();
 
-        assert_eq!(ws.rec(0), Some(&*vec![cells(&[0, 1])]));
+        assert_eq!(ws.rec(0).map(|r| r.to_vec()), Some(vec![cells(&[0, 1])]));
         assert!(ws.has_rec(2), "no effect: both records remain");
         assert_eq!(ws.diagnostics().len(), 1);
         assert!(ws.diagnostics()[0].message.contains("key attribute 'A' is missing"));
@@ -1883,7 +2003,7 @@ mod tests {
 
             ws.apply_concat(&sem, ItemId::Cell(0), &cells(&[5]), &key).unwrap();
 
-            assert_eq!(ws.rec(0), Some(&*vec![cells(&[0, 1, 2, 3, 4, 9])]));
+            assert_eq!(ws.rec(0).map(|r| r.to_vec()), Some(vec![cells(&[0, 1, 2, 3, 4, 9])]));
             assert!(ws.diagnostics().is_empty());
         }
     }
@@ -1918,7 +2038,7 @@ mod tests {
 
         ws.apply_join(&sem, ItemId::Cell(0), &cells(&[2, 3]), &RecordKey::empty()).unwrap();
 
-        assert_eq!(ws.rec(0), Some(&*vec![cells(&[0, 2, 4]), cells(&[0, 3, 5])]));
+        assert_eq!(ws.rec(0).map(|r| r.to_vec()), Some(vec![cells(&[0, 2, 4]), cells(&[0, 3, 5])]));
         assert!(ws.is_joined(2) && ws.is_joined(3));
         assert_eq!(ws.all_joined().iter().collect::<Vec<_>>(), vec![2, 3]);
         assert!(ws.rec(2).is_some(), "a joined-away anchor keeps its records");
@@ -1934,7 +2054,7 @@ mod tests {
         ws.apply_join(&sem, ItemId::Cell(1), &cells(&[2, 3]), &RecordKey::empty()).unwrap();
 
         assert_eq!(ws.rec(0).unwrap().len(), 2);
-        assert_eq!(ws.rec(1), Some(&*vec![cells(&[1, 2, 4]), cells(&[1, 3, 5])]));
+        assert_eq!(ws.rec(1).map(|r| r.to_vec()), Some(vec![cells(&[1, 2, 4]), cells(&[1, 3, 5])]));
         assert!(
             ws.is_recordset_consistent(),
             "the 'value' attribute of the joined-away anchors does not break uniformity"
@@ -1955,8 +2075,8 @@ mod tests {
                 span: (0, 1),
             });
         }
-        ws.val.insert(ItemId::Cell(6), "p".into());
-        ws.val.insert(ItemId::Cell(7), "q".into());
+        ws.set_val(ItemId::Cell(6), "p".into());
+        ws.set_val(ItemId::Cell(7), "q".into());
         name(&mut ws, &sem, 6, "w");
         name(&mut ws, &sem, 7, "w");
         ws.apply_rec(&sem, ItemId::Cell(6), &[]).unwrap();
@@ -1966,8 +2086,8 @@ mod tests {
         ws.apply_join(&sem, ItemId::Cell(0), &cells(&[6, 7]), &RecordKey::empty()).unwrap();
 
         assert_eq!(
-            ws.rec(0),
-            Some(&*vec![
+            ws.rec(0).map(|r| r.to_vec()),
+            Some(vec![
                 cells(&[0, 2, 4, 6]), cells(&[0, 2, 4, 7]),
                 cells(&[0, 3, 5, 6]), cells(&[0, 3, 5, 7]),
             ])
@@ -1992,7 +2112,7 @@ mod tests {
 
         ws.apply_join(&sem, ItemId::Cell(0), &cells(&[2, 4]), &key_pos(&[0])).unwrap();
 
-        assert_eq!(ws.rec(0), Some(&*vec![cells(&[0, 1, 3])]));
+        assert_eq!(ws.rec(0).map(|r| r.to_vec()), Some(vec![cells(&[0, 1, 3])]));
         assert!(ws.diagnostics().is_empty());
     }
 
@@ -2007,7 +2127,7 @@ mod tests {
 
         ws.apply_join(&sem, ItemId::Cell(0), &cells(&[2]), &key_pos(&[0])).unwrap();
 
-        assert_eq!(ws.rec(0), Some(&*vec![cells(&[0, 1])]));
+        assert_eq!(ws.rec(0).map(|r| r.to_vec()), Some(vec![cells(&[0, 1])]));
         assert!(ws.is_joined(2), "J is still extended");
         assert_eq!(ws.diagnostics().len(), 1);
         assert_eq!(ws.diagnostics()[0].operation, "JOIN");
@@ -2034,7 +2154,7 @@ mod tests {
 
         ws.apply_join(&sem, ItemId::Cell(0), &cells(&[2, 4]), &RecordKey::empty()).unwrap();
 
-        let records = ws.rec(0).unwrap();
+        let records = ws.rec(0).unwrap().to_vec();
         assert_eq!(records.len(), 1, "the 2025 pair disagrees on Year and is dropped");
         assert_eq!(records[0], cells(&[0, 1, 3]), "Year occurs once (dedup)");
         assert!(ws.diagnostics().is_empty());
@@ -2052,11 +2172,11 @@ mod tests {
             ty: ItemType::Value,
             span: (0, 1),
         });
-        ws.val.insert(ItemId::Cell(6), "z".into());
+        ws.set_val(ItemId::Cell(6), "z".into());
 
         ws.apply_join(&sem, ItemId::Cell(0), &cells(&[6]), &RecordKey::empty()).unwrap();
 
-        assert_eq!(ws.rec(0), Some(&*vec![cells(&[0])]));
+        assert_eq!(ws.rec(0).map(|r| r.to_vec()), Some(vec![cells(&[0])]));
         assert!(ws.all_joined().is_empty());
         assert!(ws.diagnostics().is_empty());
     }
@@ -2081,8 +2201,8 @@ mod tests {
         ws.apply_join(&sem, ItemId::Cell(0), &cells(&[2, 5]), &key_names(&["Year"])).unwrap();
 
         assert_eq!(
-            ws.rec(0),
-            Some(&*vec![cells(&[0, 1, 2, 4])]),
+            ws.rec(0).map(|r| r.to_vec()),
+            Some(vec![cells(&[0, 1, 2, 4])]),
             "only the pair carrying Year on both sides survives; the joined key is not repeated"
         );
         assert_eq!(ws.all_joined().iter().collect::<Vec<_>>(), vec![2, 5]);
