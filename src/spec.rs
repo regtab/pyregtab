@@ -4,10 +4,7 @@
 use crate::recordset::{RecordCore, RecordsetCore, Schema};
 use crate::semantics::CellItem;
 use crate::syntax::{CellData, SyntaxCore};
-use crate::util::{
-    full_match, java_is_blank, java_trim, norm_whitespace, replace_all, split_literal, split_regex,
-    CoreResult,
-};
+use crate::util::{CoreResult, Text, full_match, java_is_blank, java_trim, norm_whitespace, replace_all, split_literal, split_regex};
 use std::collections::BTreeSet;
 use std::sync::Arc;
 
@@ -1192,7 +1189,7 @@ impl Transformation {
                         values: r
                             .values
                             .into_iter()
-                            .map(|v| v.map(|s| norm_whitespace(&s)))
+                            .map(|v| v.map(|s| Text::from(norm_whitespace(&s))))
                             .collect(),
                     })
                     .collect();
@@ -1306,7 +1303,7 @@ fn apply_delimited_field_split(
     let schema = Schema::new(new_attrs)?;
     let mut out = Vec::with_capacity(rs.records.len());
     for r in &rs.records {
-        let mut cells: Vec<Option<String>> = Vec::with_capacity(total);
+        let mut cells: Vec<Option<Text>> = Vec::with_capacity(total);
         for (i, &w) in width.iter().enumerate().take(n) {
             let val = r.values[i].clone().unwrap_or_default();
             if w == 1 {
@@ -1314,7 +1311,7 @@ fn apply_delimited_field_split(
             } else {
                 let parts = split_literal(delimiter, &val);
                 for p in 0..w {
-                    cells.push(Some(parts.get(p).cloned().unwrap_or_default()));
+                    cells.push(Some(parts.get(p).map(|s| Text::from(s.as_str())).unwrap_or_default()));
                 }
             }
         }
@@ -1377,7 +1374,7 @@ fn apply_field_splitting(
                     None => Vec::new(),
                 };
                 for p in 0..max_parts {
-                    values.push(parts.get(p).cloned());
+                    values.push(parts.get(p).map(|s| Text::from(s.as_str())));
                 }
             } else {
                 values.push(v.clone());
@@ -1427,7 +1424,7 @@ mod tests {
         let records = rows
             .iter()
             .map(|row| RecordCore {
-                values: row.iter().map(|v| Some(v.to_string())).collect(),
+                values: row.iter().map(|v| Some(Text::from(*v))).collect(),
             })
             .collect();
         RecordsetCore { schema, records }

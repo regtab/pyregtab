@@ -10,7 +10,7 @@ use crate::spec::{EvalEnv, PyFunc};
 use crate::syntax::{
     CellColor as ColorCore, FontFamily, HorizontalAlignment, SyntaxCore, VerticalAlignment,
 };
-use crate::util::{CoreErr, CoreResult};
+use crate::util::{CoreErr, CoreResult, Text};
 use pyo3::create_exception;
 use pyo3::exceptions::{PyException, PyIndexError, PyKeyError, PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
@@ -79,7 +79,7 @@ pub fn call_item_filter(
             None => None,
         };
         let mk = |it: &crate::semantics::CellItem| PyCellDerivedItem {
-            s: it.s.clone(),
+            s: it.s.to_string(),
             tags: it.tags.clone(),
             index: it.index,
             ty: it.ty,
@@ -738,12 +738,12 @@ impl PyContextDerivedItem {
     #[pyo3(signature = (s, ty, const_value=None))]
     fn new(s: String, ty: sp::ItemType, const_value: Option<String>) -> Self {
         PyContextDerivedItem {
-            core: CtxItem { s, ty, const_value },
+            core: CtxItem { s: Text::from(s), ty, const_value: const_value.map(Text::from) },
         }
     }
     #[getter]
     fn str(&self) -> String {
-        self.core.s.clone()
+        self.core.s.to_string()
     }
     #[getter]
     fn type_(&self) -> sp::ItemType {
@@ -751,7 +751,7 @@ impl PyContextDerivedItem {
     }
     #[getter]
     fn const_value(&self) -> Option<String> {
-        self.core.const_value.clone()
+        self.core.const_value.as_deref().map(str::to_string)
     }
     fn __repr__(&self) -> String {
         format!(
@@ -803,7 +803,9 @@ impl PySchema {
 
 #[pyclass(name = "Recordset")]
 pub struct PyRecordset {
-    pub core: RecordsetCore,
+    /// Shared so that a transformation-free `TablePattern.transform` and
+    /// `Record` handles never copy a large recordset.
+    pub core: Arc<RecordsetCore>,
 }
 
 #[pymethods]
@@ -817,12 +819,12 @@ impl PyRecordset {
                     .core
                     .attributes
                     .iter()
-                    .map(|a| m.get(a).cloned().flatten())
+                    .map(|a| m.get(a).cloned().flatten().map(Text::from))
                     .collect(),
             })
             .collect();
         PyRecordset {
-            core: RecordsetCore { schema: schema.core, records: recs },
+            core: Arc::new(RecordsetCore { schema: schema.core, records: recs }),
         }
     }
     #[getter]
@@ -860,7 +862,7 @@ impl PyRecordset {
             let row = PyList::empty(py);
             for v in &r.values {
                 match v {
-                    Some(s) => row.append(s)?,
+                    Some(s) => row.append(&**s)?,
                     None => row.append(py.None())?,
                 }
             }
@@ -973,12 +975,12 @@ impl PyRecord {
             return rec
                 .values
                 .get(i)
-                .cloned()
+                .map(|v| v.as_deref().map(str::to_string))
                 .ok_or_else(|| PyIndexError::new_err(i));
         }
         let attr: String = key.extract()?;
         match rs.core.schema.index_of(&attr) {
-            Some(i) => Ok(rec.values[i].clone()),
+            Some(i) => Ok(rec.values[i].as_deref().map(str::to_string)),
             None => Ok(None),
         }
     }
@@ -989,12 +991,12 @@ impl PyRecord {
             return rec
                 .values
                 .get(i)
-                .cloned()
+                .map(|v| v.as_deref().map(str::to_string))
                 .ok_or_else(|| PyIndexError::new_err(i));
         }
         let attr: String = key.extract()?;
         match rs.core.schema.index_of(&attr) {
-            Some(i) => Ok(rec.values[i].clone()),
+            Some(i) => Ok(rec.values[i].as_deref().map(str::to_string)),
             None => Err(PyKeyError::new_err(attr)),
         }
     }
@@ -1003,7 +1005,7 @@ impl PyRecord {
         let rec = &rs.core.records[self.index];
         let d = PyDict::new(py);
         for (a, v) in rs.core.schema.attributes.iter().zip(&rec.values) {
-            d.set_item(a, v.clone())?;
+            d.set_item(a, v.as_deref())?;
         }
         Ok(d.unbind().into())
     }
@@ -2642,8 +2644,12 @@ impl PyTablePattern {
     }
     /// Applies all transformations in order to the given recordset.
     fn transform(&self, rs: &PyRecordset) -> PyResult<PyRecordset> {
+        if self.core.transformations.is_empty() {
+            // Nothing to apply: share the recordset instead of copying it.
+            return Ok(PyRecordset { core: rs.core.clone() });
+        }
         Ok(PyRecordset {
-            core: self.core.transform(rs.core.clone()).map_err(core_err)?,
+            core: Arc::new(self.core.transform((*rs.core).clone()).map_err(core_err)?),
         })
     }
     fn __eq__(&self, other: &PyTablePattern) -> bool {
@@ -2671,9 +2677,11 @@ impl PyWhitespaceNormalization {
     }
     fn apply(&self, rs: &PyRecordset) -> PyResult<PyRecordset> {
         Ok(PyRecordset {
-            core: sp::Transformation::WhitespaceNormalization
-                .apply(rs.core.clone())
-                .map_err(core_err)?,
+            core: Arc::new(
+                sp::Transformation::WhitespaceNormalization
+                    .apply((*rs.core).clone())
+                    .map_err(core_err)?,
+            ),
         })
     }
 }
@@ -2699,7 +2707,7 @@ impl PyAnchorAttributeAtPosition {
     }
     fn apply(&self, rs: &PyRecordset) -> PyResult<PyRecordset> {
         Ok(PyRecordset {
-            core: self.core.apply(rs.core.clone()).map_err(core_err)?,
+            core: Arc::new(self.core.apply((*rs.core).clone()).map_err(core_err)?),
         })
     }
 }
@@ -2737,7 +2745,7 @@ impl PyDelimitedFieldSplit {
     }
     fn apply(&self, rs: &PyRecordset) -> PyResult<PyRecordset> {
         Ok(PyRecordset {
-            core: self.core.apply(rs.core.clone()).map_err(core_err)?,
+            core: Arc::new(self.core.apply((*rs.core).clone()).map_err(core_err)?),
         })
     }
 }
@@ -2763,7 +2771,7 @@ impl PyFieldSplitting {
     }
     fn apply(&self, rs: &PyRecordset) -> PyResult<PyRecordset> {
         Ok(PyRecordset {
-            core: self.core.apply(rs.core.clone()).map_err(core_err)?,
+            core: Arc::new(self.core.apply((*rs.core).clone()).map_err(core_err)?),
         })
     }
 }
@@ -2784,7 +2792,7 @@ impl PySchemaReordering {
     }
     fn apply(&self, rs: &PyRecordset) -> PyResult<PyRecordset> {
         Ok(PyRecordset {
-            core: self.core.apply(rs.core.clone()).map_err(core_err)?,
+            core: Arc::new(self.core.apply((*rs.core).clone()).map_err(core_err)?),
         })
     }
 }
@@ -2804,7 +2812,7 @@ impl PyTableSemantics {
             .cell_items
             .iter()
             .map(|it| PyCellDerivedItem {
-                s: it.s.clone(),
+                s: it.s.to_string(),
                 tags: it.tags.clone(),
                 index: it.index,
                 ty: it.ty,
@@ -3054,7 +3062,7 @@ impl PyDiagnostic {
     #[getter]
     fn anchor(&self, py: Python<'_>) -> PyCellDerivedItem {
         PyCellDerivedItem {
-            s: self.anchor.s.clone(),
+            s: self.anchor.s.to_string(),
             tags: self.anchor.tags.clone(),
             index: self.anchor.index,
             ty: self.anchor.ty,
@@ -3145,7 +3153,7 @@ impl PyTableInterpreter {
                 let it = &sem.cell_items[d.anchor];
                 PyDiagnostic {
                     anchor: PyCellDerivedItem {
-                        s: it.s.clone(),
+                        s: it.s.to_string(),
                         tags: it.tags.clone(),
                         index: it.index,
                         ty: it.ty,
@@ -3217,10 +3225,12 @@ impl PyTableInterpreter {
         };
         self.last = None;
         let out = if self.missing.is_none() && !table.sem.has_py_callbacks() {
-            // Fast path: pure-native interpretation with the GIL released.
-            let core = table.table.bind(py).borrow().core.clone();
-            let sem = table.sem.clone();
-            py.allow_threads(move || crate::interp::interpret(&cfg, &core, &sem, None))
+            // Fast path: pure-native interpretation with the GIL released,
+            // borrowing the table (a copy of a million-cell grid is not free).
+            let s = table.table.bind(py).borrow();
+            let core: &SyntaxCore = &s.core;
+            let sem: &SemanticsCore = &table.sem;
+            py.allow_threads(|| crate::interp::interpret(&cfg, core, sem, None))
                 .map_err(core_err)?
         } else {
             let table_any: Py<PyAny> = table.table.clone_ref(py).into_any();
@@ -3229,7 +3239,7 @@ impl PyTableInterpreter {
                 .map_err(core_err)?
         };
         self.last = Some((table.table.clone_ref(py), table.sem.clone(), out.diagnostics));
-        Ok(PyRecordset { core: out.recordset })
+        Ok(PyRecordset { core: Arc::new(out.recordset) })
     }
 }
 

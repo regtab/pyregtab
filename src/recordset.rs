@@ -1,7 +1,7 @@
 //! Port of `ru.icc.regtab.recordset`: Schema, Record, Recordset.
 //! Records store values positionally (aligned with the schema).
 
-use crate::util::CoreResult;
+use crate::util::{CoreResult, Text};
 use std::collections::HashSet;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -33,7 +33,7 @@ impl Schema {
 /// `None` corresponds to Java's `null` (missing value).
 #[derive(Clone, PartialEq, Debug)]
 pub struct RecordCore {
-    pub values: Vec<Option<String>>,
+    pub values: Vec<Option<Text>>,
 }
 
 #[derive(Clone, PartialEq, Debug)]

@@ -62,11 +62,35 @@ pyRegTab быстрее jRegTab по wall на 9 кейсах из 10 (0,5–0,8
   wall 6,13 с → 5,21 с. Проверки: pytest 2012 passed, cargo test 49+49, differential
   750/750, bytecmp 244/244.
 
-### 3.2. Профиль `transform` — В РАБОТЕ
+### 3.2. `transform`: рабочее состояние без хеш-карт и копий строк — СДЕЛАНО
 
-- `examples/perf_runner.rs` — пофазный раннер над чистым Rust-ядром (`--no-default-features`),
-  `interp::interpret_timed` — время фаз интерпретации (инициализация, завершение рабочего
-  состояния, извлечение recordset, трансформации).
+Профиль (`examples/perf_runner.rs` — пофазный раннер над чистым Rust-ядром,
+`interp::interpret_timed` — время четырёх фаз интерпретации) на `stack_test11` до изменений:
+match 0,59 с, инициализация 0,15 с, завершение рабочего состояния 1,39 с, извлечение
+recordset 1,56 с; итого 3,21 с в Rust против 3,83 с в фазе `transform` Python — разница
+0,6 с уходила в биндинги.
+
+Что было найдено и сделано:
+- `TableInterpreter.interpret` (py.rs) **клонировал весь `SyntaxCore` и `SemanticsCore`**,
+  чтобы отпустить GIL; `TablePattern.transform` клонировал весь recordset. Теперь
+  интерпретация заимствует таблицу (ссылка `Send`), `PyRecordset` хранит `Arc<RecordsetCore>`,
+  и `transform` без трансформаций разделяет recordset вместо копии.
+- `WorkingState`: `val`/`attr`/`avp` были `IndexMap<ItemId, String>` (≈10 хеш-поисков и
+  4–5 аллокаций на запись), `rec` — `IndexMap<usize, Vec<Vec<ItemId>>>`, `J`/`C` —
+  `FxHashSet`. Теперь `ItemMap<V>` (плотные векторы по индексу элемента, отдельно cell/ctx),
+  `AnchorMap<V>` (плотные слоты + список порядка вставки — порядок записей сохранён),
+  `AnchorSet` (битовый вектор). Имена атрибутов интернированы (`u32`), `avp = (id, Text)`;
+  сравнение пар в `CONCAT`/`JOIN` — по id и содержимому, что эквивалентно сравнению строк.
+- Строки: `Text = Arc<str>` (`util.rs`) для `CellItem.s`, `CtxItem`, значений рабочего
+  состояния и `RecordCore.values` — значение разделяется между элементом, состоянием и
+  записью вместо 3–4 копий. Публичные Python-типы не изменились (`Record` возвращает `str`).
+- `provide_into` — провайдеры пишут в один буфер на всю интерпретацию; `construct_schema`
+  и `generate_records` работают по id атрибутов (без `to_string()` на каждую тройку и без
+  хеширования строки схемы на каждую запись).
+- Результат (`stack_test11`): `transform` 3,83 с → 0,73 с (jRegTab 3,36 с); в Rust:
+  инициализация 0,03 с, завершение 0,44 с, извлечение 0,14 с; wall 6,13 с → 2,03 с;
+  пик RSS 1656 → 1238 МБ. `explode_test22`: `transform` 0,49 → 0,12 с, wall 1,00 → 0,39 с.
+  Проверки: pytest 2012, cargo test 49+49, clippy 0, differential 750/750, bytecmp 244/244.
 
 ### 3.3. Потоковый `to_csv` — ПЛАН
 

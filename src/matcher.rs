@@ -6,7 +6,7 @@ use crate::semantics::{
 };
 use crate::spec::*;
 use crate::syntax::SyntaxCore;
-use crate::util::{split_literal, CoreErr, CoreResult};
+use crate::util::{CoreErr, CoreResult, Text, split_literal};
 use std::sync::Arc;
 
 // ---------------------------------------------------------------- match state
@@ -377,9 +377,9 @@ fn process_atomic(
     if atomic.idd == Idd::Skip {
         return Ok(());
     }
-    let s = match &atomic.extractor {
-        Some(x) => x.apply(input_text).map_err(SemErr::Other)?,
-        None => input_text.to_string(),
+    let s: Text = match &atomic.extractor {
+        Some(x) => Text::from(x.apply(input_text).map_err(SemErr::Other)?),
+        None => Text::from(input_text),
     };
     let ty = atomic.idd.to_item_type().map_err(SemErr::Other)?;
     let item_id = sem.cell_items.len();
@@ -525,12 +525,12 @@ fn process_content_spec(
 
 fn get_or_create_context_item(sem: &mut SemanticsCore, lit: &CtxLiteral) -> usize {
     for (i, item) in sem.ctx_items.iter().enumerate() {
-        if item.s == lit.text && item.ty == lit.ty {
+        if *item.s == *lit.text && item.ty == lit.ty {
             return i;
         }
     }
     sem.ctx_items.push(CtxItem {
-        s: lit.text.clone(),
+        s: Text::from(lit.text.as_str()),
         ty: lit.ty,
         const_value: None,
     });
@@ -546,9 +546,9 @@ fn to_provider_inst(
         if lit.const_value.is_some() {
             // Fresh (identity-distinct) context item per provider, like Java.
             sem.ctx_items.push(CtxItem {
-                s: lit.text.clone(),
+                s: Text::from(lit.text.as_str()),
                 ty: ItemType::Attribute,
-                const_value: lit.const_value.clone(),
+                const_value: lit.const_value.as_deref().map(Text::from),
             });
             return Ok(ProviderInst::Ctx {
                 items: vec![sem.ctx_items.len() - 1],
@@ -765,7 +765,7 @@ mod tests {
             .expect("pattern must match");
         sem.cell_items
             .iter()
-            .map(|it| (it.s.clone(), it.span, it.index))
+            .map(|it| (it.s.to_string(), it.span, it.index))
             .collect()
     }
 

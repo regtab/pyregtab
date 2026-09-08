@@ -15,13 +15,192 @@ use crate::spec::{
     UNBOUNDED,
 };
 use crate::util::CoreResult;
-use indexmap::IndexMap;
-use rustc_hash::{FxBuildHasher, FxHashSet};
+pub use crate::util::Text;
 use std::collections::{HashMap, HashSet};
 
-/// Insertion-ordered map with a fast non-cryptographic hasher: the working
-/// state performs a handful of lookups per cell of the table.
-pub type FastIndexMap<K, V> = IndexMap<K, V, FxBuildHasher>;
+/// Map from items to values stored densely: one slot per cell-derived item
+/// and one per context item, indexed by the item's index. The working state
+/// performs a handful of lookups per cell of the table, and on a
+/// million-cell table a vector slot beats hashing an `ItemId`.
+#[derive(Clone, Debug)]
+pub struct ItemMap<V> {
+    cell: Vec<Option<V>>,
+    ctx: Vec<Option<V>>,
+}
+
+impl<V> Default for ItemMap<V> {
+    fn default() -> Self {
+        ItemMap { cell: Vec::new(), ctx: Vec::new() }
+    }
+}
+
+impl<V> ItemMap<V> {
+    /// Pre-sizes the slots so that inserts never reallocate.
+    pub fn reserve(&mut self, cells: usize, ctx: usize) {
+        if self.cell.len() < cells {
+            self.cell.resize_with(cells, || None);
+        }
+        if self.ctx.len() < ctx {
+            self.ctx.resize_with(ctx, || None);
+        }
+    }
+
+    #[inline]
+    pub fn get(&self, id: &ItemId) -> Option<&V> {
+        match *id {
+            ItemId::Cell(i) => self.cell.get(i).and_then(|s| s.as_ref()),
+            ItemId::Ctx(i) => self.ctx.get(i).and_then(|s| s.as_ref()),
+        }
+    }
+
+    #[inline]
+    pub fn contains_key(&self, id: &ItemId) -> bool {
+        self.get(id).is_some()
+    }
+
+    /// Sets the value of an item; returns the previous value, if any.
+    pub fn insert(&mut self, id: ItemId, value: V) -> Option<V> {
+        let (slots, i) = match id {
+            ItemId::Cell(i) => (&mut self.cell, i),
+            ItemId::Ctx(i) => (&mut self.ctx, i),
+        };
+        if i >= slots.len() {
+            slots.resize_with(i + 1, || None);
+        }
+        slots[i].replace(value)
+    }
+}
+
+impl<V> std::ops::Index<&ItemId> for ItemMap<V> {
+    type Output = V;
+    fn index(&self, id: &ItemId) -> &V {
+        self.get(id).expect("no entry for item")
+    }
+}
+
+/// Insertion-ordered map from anchors (cell-item indices) to values, stored
+/// densely by anchor index: the insertion order — the order of the records —
+/// is kept in a separate list.
+#[derive(Clone, Debug)]
+pub struct AnchorMap<V> {
+    slots: Vec<Option<V>>,
+    order: Vec<usize>,
+}
+
+impl<V> Default for AnchorMap<V> {
+    fn default() -> Self {
+        AnchorMap { slots: Vec::new(), order: Vec::new() }
+    }
+}
+
+impl<V> AnchorMap<V> {
+    pub fn reserve(&mut self, anchors: usize) {
+        if self.slots.len() < anchors {
+            self.slots.resize_with(anchors, || None);
+        }
+    }
+
+    #[inline]
+    pub fn get(&self, anchor: &usize) -> Option<&V> {
+        self.slots.get(*anchor).and_then(|s| s.as_ref())
+    }
+
+    #[inline]
+    pub fn contains_key(&self, anchor: &usize) -> bool {
+        self.get(anchor).is_some()
+    }
+
+    /// Sets the value of an anchor, appending a new anchor to the order.
+    pub fn insert(&mut self, anchor: usize, value: V) -> Option<V> {
+        if anchor >= self.slots.len() {
+            self.slots.resize_with(anchor + 1, || None);
+        }
+        let previous = self.slots[anchor].replace(value);
+        if previous.is_none() {
+            self.order.push(anchor);
+        }
+        previous
+    }
+
+    /// Anchors in insertion order.
+    pub fn keys(&self) -> impl Iterator<Item = &usize> + '_ {
+        self.order.iter()
+    }
+
+    /// Entries in insertion order.
+    pub fn iter(&self) -> impl Iterator<Item = (&usize, &V)> + '_ {
+        self.order
+            .iter()
+            .map(move |a| (a, self.slots[*a].as_ref().expect("ordered anchor has a value")))
+    }
+
+    pub fn len(&self) -> usize {
+        self.order.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.order.is_empty()
+    }
+}
+
+impl<V> std::ops::Index<&usize> for AnchorMap<V> {
+    type Output = V;
+    fn index(&self, anchor: &usize) -> &V {
+        self.get(anchor).expect("no entry for anchor")
+    }
+}
+
+/// A set of anchors (cell-item indices) as a dense bit vector.
+#[derive(Clone, Debug, Default)]
+pub struct AnchorSet {
+    flags: Vec<bool>,
+    len: usize,
+}
+
+impl AnchorSet {
+    #[inline]
+    pub fn contains(&self, anchor: &usize) -> bool {
+        self.flags.get(*anchor).copied().unwrap_or(false)
+    }
+
+    pub fn insert(&mut self, anchor: usize) -> bool {
+        if anchor >= self.flags.len() {
+            self.flags.resize(anchor + 1, false);
+        }
+        let added = !self.flags[anchor];
+        self.flags[anchor] = true;
+        self.len += added as usize;
+        added
+    }
+
+    pub fn remove(&mut self, anchor: &usize) -> bool {
+        let present = self.contains(anchor);
+        if present {
+            self.flags[*anchor] = false;
+            self.len -= 1;
+        }
+        present
+    }
+
+    pub fn extend(&mut self, anchors: impl IntoIterator<Item = usize>) {
+        for a in anchors {
+            self.insert(a);
+        }
+    }
+
+    pub fn len(&self) -> usize {
+        self.len
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+
+    /// The anchors in ascending order.
+    pub fn iter(&self) -> impl Iterator<Item = usize> + '_ {
+        self.flags.iter().enumerate().filter(|(_, &f)| f).map(|(i, _)| i)
+    }
+}
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum ItemId {
@@ -32,7 +211,7 @@ pub enum ItemId {
 /// Cell-derived item (s, tags, index) bound to its source cell (row, col).
 #[derive(Clone, Debug)]
 pub struct CellItem {
-    pub s: String,
+    pub s: Text,
     pub tags: Vec<String>,
     pub index: usize,
     pub row: usize,
@@ -57,9 +236,9 @@ impl CellItem {
 /// Context-derived item.
 #[derive(Clone, Debug)]
 pub struct CtxItem {
-    pub s: String,
+    pub s: Text,
     pub ty: ItemType,
-    pub const_value: Option<String>,
+    pub const_value: Option<Text>,
 }
 
 /// One instantiated interpretation action.
@@ -590,9 +769,25 @@ impl ProviderInst {
         env: &EvalEnv,
         index: &ItemIndex,
     ) -> CoreResult<Vec<ItemId>> {
+        let mut out = Vec::new();
+        self.provide_into(anchor, sem, env, index, &mut out)?;
+        Ok(out)
+    }
+
+    /// [`Self::provide`] appending to a caller-owned buffer (reused across
+    /// the millions of actions of a large table).
+    pub fn provide_into(
+        &self,
+        anchor: ItemId,
+        sem: &SemanticsCore,
+        env: &EvalEnv,
+        index: &ItemIndex,
+        result: &mut Vec<ItemId>,
+    ) -> CoreResult<()> {
         match self {
             ProviderInst::Ctx { items, kind } => {
-                self.provide_ctx(anchor, sem, items, *kind)
+                result.extend(self.provide_ctx(anchor, sem, items, *kind)?);
+                Ok(())
             }
             ProviderInst::Cell { cond, order, cardinality, kind, exclude_anchor, lenient, scope } => {
                 let ItemId::Cell(anchor_idx) = anchor else {
@@ -608,7 +803,7 @@ impl ProviderInst {
                 };
                 if !compatible {
                     if *lenient {
-                        return Ok(Vec::new());
+                        return Ok(());
                     }
                     return Err(format!(
                         "Υ_tbl^val and Υ_tbl^attr require a value-associated anchor, got: {:?}",
@@ -616,10 +811,10 @@ impl ProviderInst {
                     )
                     .into());
                 }
-                let mut result: Vec<ItemId> = Vec::new();
                 if *cardinality == 0 {
-                    return Ok(result);
+                    return Ok(());
                 }
+                let start = result.len();
                 let range = index.lookup(scope, anch, *order, env, sem);
                 let a = range.items;
                 // J \ {anchor}, the kind restriction on J and κ; stops once k
@@ -638,15 +833,15 @@ impl ProviderInst {
                         return Ok(false);
                     }
                     result.push(ItemId::Cell(i));
-                    Ok(*cardinality != UNBOUNDED && result.len() as i64 >= *cardinality)
+                    Ok(*cardinality != UNBOUNDED && (result.len() - start) as i64 >= *cardinality)
                 };
                 if !range.backward {
                     for &i in a {
-                        if accept(i, &mut result)? {
-                            return Ok(result);
+                        if accept(i, result)? {
+                            return Ok(());
                         }
                     }
-                    return Ok(result);
+                    return Ok(());
                 }
                 // Reverse traversal: cells in reverse order, items inside a cell
                 // still by ascending index.
@@ -662,13 +857,13 @@ impl ProviderInst {
                         j -= 1;
                     }
                     for &k in &a[j..=last] {
-                        if accept(k, &mut result)? {
-                            return Ok(result);
+                        if accept(k, result)? {
+                            return Ok(());
                         }
                     }
                     i = j;
                 }
-                Ok(result)
+                Ok(())
             }
         }
     }
@@ -769,16 +964,20 @@ impl Diagnostic {
 /// anchor that never had a record.
 #[derive(Default, Debug)]
 pub struct WorkingState {
-    pub val: FastIndexMap<ItemId, String>,
-    pub attr: FastIndexMap<ItemId, String>,
-    pub avp: FastIndexMap<ItemId, (String, String)>,
+    pub val: ItemMap<Text>,
+    pub attr: ItemMap<Text>,
+    /// avp(ι) = (attribute, value); the attribute is an index into
+    /// `attr_names` (interned: a million records share one name).
+    avp: ItemMap<(u32, Text)>,
+    attr_names: Vec<Text>,
+    attr_ids: HashMap<Text, u32>,
     /// Keyed by cell-item index; insertion order defines the order of records.
     /// Concatenated-away anchors keep their (stale) entry and are masked by `C`.
-    rec: FastIndexMap<usize, Vec<Vec<ItemId>>>,
+    rec: AnchorMap<Vec<Vec<ItemId>>>,
     /// J: joined-away anchors.
-    joined: FxHashSet<usize>,
+    joined: AnchorSet,
     /// C: concatenated-away anchors (removed from `dom(rec)`).
-    concatenated: FxHashSet<usize>,
+    concatenated: AnchorSet,
     /// Preconditions violated during completion; the operations had no effect.
     diagnostics: Vec<Diagnostic>,
     /// If set, a violated precondition raises instead of being recorded.
@@ -790,8 +989,60 @@ impl WorkingState {
         WorkingState { strict_preconditions, ..Default::default() }
     }
 
+    /// Pre-sizes the per-item storage for a semantics layer.
+    pub fn reserve(&mut self, cell_items: usize, ctx_items: usize) {
+        self.val.reserve(cell_items, ctx_items);
+        self.attr.reserve(cell_items, ctx_items);
+        self.avp.reserve(cell_items, ctx_items);
+        self.rec.reserve(cell_items);
+    }
+
+    // --- attribute names (interned) ---
+
+    /// The id of an attribute name, interning it on first use.
+    pub fn intern_attr(&mut self, name: &str) -> u32 {
+        if let Some(&id) = self.attr_ids.get(name) {
+            return id;
+        }
+        let id = self.attr_names.len() as u32;
+        let text: Text = Text::from(name);
+        self.attr_names.push(text.clone());
+        self.attr_ids.insert(text, id);
+        id
+    }
+
+    /// The id of an already interned attribute name.
+    pub fn attr_id_of(&self, name: &str) -> Option<u32> {
+        self.attr_ids.get(name).copied()
+    }
+
+    pub fn attr_name(&self, id: u32) -> &str {
+        &self.attr_names[id as usize]
+    }
+
+    /// Number of interned attribute names (ids are `0..attr_count()`).
+    pub fn attr_count(&self) -> usize {
+        self.attr_names.len()
+    }
+
+    /// The attribute id of the item's avp, if any.
+    #[inline]
+    pub fn attr_id(&self, item: ItemId) -> Option<u32> {
+        self.avp.get(&item).map(|(a, _)| *a)
+    }
+
+    /// The attribute name of the item's avp, if any.
     pub fn assoc(&self, item: ItemId) -> Option<&str> {
-        self.avp.get(&item).map(|(a, _)| a.as_str())
+        self.avp.get(&item).map(|(a, _)| self.attr_name(*a))
+    }
+
+    /// The avp of the item as `(attribute, value)`, if any.
+    pub fn avp(&self, item: ItemId) -> Option<(&str, &str)> {
+        self.avp.get(&item).map(|(a, v)| (self.attr_name(*a), &**v))
+    }
+
+    pub fn has_avp(&self, item: ItemId) -> bool {
+        self.avp.contains_key(&item)
     }
 
     // --- rec accessors ---
@@ -830,11 +1081,11 @@ impl WorkingState {
             .collect()
     }
 
-    pub fn all_joined(&self) -> &FxHashSet<usize> {
+    pub fn all_joined(&self) -> &AnchorSet {
         &self.joined
     }
 
-    pub fn all_concatenated(&self) -> &FxHashSet<usize> {
+    pub fn all_concatenated(&self) -> &AnchorSet {
         &self.concatenated
     }
 
@@ -867,7 +1118,7 @@ impl WorkingState {
 
     // --- string helpers ---
 
-    fn get_val_or_attr(&self, sem: &SemanticsCore, anchor: ItemId) -> CoreResult<String> {
+    fn get_val_or_attr(&self, sem: &SemanticsCore, anchor: ItemId) -> CoreResult<Text> {
         match sem.item_type(anchor) {
             ItemType::Value => self
                 .val
@@ -888,11 +1139,11 @@ impl WorkingState {
     fn set_val_or_attr(&mut self, sem: &SemanticsCore, anchor: ItemId, value: String) -> CoreResult<()> {
         match sem.item_type(anchor) {
             ItemType::Value => {
-                self.val.insert(anchor, value);
+                self.val.insert(anchor, Text::from(value));
                 Ok(())
             }
             ItemType::Attribute => {
-                self.attr.insert(anchor, value);
+                self.attr.insert(anchor, Text::from(value));
                 Ok(())
             }
             ItemType::Auxiliary => {
@@ -972,7 +1223,8 @@ impl WorkingState {
             .get(&anchor)
             .cloned()
             .ok_or_else(|| format!("No value for anchor: {anchor:?}"))?;
-        self.avp.insert(anchor, (a, v));
+        let id = self.intern_attr(&a);
+        self.avp.insert(anchor, (id, v));
         Ok(())
     }
 
@@ -995,7 +1247,8 @@ impl WorkingState {
                 let ctx = &sem.ctx_items[ci];
                 if let Some(cv) = &ctx.const_value {
                     self.val.insert(item, cv.clone());
-                    self.avp.insert(item, (ctx.s.clone(), cv.clone()));
+                    let id = self.intern_attr(&ctx.s);
+                    self.avp.insert(item, (id, cv.clone()));
                 }
             }
             sequence.push(item);
@@ -1182,8 +1435,8 @@ impl WorkingState {
         result
     }
 
-    fn pair_text(pair: &(String, String)) -> String {
-        format!("AttributeValuePair[attribute={}, value={}]", pair.0, pair.1)
+    fn pair_text(&self, pair: &(u32, Text)) -> String {
+        format!("AttributeValuePair[attribute={}, value={}]", self.attr_name(pair.0), pair.1)
     }
 
     /// compat_K(ρ, ρ'): `None` if for every key position k both records are
@@ -1203,8 +1456,8 @@ impl WorkingState {
                     if pa != pb {
                         return Some(format!(
                             "key position {k} differs: {} vs {}",
-                            Self::pair_text(pa),
-                            Self::pair_text(pb)
+                            self.pair_text(pa),
+                            self.pair_text(pb)
                         ));
                     }
                 }
@@ -1212,8 +1465,8 @@ impl WorkingState {
                     if self.val.get(&a) != self.val.get(&b) {
                         return Some(format!(
                             "key position {k} differs: '{}' vs '{}'",
-                            self.val.get(&a).map(|s| s.as_str()).unwrap_or("null"),
-                            self.val.get(&b).map(|s| s.as_str()).unwrap_or("null")
+                            self.val.get(&a).map(|s| &**s).unwrap_or("null"),
+                            self.val.get(&b).map(|s| &**s).unwrap_or("null")
                         ));
                     }
                 }
@@ -1232,8 +1485,8 @@ impl WorkingState {
             if pa != pb {
                 return Some(format!(
                     "key attribute '{name}' differs: {} vs {}",
-                    Self::pair_text(pa),
-                    Self::pair_text(pb)
+                    self.pair_text(pa),
+                    self.pair_text(pb)
                 ));
             }
         }
@@ -1243,15 +1496,15 @@ impl WorkingState {
     /// agree(ρ, ρ'): every named attribute appearing in both records carries
     /// the same value.
     fn agree(&self, rho: &[ItemId], rho2: &[ItemId]) -> bool {
-        let mut named: HashMap<&str, &str> = HashMap::new();
+        let mut named: HashMap<u32, &Text> = HashMap::new();
         for &item in rho {
             if let Some((a, v)) = self.avp.get(&item) {
-                named.entry(a.as_str()).or_insert(v.as_str());
+                named.entry(*a).or_insert(v);
             }
         }
         for &item in rho2 {
             if let Some((a, v)) = self.avp.get(&item) {
-                if let Some(&existing) = named.get(a.as_str()) {
+                if let Some(&existing) = named.get(a) {
                     if existing != v {
                         return false;
                     }
@@ -1263,19 +1516,19 @@ impl WorkingState {
 
     /// The first named attribute occurring twice in the sequence.
     fn duplicate_attribute(&self, sequence: &[ItemId]) -> Option<String> {
-        let mut seen: Vec<&str> = Vec::with_capacity(sequence.len());
+        let mut seen: Vec<u32> = Vec::with_capacity(sequence.len());
         self.duplicate_attribute_in(sequence, &mut seen).map(|a| a.to_string())
     }
 
     /// [`Self::duplicate_attribute`] with a caller-provided scratch buffer
     /// (records are short, so a linear scan beats a hash set and the buffer
     /// is reused across the millions of records of a large table).
-    fn duplicate_attribute_in<'a>(&'a self, sequence: &[ItemId], seen: &mut Vec<&'a str>) -> Option<&'a str> {
+    fn duplicate_attribute_in(&self, sequence: &[ItemId], seen: &mut Vec<u32>) -> Option<&str> {
         seen.clear();
         for &item in sequence {
-            if let Some(a) = self.assoc(item) {
+            if let Some(a) = self.attr_id(item) {
                 if seen.contains(&a) {
-                    return Some(a);
+                    return Some(self.attr_name(a));
                 }
                 seen.push(a);
             }
@@ -1283,19 +1536,25 @@ impl WorkingState {
         None
     }
 
-    pub fn set_avp(&mut self, item: ItemId, attribute: String, value: String) {
+    pub fn set_avp(&mut self, item: ItemId, attribute: String, value: Text) {
+        let id = self.intern_attr(&attribute);
+        self.avp.insert(item, (id, value));
+    }
+
+    /// [`Self::set_avp`] with an already interned attribute name.
+    pub fn set_avp_id(&mut self, item: ItemId, attribute: u32, value: Text) {
         self.avp.insert(item, (attribute, value));
     }
 
     // --- consistency checks (over the live anchors) ---
 
     pub fn is_anchor_attribute_uniform(&self) -> bool {
-        let mut common: Option<&str> = None;
+        let mut common: Option<u32> = None;
         for anchor_idx in self.rec.keys().copied() {
             if self.joined.contains(&anchor_idx) || self.concatenated.contains(&anchor_idx) {
                 continue;
             }
-            if let Some(a) = self.assoc(ItemId::Cell(anchor_idx)) {
+            if let Some(a) = self.attr_id(ItemId::Cell(anchor_idx)) {
                 match common {
                     None => common = Some(a),
                     Some(c) => {
@@ -1310,8 +1569,8 @@ impl WorkingState {
     }
 
     pub fn is_record_attributes_distinct(&self) -> bool {
-        let mut seen: Vec<&str> = Vec::new();
-        for (anchor_idx, records) in &self.rec {
+        let mut seen: Vec<u32> = Vec::new();
+        for (anchor_idx, records) in self.rec.iter() {
             if self.joined.contains(anchor_idx) || self.concatenated.contains(anchor_idx) {
                 continue;
             }
@@ -1345,7 +1604,7 @@ mod tests {
             cell_items: items
                 .iter()
                 .map(|&(s, r, c, i)| CellItem {
-                    s: s.to_string(),
+                    s: Text::from(s),
                     tags: Vec::new(),
                     index: i,
                     row: r,
@@ -1614,7 +1873,7 @@ mod tests {
 
         assert_eq!(ws.rec(0), Some(&vec![cells(&[0, 2, 4]), cells(&[0, 3, 5])]));
         assert!(ws.is_joined(2) && ws.is_joined(3));
-        assert_eq!(ws.all_joined(), &FxHashSet::from_iter([2, 3]));
+        assert_eq!(ws.all_joined().iter().collect::<Vec<_>>(), vec![2, 3]);
         assert!(ws.rec(2).is_some(), "a joined-away anchor keeps its records");
         assert_eq!(ws.live_anchors(), vec![0, 1], "live anchors only");
         assert!(ws.diagnostics().is_empty());
@@ -1640,7 +1899,7 @@ mod tests {
         let (mut sem, mut ws) = explode_stack();
         for (s, r, c) in [("p", 2, 3), ("q", 2, 4)] {
             sem.cell_items.push(CellItem {
-                s: s.to_string(),
+                s: Text::from(s),
                 tags: Vec::new(),
                 index: 0,
                 row: r,
@@ -1779,7 +2038,7 @@ mod tests {
             Some(&vec![cells(&[0, 1, 2, 4])]),
             "only the pair carrying Year on both sides survives; the joined key is not repeated"
         );
-        assert_eq!(ws.all_joined(), &FxHashSet::from_iter([2, 5]));
+        assert_eq!(ws.all_joined().iter().collect::<Vec<_>>(), vec![2, 5]);
     }
 
     // ------------------------------------------------ provider index equivalence
@@ -1926,7 +2185,7 @@ mod tests {
                         let t = texts[rng.below(texts.len())];
                         syntax.cell_mut(r, c).set_text(t.to_string());
                         sem.cell_items.push(CellItem {
-                            s: t.to_string(),
+                            s: Text::from(t),
                             tags: if rng.below(3) == 0 { vec!["#t".into()] } else { Vec::new() },
                             index: i,
                             row: r,
