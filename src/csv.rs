@@ -37,6 +37,20 @@ pub fn parse_csv<T: for<'a> From<&'a str>>(text: &str) -> Vec<Vec<T>> {
             }
         };
     }
+    // The field ending at `end`: a plain field is taken straight from the
+    // input slice, one with quotes or escapes from the accumulator.
+    macro_rules! take_field {
+        ($end:expr) => {{
+            let field = if cur.is_empty() {
+                T::from(&text[run..$end])
+            } else {
+                flush_run!($end);
+                T::from(cur.as_str())
+            };
+            cur.clear();
+            field
+        }};
+    }
 
     while i < n {
         let ch = bytes[i];
@@ -61,18 +75,16 @@ pub fn parse_csv<T: for<'a> From<&'a str>>(text: &str) -> Vec<Vec<T>> {
             i += 1;
             run = i;
         } else if ch == b',' {
-            flush_run!(i);
-            fields.push(T::from(cur.as_str()));
-            cur.clear();
+            fields.push(take_field!(i));
             i += 1;
             run = i;
         } else if ch == b'\r' || ch == b'\n' {
-            flush_run!(i);
+            let end = i;
             if ch == b'\r' && i + 1 < n && bytes[i + 1] == b'\n' {
                 i += 1; // CRLF is one line break
             }
-            if !fields.is_empty() || !cur.is_empty() || quoted {
-                fields.push(T::from(cur.as_str()));
+            if !fields.is_empty() || run < end || !cur.is_empty() || quoted {
+                fields.push(take_field!(end));
                 rows.push(std::mem::take(&mut fields));
             }
             cur.clear();
@@ -83,9 +95,8 @@ pub fn parse_csv<T: for<'a> From<&'a str>>(text: &str) -> Vec<Vec<T>> {
             i += 1;
         }
     }
-    flush_run!(n);
-    if !fields.is_empty() || !cur.is_empty() || quoted {
-        fields.push(T::from(cur.as_str()));
+    if !fields.is_empty() || run < n || !cur.is_empty() || quoted {
+        fields.push(take_field!(n));
         rows.push(fields);
     }
     rows
