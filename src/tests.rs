@@ -136,7 +136,7 @@ fn end_to_end_match_and_interpret() {
     let rs = out.recordset;
 
     assert_eq!(rs.schema.attributes, vec!["ND", "AIRLINE", "AIRPORT", "MON"]);
-    assert_eq!(rs.records.len(), 4);
+    assert_eq!(rs.len(), 4);
     assert_eq!(rs.get(0, "ND"), Some("0"));
     assert_eq!(rs.get(3, "MON"), Some("Feb"));
 }

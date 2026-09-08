@@ -6,7 +6,7 @@
 //! by `CONCAT`/`JOIN` leave the working state unchanged and are reported
 //! through the returned [`Diagnostic`]s (or fail under strict preconditions).
 
-use crate::recordset::{RecordCore, RecordsetCore, Schema};
+use crate::recordset::{RecordsetCore, Schema};
 use crate::semantics::{ActionInst, Diagnostic, ItemId, ItemIndex, OpInst, SemanticsCore, WorkingState};
 use crate::spec::{EvalEnv, PyFunc, Transformation};
 use crate::syntax::SyntaxCore;
@@ -269,8 +269,7 @@ fn extract_recordset(
     }
     let anchors: Vec<usize> = ws.live_anchors();
     let schema = construct_schema(cfg, ws, sem, &anchors)?;
-    let records = generate_records(cfg, ws, sem, &anchors, &schema)?;
-    Ok(RecordsetCore { schema, records })
+    generate_records(cfg, ws, sem, &anchors, schema)
 }
 
 /// Visits the `(anchor, record, position)` triples of schema construction
@@ -401,8 +400,8 @@ fn generate_records(
     ws: &WorkingState,
     sem: &SemanticsCore,
     anchors: &[usize],
-    schema: &Schema,
-) -> CoreResult<Vec<RecordCore>> {
+    schema: Schema,
+) -> CoreResult<RecordsetCore> {
     let n = schema.attributes.len();
     // Interned attribute id → position in the schema.
     let mut index: Vec<Option<usize>> = vec![None; ws.attr_count()];
@@ -422,11 +421,12 @@ fn generate_records(
             m
         }
     };
-    let mut records = Vec::with_capacity(anchors.len());
+    let mut rs = RecordsetCore::with_capacity(schema, anchors.len());
     for &anchor in anchors {
         let Some(recs) = ws.rec(anchor) else { continue };
         for sequence in recs.iter() {
-            let mut values = missing.clone();
+            let r = rs.push_slice(&missing);
+            let values = rs.record_mut(r);
             for &item in sequence {
                 if let Some(id) = ws.attr_id(item) {
                     if let Some(idx) = index[id as usize] {
@@ -434,10 +434,9 @@ fn generate_records(
                     }
                 }
             }
-            records.push(RecordCore { values });
         }
     }
-    Ok(records)
+    Ok(rs)
 }
 
 fn handle_missing(cfg: &InterpreterCfg, attribute: &str) -> CoreResult<Option<String>> {

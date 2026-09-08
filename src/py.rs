@@ -2,7 +2,7 @@
 
 use crate::interp::{ActionStrategy, InterpreterCfg, SchemaStrategy};
 use crate::matcher;
-use crate::recordset::{RecordCore, RecordsetCore, Schema as SchemaCore};
+use crate::recordset::{RecordsetCore, Schema as SchemaCore};
 use crate::rtl::{self, BindingsCore, RtlErr};
 use crate::semantics::{CtxItem, SemanticsCore};
 use crate::spec as sp;
@@ -822,20 +822,12 @@ pub struct PyRecordset {
 impl PyRecordset {
     #[new]
     fn new(schema: PySchema, records: Vec<std::collections::HashMap<String, Option<String>>>) -> Self {
-        let recs = records
-            .into_iter()
-            .map(|m| RecordCore {
-                values: schema
-                    .core
-                    .attributes
-                    .iter()
-                    .map(|a| m.get(a).cloned().flatten().map(Text::from))
-                    .collect(),
-            })
-            .collect();
-        PyRecordset {
-            core: Arc::new(RecordsetCore { schema: schema.core, records: recs }),
+        let mut core = RecordsetCore::with_capacity(schema.core, records.len());
+        for m in records {
+            let attrs = core.schema.attributes.clone();
+            core.push(attrs.iter().map(|a| m.get(a).cloned().flatten().map(Text::from)));
         }
+        PyRecordset { core: Arc::new(core) }
     }
     #[getter]
     fn schema(&self) -> PySchema {
@@ -843,19 +835,19 @@ impl PyRecordset {
     }
     #[getter]
     fn records(slf: &Bound<'_, Self>) -> Vec<PyRecord> {
-        let n = slf.borrow().core.records.len();
+        let n = slf.borrow().core.len();
         (0..n)
             .map(|i| PyRecord { rs: slf.clone().unbind(), index: i })
             .collect()
     }
     fn size(&self) -> usize {
-        self.core.records.len()
+        self.core.len()
     }
     fn __len__(&self) -> usize {
         self.size()
     }
     fn get(slf: &Bound<'_, Self>, index: usize) -> PyResult<PyRecord> {
-        if index >= slf.borrow().core.records.len() {
+        if index >= slf.borrow().core.len() {
             return Err(PyIndexError::new_err(index));
         }
         Ok(PyRecord { rs: slf.clone().unbind(), index })
@@ -868,9 +860,9 @@ impl PyRecordset {
     fn to_pandas(&self, py: Python<'_>) -> PyResult<PyObject> {
         let pandas = py.import("pandas")?;
         let data = PyList::empty(py);
-        for r in &self.core.records {
+        for r in self.core.records() {
             let row = PyList::empty(py);
-            for v in &r.values {
+            for v in r {
                 match v {
                     Some(s) => row.append(&**s)?,
                     None => row.append(py.None())?,
@@ -927,10 +919,10 @@ impl PyRecordset {
             "Recordset[schema=Schema{:?}, records=[\n",
             self.core.schema.attributes
         );
-        for r in &self.core.records {
+        for r in self.core.records() {
             sb.push_str("  Record{");
             let mut first = true;
-            for (a, v) in self.core.schema.attributes.iter().zip(&r.values) {
+            for (a, v) in self.core.schema.attributes.iter().zip(r) {
                 if !first {
                     sb.push_str(", ");
                 }
@@ -962,51 +954,49 @@ impl PyRecord {
     }
     fn get(&self, py: Python<'_>, key: &Bound<'_, PyAny>) -> PyResult<Option<String>> {
         let rs = self.rs.bind(py).borrow();
-        let rec = &rs.core.records[self.index];
+        let rec = rs.core.record(self.index);
         if let Ok(i) = key.extract::<usize>() {
             return rec
-                .values
                 .get(i)
                 .map(|v| v.as_deref().map(str::to_string))
                 .ok_or_else(|| PyIndexError::new_err(i));
         }
         let attr: String = key.extract()?;
         match rs.core.schema.index_of(&attr) {
-            Some(i) => Ok(rec.values[i].as_deref().map(str::to_string)),
+            Some(i) => Ok(rec[i].as_deref().map(str::to_string)),
             None => Ok(None),
         }
     }
     fn __getitem__(&self, py: Python<'_>, key: &Bound<'_, PyAny>) -> PyResult<Option<String>> {
         let rs = self.rs.bind(py).borrow();
-        let rec = &rs.core.records[self.index];
+        let rec = rs.core.record(self.index);
         if let Ok(i) = key.extract::<usize>() {
             return rec
-                .values
                 .get(i)
                 .map(|v| v.as_deref().map(str::to_string))
                 .ok_or_else(|| PyIndexError::new_err(i));
         }
         let attr: String = key.extract()?;
         match rs.core.schema.index_of(&attr) {
-            Some(i) => Ok(rec.values[i].as_deref().map(str::to_string)),
+            Some(i) => Ok(rec[i].as_deref().map(str::to_string)),
             None => Err(PyKeyError::new_err(attr)),
         }
     }
     fn values(&self, py: Python<'_>) -> PyResult<PyObject> {
         let rs = self.rs.bind(py).borrow();
-        let rec = &rs.core.records[self.index];
+        let rec = rs.core.record(self.index);
         let d = PyDict::new(py);
-        for (a, v) in rs.core.schema.attributes.iter().zip(&rec.values) {
+        for (a, v) in rs.core.schema.attributes.iter().zip(rec) {
             d.set_item(a, v.as_deref())?;
         }
         Ok(d.unbind().into())
     }
     fn __repr__(&self, py: Python<'_>) -> String {
         let rs = self.rs.bind(py).borrow();
-        let rec = &rs.core.records[self.index];
+        let rec = rs.core.record(self.index);
         let mut sb = String::from("Record{");
         let mut first = true;
-        for (a, v) in rs.core.schema.attributes.iter().zip(&rec.values) {
+        for (a, v) in rs.core.schema.attributes.iter().zip(rec) {
             if !first {
                 sb.push_str(", ");
             }

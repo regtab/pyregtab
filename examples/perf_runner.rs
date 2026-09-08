@@ -89,7 +89,7 @@ fn main() {
             syntax.num_cols,
             sem.cell_items.len(),
             sem.actions.len(),
-            rs.records.len(),
+            rs.len(),
             rs.schema.attributes.len()
         );
     }

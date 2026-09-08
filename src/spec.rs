@@ -1,7 +1,7 @@
 //! Port of `ru.icc.regtab.atp.spec` (+ `interpret` transformations):
 //! the ATP specification hierarchy. Java sealed interfaces map to enums.
 
-use crate::recordset::{RecordCore, RecordsetCore, Schema};
+use crate::recordset::{RecordsetCore, Schema};
 use crate::semantics::CellItem;
 use crate::syntax::{CellData, SyntaxCore};
 use crate::util::{CoreResult, Text, full_match, java_is_blank, java_trim, norm_whitespace, replace_all, split_literal, split_regex};
@@ -1182,18 +1182,7 @@ impl Transformation {
                 apply_anchor_at_position(rs, *position)
             }
             Transformation::WhitespaceNormalization => {
-                let records = rs
-                    .records
-                    .into_iter()
-                    .map(|r| RecordCore {
-                        values: r
-                            .values
-                            .into_iter()
-                            .map(|v| v.map(|s| Text::from(norm_whitespace(&s))))
-                            .collect(),
-                    })
-                    .collect();
-                Ok(RecordsetCore { schema: rs.schema, records })
+                Ok(rs.map_values(|v| v.map(|s| Text::from(norm_whitespace(&s)))))
             }
             Transformation::DelimitedFieldSplit { delimiter, only_attributes, template } => {
                 apply_delimited_field_split(rs, delimiter, only_attributes.as_ref(), template)
@@ -1240,14 +1229,10 @@ fn apply_anchor_at_position(rs: RecordsetCore, position: i64) -> CoreResult<Reco
     }
     let new_attrs: Vec<String> = reordered.iter().map(|&src| attrs[src].clone()).collect();
     let schema = Schema::new(new_attrs)?;
-    let records = rs
-        .records
-        .iter()
-        .map(|r| RecordCore {
-            values: reordered.iter().map(|&src| r.values[src].clone()).collect(),
-        })
-        .collect();
-    Ok(RecordsetCore { schema, records })
+    Ok(RecordsetCore::from_rows(
+        schema,
+        rs.records().map(|r| reordered.iter().map(|&src| r[src].clone())),
+    ))
 }
 
 fn anonymous_attribute(template: &str, index: usize) -> String {
@@ -1284,8 +1269,8 @@ fn apply_delimited_field_split(
             }
         }
         let mut max_parts = 1;
-        for r in &rs.records {
-            let val = r.values[i].as_deref().unwrap_or("");
+        for r in rs.records() {
+            let val = r[i].as_deref().unwrap_or("");
             max_parts = max_parts.max(split_literal(delimiter, val).len());
         }
         width[i] = max_parts;
@@ -1301,11 +1286,11 @@ fn apply_delimited_field_split(
         .map(|j| anonymous_attribute(template, j + 1))
         .collect();
     let schema = Schema::new(new_attrs)?;
-    let mut out = Vec::with_capacity(rs.records.len());
-    for r in &rs.records {
+    let mut out = RecordsetCore::with_capacity(schema, rs.len());
+    for r in rs.records() {
         let mut cells: Vec<Option<Text>> = Vec::with_capacity(total);
         for (i, &w) in width.iter().enumerate().take(n) {
-            let val = r.values[i].clone().unwrap_or_default();
+            let val = r[i].clone().unwrap_or_default();
             if w == 1 {
                 cells.push(Some(val));
             } else {
@@ -1315,9 +1300,9 @@ fn apply_delimited_field_split(
                 }
             }
         }
-        out.push(RecordCore { values: cells });
+        out.push(cells);
     }
-    Ok(RecordsetCore { schema, records: out })
+    Ok(out)
 }
 
 fn apply_field_splitting(
@@ -1330,8 +1315,8 @@ fn apply_field_splitting(
         return Ok(rs);
     };
     let mut max_parts = 1;
-    for r in &rs.records {
-        if let Some(val) = &r.values[idx] {
+    for r in rs.records() {
+        if let Some(val) = &r[idx] {
             max_parts = max_parts.max(split_regex(delimiter, val)?.len());
         }
     }
@@ -1364,10 +1349,10 @@ fn apply_field_splitting(
         }
     }
     let schema = Schema::new(new_attrs)?;
-    let mut records = Vec::with_capacity(rs.records.len());
-    for r in &rs.records {
-        let mut values = Vec::with_capacity(schema.attributes.len());
-        for (i, v) in r.values.iter().enumerate() {
+    let mut out = RecordsetCore::with_capacity(schema, rs.len());
+    for r in rs.records() {
+        let mut values = Vec::with_capacity(out.width());
+        for (i, v) in r.iter().enumerate() {
             if i == idx {
                 let parts: Vec<String> = match v {
                     Some(val) => split_regex(delimiter, val)?,
@@ -1380,9 +1365,9 @@ fn apply_field_splitting(
                 values.push(v.clone());
             }
         }
-        records.push(RecordCore { values });
+        out.push(values);
     }
-    Ok(RecordsetCore { schema, records })
+    Ok(out)
 }
 
 fn apply_schema_reordering(rs: RecordsetCore, order: &[String]) -> CoreResult<RecordsetCore> {
@@ -1402,14 +1387,10 @@ fn apply_schema_reordering(rs: RecordsetCore, order: &[String]) -> CoreResult<Re
         .map(|a| rs.schema.index_of(a).unwrap())
         .collect();
     let schema = Schema::new(new_attrs)?;
-    let records = rs
-        .records
-        .iter()
-        .map(|r| RecordCore {
-            values: indices.iter().map(|&i| r.values[i].clone()).collect(),
-        })
-        .collect();
-    Ok(RecordsetCore { schema, records })
+    Ok(RecordsetCore::from_rows(
+        schema,
+        rs.records().map(|r| indices.iter().map(|&i| r[i].clone())),
+    ))
 }
 
 #[cfg(test)]
@@ -1421,19 +1402,15 @@ mod tests {
     /// A recordset with the given attributes and rows of non-null values.
     fn recordset(attributes: &[&str], rows: &[&[&str]]) -> RecordsetCore {
         let schema = Schema::new(attributes.iter().map(|a| a.to_string()).collect()).unwrap();
-        let records = rows
-            .iter()
-            .map(|row| RecordCore {
-                values: row.iter().map(|v| Some(Text::from(*v))).collect(),
-            })
-            .collect();
-        RecordsetCore { schema, records }
+        RecordsetCore::from_rows(
+            schema,
+            rows.iter().map(|row| row.iter().map(|v| Some(Text::from(*v)))),
+        )
     }
 
     /// Values of one record in the order of the recordset's own schema.
     fn values(rs: &RecordsetCore, record: usize) -> Vec<&str> {
-        rs.records[record]
-            .values
+        rs.record(record)
             .iter()
             .map(|v| v.as_deref().unwrap_or(""))
             .collect()
