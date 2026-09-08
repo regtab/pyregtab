@@ -266,7 +266,7 @@ impl CellPredicate {
             }
             #[cfg(not(feature = "python"))]
             CellPredicate::External { func, .. } | CellPredicate::Custom { func, .. } => {
-                let _ = env;
+                let _ = (env, row, col);
                 match *func {}
             }
             CellPredicate::ExternalUnbound { .. } => Ok(true),
