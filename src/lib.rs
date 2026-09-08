@@ -1,6 +1,7 @@
 //! pyRegTab native core: a Rust port of jRegTab (RTL compiler, ATP matcher,
 //! table interpreter) exposed to Python as `pyregtab._core`.
 
+pub mod csv;
 pub mod interp;
 pub mod matcher;
 #[cfg(feature = "python")]
@@ -16,6 +17,10 @@ pub mod util;
 
 #[cfg(feature = "python")]
 use pyo3::prelude::*;
+
+#[cfg(feature = "python")]
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 #[cfg(feature = "python")]
 #[pymodule]
@@ -82,6 +87,7 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<py::PyRtlCompiler>()?;
     m.add_class::<py::PyAtpToRtlSerializer>()?;
     m.add_function(wrap_pyfunction!(py::compile, m)?)?;
+    m.add_function(wrap_pyfunction!(py::parse_csv, m)?)?;
     m.add("RtlCompileError", m.py().get_type::<py::RtlCompileError>())?;
     m.add("UNBOUNDED", spec::UNBOUNDED)?;
     Ok(())

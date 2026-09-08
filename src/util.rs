@@ -47,6 +47,13 @@ impl CoreErr {
 
 pub type CoreResult<T> = Result<T, CoreErr>;
 
+/// Immutable shared text: the string of an item is shared by the working
+/// state (`val`, `avp`) and the records derived from it instead of being
+/// copied at every layer (a million-record table copies each value 3–4
+/// times otherwise). `Arc` rather than `Rc` because recordsets cross into
+/// Python objects, which must be `Send`.
+pub type Text = std::sync::Arc<str>;
+
 fn cache() -> &'static Mutex<HashMap<String, Arc<Regex>>> {
     static CACHE: OnceLock<Mutex<HashMap<String, Arc<Regex>>>> = OnceLock::new();
     CACHE.get_or_init(|| Mutex::new(HashMap::new()))

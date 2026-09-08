@@ -2,7 +2,7 @@
 
 use crate::interp::{ActionStrategy, InterpreterCfg, SchemaStrategy};
 use crate::matcher;
-use crate::recordset::{RecordCore, RecordsetCore, Schema as SchemaCore};
+use crate::recordset::{RecordsetCore, Schema as SchemaCore};
 use crate::rtl::{self, BindingsCore, RtlErr};
 use crate::semantics::{CtxItem, SemanticsCore};
 use crate::spec as sp;
@@ -10,12 +10,13 @@ use crate::spec::{EvalEnv, PyFunc};
 use crate::syntax::{
     CellColor as ColorCore, FontFamily, HorizontalAlignment, SyntaxCore, VerticalAlignment,
 };
-use crate::util::{CoreErr, CoreResult};
+use crate::util::{CoreErr, CoreResult, Text};
 use pyo3::create_exception;
 use pyo3::exceptions::{PyException, PyIndexError, PyKeyError, PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyTuple};
 use std::collections::BTreeSet;
+use std::io::Write;
 use std::sync::Arc;
 
 create_exception!(pyregtab, RtlCompileError, PyException);
@@ -79,13 +80,13 @@ pub fn call_item_filter(
             None => None,
         };
         let mk = |it: &crate::semantics::CellItem| PyCellDerivedItem {
-            s: it.s.clone(),
+            s: it.s.to_string(),
             tags: it.tags.clone(),
-            index: it.index,
+            index: it.index as usize,
             ty: it.ty,
             row: it.row,
             col: it.col,
-            span: it.span,
+            span: (it.span.0 as usize, it.span.1 as usize),
             table: table.as_ref().map(|t| t.clone_ref(py)),
         };
         let res = func
@@ -223,6 +224,46 @@ impl PyTableSyntax {
         })
     }
 
+    /// Builds the table from ready rows of cell texts in one call (`num_cols`
+    /// defaults to the widest row; shorter rows are padded with empty cells).
+    #[staticmethod]
+    #[pyo3(signature = (rows, *, num_cols=None))]
+    fn from_rows(rows: Vec<Vec<String>>, num_cols: Option<usize>) -> PyResult<Self> {
+        Ok(PyTableSyntax {
+            core: SyntaxCore::from_rows(rows, num_cols).map_err(core_err)?,
+        })
+    }
+
+    /// Reads a CSV file (UTF-8, universal newlines as `Path.read_text`) and
+    /// builds the table with the CLI runner's parsing rules (`parse_csv`):
+    /// RFC 4180, empty lines skipped, ragged rows padded with empty cells.
+    #[staticmethod]
+    fn from_csv(py: Python<'_>, path: std::path::PathBuf) -> PyResult<Self> {
+        let bytes = std::fs::read(&path).map_err(|e| {
+            PyErr::new::<pyo3::exceptions::PyOSError, _>(format!("cannot read {}: {e}", path.display()))
+        })?;
+        let text = match String::from_utf8(bytes) {
+            Ok(t) => t,
+            Err(e) => {
+                let err = e.utf8_error();
+                let bytes = e.into_bytes();
+                return Err(pyo3::exceptions::PyUnicodeDecodeError::new_utf8(py, &bytes, err)?.into());
+            }
+        };
+        let core = py.allow_threads(|| {
+            let text = crate::csv::universal_newlines(&text);
+            SyntaxCore::from_rows(crate::csv::parse_csv::<Text>(&text), None)
+        });
+        Ok(PyTableSyntax { core: core.map_err(core_err)? })
+    }
+
+    /// `from_csv` for CSV text already in memory (no newline translation).
+    #[staticmethod]
+    fn from_csv_text(py: Python<'_>, text: &str) -> PyResult<Self> {
+        let core = py.allow_threads(|| SyntaxCore::from_rows(crate::csv::parse_csv::<Text>(text), None));
+        Ok(PyTableSyntax { core: core.map_err(core_err)? })
+    }
+
     #[getter]
     fn num_rows(&self) -> usize {
         self.core.num_rows
@@ -313,10 +354,18 @@ macro_rules! cell_get {
         t.core.cell($self.row, $self.col).$field.clone()
     }};
 }
+/// Formatting getters/setters go through `CellData::format()` /
+/// `format_mut()` (formatting is materialized per cell on first write).
+macro_rules! fmt_get {
+    ($self:ident, $py:ident, $field:ident) => {{
+        let t = $self.table.bind($py).borrow();
+        t.core.cell($self.row, $self.col).format($self.row, $self.col).$field
+    }};
+}
 macro_rules! cell_set {
     ($self:ident, $py:ident, $field:ident, $value:expr) => {{
         let mut t = $self.table.bind($py).borrow_mut();
-        t.core.cell_mut($self.row, $self.col).$field = $value;
+        t.core.cell_mut($self.row, $self.col).format_mut($self.row, $self.col).$field = $value;
     }};
 }
 
@@ -337,7 +386,7 @@ impl PyCell0 {
     #[getter]
     fn bbox(&self, py: Python<'_>) -> PyBoundingBox {
         let t = self.table.bind(py).borrow();
-        let b = t.core.cell(self.row, self.col).bbox;
+        let b = t.core.cell(self.row, self.col).format(self.row, self.col).bbox;
         PyBoundingBox {
             top_row: b.top_row,
             left_col: b.left_col,
@@ -347,13 +396,14 @@ impl PyCell0 {
     }
     #[getter]
     fn merged(&self, py: Python<'_>) -> bool {
-        cell_get!(self, py, merged)
+        fmt_get!(self, py, merged)
     }
 
     // --- content ---
     #[getter]
     fn text(&self, py: Python<'_>) -> String {
-        cell_get!(self, py, text)
+        let t = self.table.bind(py).borrow();
+        t.core.cell(self.row, self.col).text.to_string()
     }
     #[setter(text)]
     fn set_text_prop(&self, py: Python<'_>, text: String) {
@@ -373,13 +423,14 @@ impl PyCell0 {
     }
     #[getter]
     fn text_indent(&self, py: Python<'_>) -> usize {
-        cell_get!(self, py, text_indent)
+        let t = self.table.bind(py).borrow();
+        t.core.cell(self.row, self.col).text_indent as usize
     }
 
     // --- formatting ---
     #[getter]
     fn font_family(&self, py: Python<'_>) -> FontFamily {
-        cell_get!(self, py, font_family)
+        fmt_get!(self, py, font_family)
     }
     #[setter(font_family)]
     fn set_font_family(&self, py: Python<'_>, v: FontFamily) {
@@ -387,7 +438,7 @@ impl PyCell0 {
     }
     #[getter]
     fn font_bold(&self, py: Python<'_>) -> bool {
-        cell_get!(self, py, font_bold)
+        fmt_get!(self, py, font_bold)
     }
     #[setter(font_bold)]
     fn set_font_bold(&self, py: Python<'_>, v: bool) {
@@ -395,7 +446,7 @@ impl PyCell0 {
     }
     #[getter]
     fn font_italic(&self, py: Python<'_>) -> bool {
-        cell_get!(self, py, font_italic)
+        fmt_get!(self, py, font_italic)
     }
     #[setter(font_italic)]
     fn set_font_italic(&self, py: Python<'_>, v: bool) {
@@ -403,7 +454,7 @@ impl PyCell0 {
     }
     #[getter]
     fn font_strikeout(&self, py: Python<'_>) -> bool {
-        cell_get!(self, py, font_strikeout)
+        fmt_get!(self, py, font_strikeout)
     }
     #[setter(font_strikeout)]
     fn set_font_strikeout(&self, py: Python<'_>, v: bool) {
@@ -411,7 +462,7 @@ impl PyCell0 {
     }
     #[getter]
     fn font_underline(&self, py: Python<'_>) -> bool {
-        cell_get!(self, py, font_underline)
+        fmt_get!(self, py, font_underline)
     }
     #[setter(font_underline)]
     fn set_font_underline(&self, py: Python<'_>, v: bool) {
@@ -419,7 +470,7 @@ impl PyCell0 {
     }
     #[getter]
     fn horz_align(&self, py: Python<'_>) -> HorizontalAlignment {
-        cell_get!(self, py, horz_align)
+        fmt_get!(self, py, horz_align)
     }
     #[setter(horz_align)]
     fn set_horz_align(&self, py: Python<'_>, v: HorizontalAlignment) {
@@ -427,7 +478,7 @@ impl PyCell0 {
     }
     #[getter]
     fn vert_align(&self, py: Python<'_>) -> VerticalAlignment {
-        cell_get!(self, py, vert_align)
+        fmt_get!(self, py, vert_align)
     }
     #[setter(vert_align)]
     fn set_vert_align(&self, py: Python<'_>, v: VerticalAlignment) {
@@ -435,7 +486,7 @@ impl PyCell0 {
     }
     #[getter]
     fn left_border(&self, py: Python<'_>) -> bool {
-        cell_get!(self, py, left_border)
+        fmt_get!(self, py, left_border)
     }
     #[setter(left_border)]
     fn set_left_border(&self, py: Python<'_>, v: bool) {
@@ -443,7 +494,7 @@ impl PyCell0 {
     }
     #[getter]
     fn top_border(&self, py: Python<'_>) -> bool {
-        cell_get!(self, py, top_border)
+        fmt_get!(self, py, top_border)
     }
     #[setter(top_border)]
     fn set_top_border(&self, py: Python<'_>, v: bool) {
@@ -451,7 +502,7 @@ impl PyCell0 {
     }
     #[getter]
     fn right_border(&self, py: Python<'_>) -> bool {
-        cell_get!(self, py, right_border)
+        fmt_get!(self, py, right_border)
     }
     #[setter(right_border)]
     fn set_right_border(&self, py: Python<'_>, v: bool) {
@@ -459,7 +510,7 @@ impl PyCell0 {
     }
     #[getter]
     fn bottom_border(&self, py: Python<'_>) -> bool {
-        cell_get!(self, py, bottom_border)
+        fmt_get!(self, py, bottom_border)
     }
     #[setter(bottom_border)]
     fn set_bottom_border(&self, py: Python<'_>, v: bool) {
@@ -467,7 +518,7 @@ impl PyCell0 {
     }
     #[getter]
     fn bg_color(&self, py: Python<'_>) -> PyCellColor {
-        cell_get!(self, py, bg_color).into()
+        fmt_get!(self, py, bg_color).into()
     }
     #[setter(bg_color)]
     fn set_bg_color(&self, py: Python<'_>, v: PyCellColor) {
@@ -475,7 +526,7 @@ impl PyCell0 {
     }
     #[getter]
     fn fg_color(&self, py: Python<'_>) -> PyCellColor {
-        cell_get!(self, py, fg_color).into()
+        fmt_get!(self, py, fg_color).into()
     }
     #[setter(fg_color)]
     fn set_fg_color(&self, py: Python<'_>, v: PyCellColor) {
@@ -483,7 +534,7 @@ impl PyCell0 {
     }
     #[getter]
     fn rotation(&self, py: Python<'_>) -> f64 {
-        cell_get!(self, py, rotation)
+        fmt_get!(self, py, rotation)
     }
     #[setter(rotation)]
     fn set_rotation(&self, py: Python<'_>, v: f64) {
@@ -698,12 +749,12 @@ impl PyContextDerivedItem {
     #[pyo3(signature = (s, ty, const_value=None))]
     fn new(s: String, ty: sp::ItemType, const_value: Option<String>) -> Self {
         PyContextDerivedItem {
-            core: CtxItem { s, ty, const_value },
+            core: CtxItem { s: Text::from(s), ty, const_value: const_value.map(Text::from) },
         }
     }
     #[getter]
     fn str(&self) -> String {
-        self.core.s.clone()
+        self.core.s.to_string()
     }
     #[getter]
     fn type_(&self) -> sp::ItemType {
@@ -711,7 +762,7 @@ impl PyContextDerivedItem {
     }
     #[getter]
     fn const_value(&self) -> Option<String> {
-        self.core.const_value.clone()
+        self.core.const_value.as_deref().map(str::to_string)
     }
     fn __repr__(&self) -> String {
         format!(
@@ -763,27 +814,21 @@ impl PySchema {
 
 #[pyclass(name = "Recordset")]
 pub struct PyRecordset {
-    pub core: RecordsetCore,
+    /// Shared so that a transformation-free `TablePattern.transform` and
+    /// `Record` handles never copy a large recordset.
+    pub core: Arc<RecordsetCore>,
 }
 
 #[pymethods]
 impl PyRecordset {
     #[new]
     fn new(schema: PySchema, records: Vec<std::collections::HashMap<String, Option<String>>>) -> Self {
-        let recs = records
-            .into_iter()
-            .map(|m| RecordCore {
-                values: schema
-                    .core
-                    .attributes
-                    .iter()
-                    .map(|a| m.get(a).cloned().flatten())
-                    .collect(),
-            })
-            .collect();
-        PyRecordset {
-            core: RecordsetCore { schema: schema.core, records: recs },
+        let mut core = RecordsetCore::with_capacity(schema.core, records.len());
+        for m in records {
+            let attrs = core.schema.attributes.clone();
+            core.push(attrs.iter().map(|a| m.get(a).cloned().flatten().map(Text::from)));
         }
+        PyRecordset { core: Arc::new(core) }
     }
     #[getter]
     fn schema(&self) -> PySchema {
@@ -791,19 +836,19 @@ impl PyRecordset {
     }
     #[getter]
     fn records(slf: &Bound<'_, Self>) -> Vec<PyRecord> {
-        let n = slf.borrow().core.records.len();
+        let n = slf.borrow().core.len();
         (0..n)
             .map(|i| PyRecord { rs: slf.clone().unbind(), index: i })
             .collect()
     }
     fn size(&self) -> usize {
-        self.core.records.len()
+        self.core.len()
     }
     fn __len__(&self) -> usize {
         self.size()
     }
     fn get(slf: &Bound<'_, Self>, index: usize) -> PyResult<PyRecord> {
-        if index >= slf.borrow().core.records.len() {
+        if index >= slf.borrow().core.len() {
             return Err(PyIndexError::new_err(index));
         }
         Ok(PyRecord { rs: slf.clone().unbind(), index })
@@ -816,11 +861,11 @@ impl PyRecordset {
     fn to_pandas(&self, py: Python<'_>) -> PyResult<PyObject> {
         let pandas = py.import("pandas")?;
         let data = PyList::empty(py);
-        for r in &self.core.records {
+        for r in self.core.records() {
             let row = PyList::empty(py);
-            for v in &r.values {
+            for v in r {
                 match v {
-                    Some(s) => row.append(s)?,
+                    Some(s) => row.append(&**s)?,
                     None => row.append(py.None())?,
                 }
             }
@@ -842,47 +887,29 @@ impl PyRecordset {
     #[pyo3(signature = (path=None, *, sep=",", missing="", quote_all=false, newline="\r\n"))]
     fn to_csv(
         &self,
+        py: Python<'_>,
         path: Option<std::path::PathBuf>,
         sep: &str,
         missing: &str,
         quote_all: bool,
         newline: &str,
     ) -> PyResult<Option<String>> {
-        fn field(out: &mut String, s: &str, sep: &str, quote_all: bool) {
-            if quote_all || s.contains(sep) || s.contains('"') || s.contains('\n') || s.contains('\r') {
-                out.push('"');
-                out.push_str(&s.replace('"', "\"\""));
-                out.push('"');
-            } else {
-                out.push_str(s);
-            }
-        }
-        let mut csv = String::new();
-        for (i, a) in self.core.schema.attributes.iter().enumerate() {
-            if i > 0 {
-                csv.push_str(sep);
-            }
-            field(&mut csv, a, sep, quote_all);
-        }
-        csv.push_str(newline);
-        for r in &self.core.records {
-            for (i, v) in r.values.iter().enumerate() {
-                if i > 0 {
-                    csv.push_str(sep);
-                }
-                field(&mut csv, v.as_deref().unwrap_or(missing), sep, quote_all);
-            }
-            csv.push_str(newline);
-        }
         match path {
-            None => Ok(Some(csv)),
+            None => Ok(Some(self.core.to_csv_string(sep, missing, quote_all, newline))),
             Some(p) => {
-                std::fs::write(&p, csv.as_bytes()).map_err(|e| {
+                let err = |e: std::io::Error| {
                     PyErr::new::<pyo3::exceptions::PyOSError, _>(format!(
                         "cannot write {}: {e}",
                         p.display()
                     ))
-                })?;
+                };
+                let file = std::fs::File::create(&p).map_err(err)?;
+                let mut w = std::io::BufWriter::with_capacity(1 << 20, file);
+                py.allow_threads(|| {
+                    self.core.write_csv(&mut w, sep, missing, quote_all, newline)?;
+                    w.flush()
+                })
+                .map_err(err)?;
                 Ok(None)
             }
         }
@@ -893,10 +920,10 @@ impl PyRecordset {
             "Recordset[schema=Schema{:?}, records=[\n",
             self.core.schema.attributes
         );
-        for r in &self.core.records {
+        for r in self.core.records() {
             sb.push_str("  Record{");
             let mut first = true;
-            for (a, v) in self.core.schema.attributes.iter().zip(&r.values) {
+            for (a, v) in self.core.schema.attributes.iter().zip(r) {
                 if !first {
                     sb.push_str(", ");
                 }
@@ -928,51 +955,49 @@ impl PyRecord {
     }
     fn get(&self, py: Python<'_>, key: &Bound<'_, PyAny>) -> PyResult<Option<String>> {
         let rs = self.rs.bind(py).borrow();
-        let rec = &rs.core.records[self.index];
+        let rec = rs.core.record(self.index);
         if let Ok(i) = key.extract::<usize>() {
             return rec
-                .values
                 .get(i)
-                .cloned()
+                .map(|v| v.as_deref().map(str::to_string))
                 .ok_or_else(|| PyIndexError::new_err(i));
         }
         let attr: String = key.extract()?;
         match rs.core.schema.index_of(&attr) {
-            Some(i) => Ok(rec.values[i].clone()),
+            Some(i) => Ok(rec[i].as_deref().map(str::to_string)),
             None => Ok(None),
         }
     }
     fn __getitem__(&self, py: Python<'_>, key: &Bound<'_, PyAny>) -> PyResult<Option<String>> {
         let rs = self.rs.bind(py).borrow();
-        let rec = &rs.core.records[self.index];
+        let rec = rs.core.record(self.index);
         if let Ok(i) = key.extract::<usize>() {
             return rec
-                .values
                 .get(i)
-                .cloned()
+                .map(|v| v.as_deref().map(str::to_string))
                 .ok_or_else(|| PyIndexError::new_err(i));
         }
         let attr: String = key.extract()?;
         match rs.core.schema.index_of(&attr) {
-            Some(i) => Ok(rec.values[i].clone()),
+            Some(i) => Ok(rec[i].as_deref().map(str::to_string)),
             None => Err(PyKeyError::new_err(attr)),
         }
     }
     fn values(&self, py: Python<'_>) -> PyResult<PyObject> {
         let rs = self.rs.bind(py).borrow();
-        let rec = &rs.core.records[self.index];
+        let rec = rs.core.record(self.index);
         let d = PyDict::new(py);
-        for (a, v) in rs.core.schema.attributes.iter().zip(&rec.values) {
-            d.set_item(a, v.clone())?;
+        for (a, v) in rs.core.schema.attributes.iter().zip(rec) {
+            d.set_item(a, v.as_deref())?;
         }
         Ok(d.unbind().into())
     }
     fn __repr__(&self, py: Python<'_>) -> String {
         let rs = self.rs.bind(py).borrow();
-        let rec = &rs.core.records[self.index];
+        let rec = rs.core.record(self.index);
         let mut sb = String::from("Record{");
         let mut first = true;
-        for (a, v) in rs.core.schema.attributes.iter().zip(&rec.values) {
+        for (a, v) in rs.core.schema.attributes.iter().zip(rec) {
             if !first {
                 sb.push_str(", ");
             }
@@ -1100,7 +1125,7 @@ impl PyCellPredicate {
         let any: Py<PyAny> = cell.table.clone_ref(py).into_any();
         let env = EvalEnv { syntax: &table.core, py_table: Some(&any) };
         self.core
-            .test(table.core.cell(cell.row, cell.col), &env)
+            .test(table.core.cell(cell.row, cell.col), (cell.row, cell.col), &env)
             .map_err(core_err)
     }
 }
@@ -2602,8 +2627,12 @@ impl PyTablePattern {
     }
     /// Applies all transformations in order to the given recordset.
     fn transform(&self, rs: &PyRecordset) -> PyResult<PyRecordset> {
+        if self.core.transformations.is_empty() {
+            // Nothing to apply: share the recordset instead of copying it.
+            return Ok(PyRecordset { core: rs.core.clone() });
+        }
         Ok(PyRecordset {
-            core: self.core.transform(rs.core.clone()).map_err(core_err)?,
+            core: Arc::new(self.core.transform((*rs.core).clone()).map_err(core_err)?),
         })
     }
     fn __eq__(&self, other: &PyTablePattern) -> bool {
@@ -2631,9 +2660,11 @@ impl PyWhitespaceNormalization {
     }
     fn apply(&self, rs: &PyRecordset) -> PyResult<PyRecordset> {
         Ok(PyRecordset {
-            core: sp::Transformation::WhitespaceNormalization
-                .apply(rs.core.clone())
-                .map_err(core_err)?,
+            core: Arc::new(
+                sp::Transformation::WhitespaceNormalization
+                    .apply((*rs.core).clone())
+                    .map_err(core_err)?,
+            ),
         })
     }
 }
@@ -2659,7 +2690,7 @@ impl PyAnchorAttributeAtPosition {
     }
     fn apply(&self, rs: &PyRecordset) -> PyResult<PyRecordset> {
         Ok(PyRecordset {
-            core: self.core.apply(rs.core.clone()).map_err(core_err)?,
+            core: Arc::new(self.core.apply((*rs.core).clone()).map_err(core_err)?),
         })
     }
 }
@@ -2697,7 +2728,7 @@ impl PyDelimitedFieldSplit {
     }
     fn apply(&self, rs: &PyRecordset) -> PyResult<PyRecordset> {
         Ok(PyRecordset {
-            core: self.core.apply(rs.core.clone()).map_err(core_err)?,
+            core: Arc::new(self.core.apply((*rs.core).clone()).map_err(core_err)?),
         })
     }
 }
@@ -2723,7 +2754,7 @@ impl PyFieldSplitting {
     }
     fn apply(&self, rs: &PyRecordset) -> PyResult<PyRecordset> {
         Ok(PyRecordset {
-            core: self.core.apply(rs.core.clone()).map_err(core_err)?,
+            core: Arc::new(self.core.apply((*rs.core).clone()).map_err(core_err)?),
         })
     }
 }
@@ -2744,7 +2775,7 @@ impl PySchemaReordering {
     }
     fn apply(&self, rs: &PyRecordset) -> PyResult<PyRecordset> {
         Ok(PyRecordset {
-            core: self.core.apply(rs.core.clone()).map_err(core_err)?,
+            core: Arc::new(self.core.apply((*rs.core).clone()).map_err(core_err)?),
         })
     }
 }
@@ -2764,13 +2795,13 @@ impl PyTableSemantics {
             .cell_items
             .iter()
             .map(|it| PyCellDerivedItem {
-                s: it.s.clone(),
+                s: it.s.to_string(),
                 tags: it.tags.clone(),
-                index: it.index,
+                index: it.index as usize,
                 ty: it.ty,
                 row: it.row,
                 col: it.col,
-                span: it.span,
+                span: (it.span.0 as usize, it.span.1 as usize),
                 table: Some(self.table.clone_ref(py)),
             })
             .collect()
@@ -3014,7 +3045,7 @@ impl PyDiagnostic {
     #[getter]
     fn anchor(&self, py: Python<'_>) -> PyCellDerivedItem {
         PyCellDerivedItem {
-            s: self.anchor.s.clone(),
+            s: self.anchor.s.to_string(),
             tags: self.anchor.tags.clone(),
             index: self.anchor.index,
             ty: self.anchor.ty,
@@ -3105,13 +3136,13 @@ impl PyTableInterpreter {
                 let it = &sem.cell_items[d.anchor];
                 PyDiagnostic {
                     anchor: PyCellDerivedItem {
-                        s: it.s.clone(),
+                        s: it.s.to_string(),
                         tags: it.tags.clone(),
-                        index: it.index,
+                        index: it.index as usize,
                         ty: it.ty,
                         row: it.row,
                         col: it.col,
-                        span: it.span,
+                        span: (it.span.0 as usize, it.span.1 as usize),
                         table: Some(table.clone_ref(py)),
                     },
                     operation: d.operation.clone(),
@@ -3177,10 +3208,12 @@ impl PyTableInterpreter {
         };
         self.last = None;
         let out = if self.missing.is_none() && !table.sem.has_py_callbacks() {
-            // Fast path: pure-native interpretation with the GIL released.
-            let core = table.table.bind(py).borrow().core.clone();
-            let sem = table.sem.clone();
-            py.allow_threads(move || crate::interp::interpret(&cfg, &core, &sem, None))
+            // Fast path: pure-native interpretation with the GIL released,
+            // borrowing the table (a copy of a million-cell grid is not free).
+            let s = table.table.bind(py).borrow();
+            let core: &SyntaxCore = &s.core;
+            let sem: &SemanticsCore = &table.sem;
+            py.allow_threads(|| crate::interp::interpret(&cfg, core, sem, None))
                 .map_err(core_err)?
         } else {
             let table_any: Py<PyAny> = table.table.clone_ref(py).into_any();
@@ -3189,7 +3222,7 @@ impl PyTableInterpreter {
                 .map_err(core_err)?
         };
         self.last = Some((table.table.clone_ref(py), table.sem.clone(), out.diagnostics));
-        Ok(PyRecordset { core: out.recordset })
+        Ok(PyRecordset { core: Arc::new(out.recordset) })
     }
 }
 
@@ -3263,6 +3296,14 @@ impl PyAtpToRtlSerializer {
 }
 
 /// Module-level alias: `pyregtab.compile(rtl, bindings=None)`.
+/// RFC 4180 parser of the CLI runner (`RtlRunner.parseCsv`): ragged rows of
+/// fields; quoted fields may hold commas, doubled quotes and line breaks;
+/// CRLF/CR/LF end a row; empty lines are skipped.
+#[pyfunction]
+pub fn parse_csv(py: Python<'_>, text: &str) -> Vec<Vec<String>> {
+    py.allow_threads(|| crate::csv::parse_csv::<String>(text))
+}
+
 #[pyfunction]
 #[pyo3(signature = (rtl, bindings=None))]
 pub fn compile(rtl: &str, bindings: Option<PyBindings>) -> PyResult<PyTablePattern> {

@@ -1,6 +1,6 @@
 [package]
 name = "pyregtab"
-version = "0.7.1"
+version = "0.7.2"
 edition = "2021"
 description = "Native core of pyRegTab: RTL compiler, ATP matcher and table interpreter"
 license = "MIT"
@@ -14,10 +14,15 @@ crate-type = ["cdylib", "rlib"]
 # `--no-default-features` to build the pure-Rust core (RTL compiler, matcher,
 # interpreter) for embedding, e.g. in rtl-lsp.
 default = ["python"]
-python = ["dep:pyo3"]
+python = ["dep:pyo3", "dep:mimalloc"]
 
 [dependencies]
 pyo3 = { version = "0.23", features = ["abi3-py310"], optional = true }
+# Global allocator of the extension module: lower per-object overhead and
+# faster small allocations than the system heap (millions of cells, items
+# and records). Not enabled for the pure-Rust core so that a host binary
+# (rtl-lsp) keeps its own allocator.
+mimalloc = { version = "0.1", optional = true, default-features = false }
 regex = "1"
 indexmap = "2"
 rustc-hash = "2"

@@ -1,12 +1,11 @@
 //! Port of `ru.icc.regtab.atp.match` + `AtpMatcher`:
 //! backtracking syntactic matching and semantic layer construction.
 
-use crate::semantics::{
-    ActionInst, CandidateScope, CellItem, CtxItem, ItemId, OpInst, ProviderInst, SemanticsCore,
-};
+use crate::semantics::{ActionInst, ActionTemplate, CandidateScope, CellItem, CtxItem, ItemId, OpInst, ProviderInst, SemanticsCore};
 use crate::spec::*;
 use crate::syntax::SyntaxCore;
-use crate::util::{split_literal, CoreErr, CoreResult};
+use crate::util::{CoreErr, CoreResult, Text, split_literal};
+use std::collections::HashMap;
 use std::sync::Arc;
 
 // ---------------------------------------------------------------- match state
@@ -126,7 +125,7 @@ fn row_satisfies(
 ) -> CoreResult<bool> {
     let Some(cond) = cond else { return Ok(true) };
     for (r, c) in syntax.cells_of_row(row) {
-        if !cond.test(syntax.cell(r, c), env)? {
+        if !cond.test(syntax.cell(r, c), (r, c), env)? {
             return Ok(false);
         }
     }
@@ -161,7 +160,7 @@ fn cells_satisfy(
 ) -> CoreResult<bool> {
     let Some(cond) = cond else { return Ok(true) };
     for &(r, c) in &cells[from..to] {
-        if !cond.test(syntax.cell(r, c), env)? {
+        if !cond.test(syntax.cell(r, c), (r, c), env)? {
             return Ok(false);
         }
     }
@@ -180,7 +179,7 @@ fn resolve_idd(
         ContentSpec::Delimited(d) => Ok(d.atom.idd),
         ContentSpec::Compound(_) => Ok(Idd::Val),
         ContentSpec::Conditional(c) => {
-            let branch = if c.condition.test(syntax.cell(row, col), env)? {
+            let branch = if c.condition.test(syntax.cell(row, col), (row, col), env)? {
                 &c.positive
             } else {
                 &c.negative
@@ -205,7 +204,7 @@ fn dispatch_cell(
     }
     let (r, c) = cells[cell_index];
     if let Some(cond) = &pattern.condition {
-        if !cond.test(syntax.cell(r, c), env)? {
+        if !cond.test(syntax.cell(r, c), (r, c), env)? {
             return Ok(None);
         }
     }
@@ -365,11 +364,28 @@ impl From<CoreErr> for SemErr {
     }
 }
 
+/// The source text of an atomic item: the whole cell text (shared with the
+/// cell when no extractor rewrites it) or a segment of it.
+#[derive(Clone, Copy)]
+enum Source<'a> {
+    Whole(&'a Text),
+    Segment(&'a str),
+}
+
+impl<'a> Source<'a> {
+    fn as_str(&self) -> &'a str {
+        match self {
+            Source::Whole(t) => t,
+            Source::Segment(s) => s,
+        }
+    }
+}
+
 fn process_atomic(
     atomic: &AtomicSpec,
     row: usize,
     col: usize,
-    input_text: &str,
+    source: Source<'_>,
     item_index: usize,
     span: (usize, usize),
     sem: &mut SemanticsCore,
@@ -377,20 +393,21 @@ fn process_atomic(
     if atomic.idd == Idd::Skip {
         return Ok(());
     }
-    let s = match &atomic.extractor {
-        Some(x) => x.apply(input_text).map_err(SemErr::Other)?,
-        None => input_text.to_string(),
+    let s: Text = match (&atomic.extractor, source) {
+        (Some(x), _) => Text::from(x.apply(source.as_str()).map_err(SemErr::Other)?),
+        (None, Source::Whole(t)) => t.clone(),
+        (None, Source::Segment(seg)) => Text::from(seg),
     };
     let ty = atomic.idd.to_item_type().map_err(SemErr::Other)?;
     let item_id = sem.cell_items.len();
     sem.cell_items.push(CellItem {
         s,
         tags: atomic.tags.clone(),
-        index: item_index,
+        index: item_index as u32,
         row,
         col,
         ty,
-        span,
+        span: (span.0 as u32, span.1 as u32),
     });
     for action_spec in &atomic.actions {
         let action = instantiate_action(ItemId::Cell(item_id), action_spec, sem)?;
@@ -424,7 +441,7 @@ fn process_delimited(
     sem: &mut SemanticsCore,
 ) -> Result<(), SemErr> {
     for (i, part, span) in split_with_spans(&d.delimiter, text, 0) {
-        process_atomic(&d.atom, row, col, &part, i, span, sem)?;
+        process_atomic(&d.atom, row, col, Source::Segment(&part), i, span, sem)?;
     }
     Ok(())
 }
@@ -472,12 +489,12 @@ fn process_compound(
         let substring = &text[pos..end_pos];
         match &seg.spec {
             ContentSpec::Atomic(a) => {
-                process_atomic(a, row, col, substring, item_index, (pos, end_pos), sem)?;
+                process_atomic(a, row, col, Source::Segment(substring), item_index, (pos, end_pos), sem)?;
                 item_index += 1;
             }
             ContentSpec::Delimited(d) => {
                 for (_, part, span) in split_with_spans(&d.delimiter, substring, pos) {
-                    process_atomic(&d.atom, row, col, &part, item_index, span, sem)?;
+                    process_atomic(&d.atom, row, col, Source::Segment(&part), item_index, span, sem)?;
                     item_index += 1;
                 }
             }
@@ -502,7 +519,7 @@ fn process_content_spec(
         ContentSpec::Atomic(a) => {
             let text = syntax.cell(row, col).text.clone();
             let span = (0, text.len());
-            process_atomic(a, row, col, &text, 0, span, sem)
+            process_atomic(a, row, col, Source::Whole(&text), 0, span, sem)
         }
         ContentSpec::Delimited(d) => {
             let text = syntax.cell(row, col).text.clone();
@@ -515,7 +532,7 @@ fn process_content_spec(
         ContentSpec::Conditional(c) => {
             let take_pos = c
                 .condition
-                .test(syntax.cell(row, col), env)
+                .test(syntax.cell(row, col), (row, col), env)
                 .map_err(SemErr::Other)?;
             let branch = if take_pos { &c.positive } else { &c.negative };
             process_content_spec(branch, row, col, syntax, env, sem)
@@ -525,12 +542,12 @@ fn process_content_spec(
 
 fn get_or_create_context_item(sem: &mut SemanticsCore, lit: &CtxLiteral) -> usize {
     for (i, item) in sem.ctx_items.iter().enumerate() {
-        if item.s == lit.text && item.ty == lit.ty {
+        if *item.s == *lit.text && item.ty == lit.ty {
             return i;
         }
     }
     sem.ctx_items.push(CtxItem {
-        s: lit.text.clone(),
+        s: Text::from(lit.text.as_str()),
         ty: lit.ty,
         const_value: None,
     });
@@ -546,9 +563,9 @@ fn to_provider_inst(
         if lit.const_value.is_some() {
             // Fresh (identity-distinct) context item per provider, like Java.
             sem.ctx_items.push(CtxItem {
-                s: lit.text.clone(),
+                s: Text::from(lit.text.as_str()),
                 ty: ItemType::Attribute,
-                const_value: lit.const_value.clone(),
+                const_value: lit.const_value.as_deref().map(Text::from),
             });
             return Ok(ProviderInst::Ctx {
                 items: vec![sem.ctx_items.len() - 1],
@@ -577,11 +594,35 @@ fn to_provider_inst(
     })
 }
 
+/// Instantiates an action for an anchor. The anchor-independent part is
+/// shared by all anchors of the same spec, except when a provider carries a
+/// context literal with a constant value: that provider creates a fresh
+/// (identity-distinct) context item per instance, like Java, so such specs
+/// are instantiated per anchor.
 fn instantiate_action(
     anchor: ItemId,
     action_spec: &ActionSpec,
     sem: &mut SemanticsCore,
 ) -> Result<ActionInst, SemErr> {
+    let key = action_spec as *const ActionSpec as usize;
+    if let Some(template) = sem.action_templates.get(&key) {
+        return Ok(ActionInst::new(anchor, template.clone()));
+    }
+    let template = std::sync::Arc::new(instantiate_template(action_spec, sem)?);
+    let per_instance = action_spec
+        .providers
+        .iter()
+        .any(|p| p.context_literal.as_ref().is_some_and(|l| l.const_value.is_some()));
+    if !per_instance {
+        sem.action_templates.insert(key, template.clone());
+    }
+    Ok(ActionInst::new(anchor, template))
+}
+
+fn instantiate_template(
+    action_spec: &ActionSpec,
+    sem: &mut SemanticsCore,
+) -> Result<ActionTemplate, SemErr> {
     let delim = action_spec.delimiter.clone().unwrap_or_default();
     let op = match action_spec.operation_type {
         OperationType::Fill => OpInst::Fill(delim),
@@ -596,7 +637,7 @@ fn instantiate_action(
     for ps in &action_spec.providers {
         providers.push(to_provider_inst(ps, sem, action_spec.inherited)?);
     }
-    Ok(ActionInst { anchor, providers, op, inherited: action_spec.inherited })
+    Ok(ActionTemplate { providers, op, inherited: action_spec.inherited })
 }
 
 pub fn construct_semantics(
@@ -609,11 +650,14 @@ pub fn construct_semantics(
         cell_items: Vec::new(),
         ctx_items: context_items,
         actions: Vec::new(),
+        action_templates: HashMap::new(),
     };
     for (pattern, (r, c)) in pairs {
         let Some(cs) = &pattern.content_spec else { continue };
         process_content_spec(cs, *r, *c, syntax, env, &mut sem)?;
     }
+    // The template cache is keyed by spec addresses of this pattern only.
+    sem.action_templates = HashMap::new();
     Ok(sem)
 }
 
@@ -765,7 +809,7 @@ mod tests {
             .expect("pattern must match");
         sem.cell_items
             .iter()
-            .map(|it| (it.s.clone(), it.span, it.index))
+            .map(|it| (it.s.to_string(), (it.span.0 as usize, it.span.1 as usize), it.index as usize))
             .collect()
     }
 

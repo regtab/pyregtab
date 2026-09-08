@@ -121,22 +121,22 @@ fn end_to_end_match_and_interpret() {
         .filter(|it| it.row == 1 && it.col == 1)
         .collect();
     assert_eq!(compound.len(), 2);
-    assert_eq!((compound[0].s.as_str(), compound[0].span), ("0", (0, 1)));
-    assert_eq!((compound[1].s.as_str(), compound[1].span), ("Jan", (2, 5)));
+    assert_eq!((&*compound[0].s, compound[0].span), ("0", (0, 1)));
+    assert_eq!((&*compound[1].s, compound[1].span), ("Jan", (2, 5)));
     // Atomic cells span their whole text.
     let atomic = sem
         .cell_items
         .iter()
         .find(|it| it.row == 1 && it.col == 0)
         .unwrap();
-    assert_eq!(atomic.span, (0, "IKT".len()));
+    assert_eq!(atomic.span, (0, "IKT".len() as u32));
 
     let out = interpret(&InterpreterCfg::default(), &syntax, &sem, None).unwrap();
     assert!(out.diagnostics.is_empty());
     let rs = out.recordset;
 
     assert_eq!(rs.schema.attributes, vec!["ND", "AIRLINE", "AIRPORT", "MON"]);
-    assert_eq!(rs.records.len(), 4);
+    assert_eq!(rs.len(), 4);
     assert_eq!(rs.get(0, "ND"), Some("0"));
     assert_eq!(rs.get(3, "MON"), Some("Feb"));
 }
