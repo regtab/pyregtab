@@ -108,9 +108,10 @@ compiler.
 |---|---|
 | `(…)->REC` / `REC(n)` / `REC('s')` | `rec(…)` / `rec(n, …)` / `rec_split("s", …)` |
 | `prov->AVP` / `'NAME'->AVP` | `avp(prov)` / `avp("NAME")` |
-| `(…)->JOIN` / `JOIN(k)` | `join(…)` / `join(k, …)` |
+| `(…)->CONCAT` / `CONCAT(k)` / `CONCAT('A')` / `CONCAT(0, 'A')` | `concat(…)` / `concat(k, …)` / `concat("A", …)` / `concat((0, "A"), …)` (a leading int, str, set/tuple or `RecordKey` is the key) |
+| `(…)->JOIN` / `JOIN(k)` / `JOIN('A')` | `join(…)` / `join(k, …)` / `join("A", …)` |
 | `(…)->FILL('d')`, `PREFIX`, `SUFFIX` | `fill("d", …)`, `prefix(…)`, `suffix(…)` (delimiter optional) |
-| `'EUR'` context literal | `lit("EUR")` (VALUE under REC/JOIN, ATTRIBUTE otherwise — as in the compiler) |
+| `'EUR'` context literal | `lit("EUR")` (VALUE under REC/CONCAT/JOIN, ATTRIBUTE otherwise — as in the compiler) |
 | `@'K'='V'` | `ctx_avp("K", "V")` |
 
 Provider kinds (VAL/ATTR/UNRESTRICTED) are inferred from the action, exactly as in the RTL

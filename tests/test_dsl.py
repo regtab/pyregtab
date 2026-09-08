@@ -129,12 +129,12 @@ def test_task015():
 def test_task016():
     assert_mirrors(
         r"""
-        [ [VAL : RT->REC, BW&STR*->JOIN(0)] [VAL] ]+
+        [ [VAL : RT->REC, BW&STR*->CONCAT(0)] [VAL] ]+
         """,
         table(
             subtable(
                 row(
-                    cell(VAL, rec(RT), join(0, BW.and_(STR).unbounded())),
+                    cell(VAL, rec(RT), concat(0, BW.and_(STR).unbounded())),
                     cell(VAL),
                 ).one_or_more()
             )
@@ -163,12 +163,12 @@ def test_task022():
 def test_task023():
     assert_mirrors(
         r"""
-        { [ [VAL : ''->AVP, SR*->REC, BW&STR*->JOIN(0)] [ATTR : RT->SUFFIX] [AUX] [VAL : SR->AVP] ]{3} }+
+        { [ [VAL : ''->AVP, SR*->REC, BW&STR*->CONCAT(0)] [ATTR : RT->SUFFIX] [AUX] [VAL : SR->AVP] ]{3} }+
         """,
         table(
             subtable(
                 row(
-                    cell(VAL, avp(""), rec(SR.unbounded()), join(0, BW.and_(STR).unbounded())),
+                    cell(VAL, avp(""), rec(SR.unbounded()), concat(0, BW.and_(STR).unbounded())),
                     cell(ATTR, suffix(RT)),
                     cell(AUX),
                     cell(VAL, avp(SR)),
@@ -181,7 +181,7 @@ def test_task023():
 def test_task025():
     assert_mirrors(
         r"""
-        [ [VAL : RT->SUFFIX('/'), RT&C+2..*->REC('/'), BW&STR*->JOIN(0)] [VAL]+ ]+
+        [ [VAL : RT->SUFFIX('/'), RT&C+2..*->REC('/'), BW&STR*->CONCAT(0)] [VAL]+ ]+
         """,
         table(
             subtable(
@@ -190,7 +190,7 @@ def test_task025():
                         VAL,
                         suffix("/", RT),
                         rec_split("/", RT.and_(CrelFrom(2)).unbounded()),
-                        join(0, BW.and_(STR).unbounded()),
+                        concat(0, BW.and_(STR).unbounded()),
                     ),
                     cell(VAL).one_or_more(),
                 ).one_or_more()
@@ -278,7 +278,7 @@ def test_task068():
 def test_task069():
     assert_mirrors(
         r"""
-        [ BW*->REC { [ATTR] [VAL#'1': ROW&#'1'*->JOIN][VAL#'2': ROW&#'2'*->JOIN] }* ]
+        [ BW*->REC { [ATTR] [VAL#'1': ROW&#'1'*->CONCAT][VAL#'2': ROW&#'2'*->CONCAT] }* ]
         """,
         table(
             subtable(
@@ -286,8 +286,8 @@ def test_task069():
                     acts(rec(BW.unbounded())),
                     subrow(
                         cell(ATTR),
-                        cell(val(join(ROW.and_(tag("1")).unbounded())).tagged("1")),
-                        cell(val(join(ROW.and_(tag("2")).unbounded())).tagged("2")),
+                        cell(val(concat(ROW.and_(tag("1")).unbounded())).tagged("1")),
+                        cell(val(concat(ROW.and_(tag("2")).unbounded())).tagged("2")),
                     ).zero_or_more(),
                 )
             )

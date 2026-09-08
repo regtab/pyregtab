@@ -299,14 +299,18 @@ class Translator:
                 kw.append(f"split_delimiter={head.py}")
             parts = [a.py for a in rest] + kw
             return Expr("call", f"ActionSpec.rec({', '.join(parts)})", "ActionSpec")
-        if leaf == "join":
+        if leaf in ("concat", "join"):
+            # Java overloads: (providers...), (int, providers...),
+            # (Set<Integer>, providers...), (String keyName, providers...),
+            # (RecordKey, providers...) -> Python keyword `key=`
             kw = []
             rest = args
-            if args and args[0].kind in ("int", "set"):
-                kw.append(f"key_positions={args[0].py}")
+            if args and (args[0].kind in ("int", "set") or is_str(args[0])
+                         or args[0].root == "RecordKey"):
+                kw.append(f"key={args[0].py}")
                 rest = args[1:]
             parts = [a.py for a in rest] + kw
-            return Expr("call", f"ActionSpec.join({', '.join(parts)})", "ActionSpec")
+            return Expr("call", f"ActionSpec.{leaf}({', '.join(parts)})", "ActionSpec")
         if leaf in ("fill", "prefix", "suffix", "avp"):
             return Expr("call", f"ActionSpec.{leaf}({join(args)})", "ActionSpec")
         raise SyntaxError(f"unknown ActionSpec factory: {leaf}")

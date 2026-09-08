@@ -1,0 +1,2 @@
+[ [ATTR] [VAL: 'var'->AVP]+ ]
+[ [(VAL: COL->AVP, ()->REC, RT*->JOIN){';'}] [VAL: 'value'->AVP, COL->REC]+ ]+

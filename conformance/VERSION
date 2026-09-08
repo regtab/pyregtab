@@ -1,2 +1,8 @@
-generated: 2026-08-26
+generated: 2026-08-29
 sources: RtlTask001..150 + curated extras
+note: key K of CONCAT(K)/JOIN(K) may name attributes (CONCAT(0, 1, 'A', 'B'), JOIN('k')), resolved per record;
+      canonical form sorts positions, then names, single-quoted; curated extra named_key and
+      semantic cases concat_named_key, join_named_key, negative concat_empty_key_name added;
+      zero-width subrows match the empty sequence (never repeated) and {n} accepts n in {0, 1}:
+      curated extra quantifier_small_n, semantic cases subrow_zero_width_{mid,tail,repeated,repeated_star},
+      quantifier_exactly_{one,zero}, negative quantifier_exactly_negative added

@@ -837,38 +837,42 @@ impl PyRecordset {
     /// CSV export (RFC 4180 quoting). Returns the CSV text when `path` is
     /// None, otherwise writes it to `path` (UTF-8) and returns None.
     /// Missing values are rendered as `missing` (default: empty field).
-    #[pyo3(signature = (path=None, *, sep=",", missing=""))]
+    /// `quote_all` double-quotes every field (the regtab-runner format);
+    /// `newline` is the line terminator (default CRLF, as `csv.writer`).
+    #[pyo3(signature = (path=None, *, sep=",", missing="", quote_all=false, newline="\r\n"))]
     fn to_csv(
         &self,
         path: Option<std::path::PathBuf>,
         sep: &str,
         missing: &str,
+        quote_all: bool,
+        newline: &str,
     ) -> PyResult<Option<String>> {
-        fn field(s: &str, sep: &str) -> String {
-            if s.contains(sep) || s.contains('"') || s.contains('\n') || s.contains('\r') {
-                format!("\"{}\"", s.replace('"', "\"\""))
+        fn field(out: &mut String, s: &str, sep: &str, quote_all: bool) {
+            if quote_all || s.contains(sep) || s.contains('"') || s.contains('\n') || s.contains('\r') {
+                out.push('"');
+                out.push_str(&s.replace('"', "\"\""));
+                out.push('"');
             } else {
-                s.to_string()
+                out.push_str(s);
             }
         }
         let mut csv = String::new();
-        let header: Vec<String> = self
-            .core
-            .schema
-            .attributes
-            .iter()
-            .map(|a| field(a, sep))
-            .collect();
-        csv.push_str(&header.join(sep));
-        csv.push_str("\r\n");
+        for (i, a) in self.core.schema.attributes.iter().enumerate() {
+            if i > 0 {
+                csv.push_str(sep);
+            }
+            field(&mut csv, a, sep, quote_all);
+        }
+        csv.push_str(newline);
         for r in &self.core.records {
-            let row: Vec<String> = r
-                .values
-                .iter()
-                .map(|v| field(v.as_deref().unwrap_or(missing), sep))
-                .collect();
-            csv.push_str(&row.join(sep));
-            csv.push_str("\r\n");
+            for (i, v) in r.values.iter().enumerate() {
+                if i > 0 {
+                    csv.push_str(sep);
+                }
+                field(&mut csv, v.as_deref().unwrap_or(missing), sep, quote_all);
+            }
+            csv.push_str(newline);
         }
         match path {
             None => Ok(Some(csv)),
@@ -1527,6 +1531,111 @@ impl PyProviderSpec {
     }
 }
 
+/// The key K of `CONCAT(K)` / `JOIN(K)`: 0-based positions in the item-based
+/// record and/or attribute names, resolved per record at apply time.
+#[pyclass(name = "RecordKey", frozen, eq)]
+#[derive(Clone, PartialEq)]
+pub struct PyRecordKey {
+    pub core: sp::RecordKey,
+}
+
+/// Builds a `RecordKey` from the accepted Python spellings: `None` (K = ∅),
+/// an `int` (one position), a `str` (one attribute name), a `RecordKey`, or an
+/// iterable mixing positions and names.
+fn extract_record_key(key: Option<&Bound<'_, PyAny>>) -> PyResult<sp::RecordKey> {
+    let Some(key) = key else {
+        return Ok(sp::RecordKey::empty());
+    };
+    if key.is_none() {
+        return Ok(sp::RecordKey::empty());
+    }
+    if let Ok(k) = key.extract::<PyRecordKey>() {
+        return Ok(k.core);
+    }
+    let mut positions = BTreeSet::new();
+    let mut names = BTreeSet::new();
+    let mut add = |item: &Bound<'_, PyAny>| -> PyResult<()> {
+        if let Ok(s) = item.extract::<String>() {
+            names.insert(s);
+        } else if let Ok(n) = item.extract::<i64>() {
+            positions.insert(n);
+        } else {
+            return Err(PyValueError::new_err(
+                "key references must be int positions or str attribute names",
+            ));
+        }
+        Ok(())
+    };
+    if key.extract::<String>().is_ok() || key.extract::<i64>().is_ok() {
+        add(key)?;
+    } else {
+        for item in key.try_iter()? {
+            add(&item?)?;
+        }
+    }
+    sp::RecordKey::new(positions, names).map_err(core_err)
+}
+
+#[pymethods]
+impl PyRecordKey {
+    /// `RecordKey(positions=(), names=())` — any iterables of ints and strs.
+    #[new]
+    #[pyo3(signature = (positions=None, names=None))]
+    fn new(positions: Option<&Bound<'_, PyAny>>, names: Option<&Bound<'_, PyAny>>) -> PyResult<Self> {
+        let mut ps: BTreeSet<i64> = BTreeSet::new();
+        if let Some(positions) = positions {
+            for p in positions.try_iter()? {
+                ps.insert(p?.extract::<i64>()?);
+            }
+        }
+        let mut ns: BTreeSet<String> = BTreeSet::new();
+        if let Some(names) = names {
+            for n in names.try_iter()? {
+                ns.insert(n?.extract::<String>()?);
+            }
+        }
+        Ok(PyRecordKey { core: sp::RecordKey::new(ps, ns).map_err(core_err)? })
+    }
+    /// K = ∅.
+    #[staticmethod]
+    fn empty() -> Self {
+        PyRecordKey { core: sp::RecordKey::empty() }
+    }
+    /// `RecordKey.of(positions, names)` — the Java factories `positions(…)`
+    /// / `names(…)` / `of(…)` collapse into this one (in Python the accessors
+    /// `positions` / `names` are properties).
+    #[staticmethod]
+    #[pyo3(signature = (positions=None, names=None))]
+    fn of(positions: Option<&Bound<'_, PyAny>>, names: Option<&Bound<'_, PyAny>>) -> PyResult<Self> {
+        Self::new(positions, names)
+    }
+    #[getter]
+    fn positions(&self) -> BTreeSet<i64> {
+        self.core.positions.clone()
+    }
+    #[getter]
+    fn names(&self) -> BTreeSet<String> {
+        self.core.names.clone()
+    }
+    fn is_empty(&self) -> bool {
+        self.core.is_empty()
+    }
+    fn __repr__(&self) -> String {
+        format!(
+            "RecordKey(positions={:?}, names={:?})",
+            self.core.positions.iter().collect::<Vec<_>>(),
+            self.core.names.iter().collect::<Vec<_>>()
+        )
+    }
+    fn __hash__(&self) -> u64 {
+        use std::hash::{Hash, Hasher};
+        let mut h = std::collections::hash_map::DefaultHasher::new();
+        self.core.positions.hash(&mut h);
+        self.core.names.hash(&mut h);
+        h.finish()
+    }
+}
+
 #[pyclass(name = "ActionSpec", frozen)]
 #[derive(Clone)]
 pub struct PyActionSpec {
@@ -1564,8 +1673,12 @@ fn providers_from_args(
 
 #[pymethods]
 impl PyActionSpec {
+    /// `key_positions` (positions only) is kept for callers written against
+    /// 0.5.x; `key` — a `RecordKey`, an int, a str or an iterable of both —
+    /// takes precedence when given.
     #[new]
-    #[pyo3(signature = (operation_type, delimiter=None, providers=vec![], anchor_pos=None, split_delimiter=None, key_positions=None, inherited=false))]
+    #[allow(clippy::too_many_arguments)]
+    #[pyo3(signature = (operation_type, delimiter=None, providers=vec![], anchor_pos=None, split_delimiter=None, key_positions=None, inherited=false, key=None))]
     fn new(
         operation_type: sp::OperationType,
         delimiter: Option<String>,
@@ -1574,7 +1687,12 @@ impl PyActionSpec {
         split_delimiter: Option<String>,
         key_positions: Option<BTreeSet<i64>>,
         inherited: bool,
+        key: Option<&Bound<'_, PyAny>>,
     ) -> PyResult<Self> {
+        let key = match key {
+            Some(k) => extract_record_key(Some(k))?,
+            None => sp::RecordKey::positions(key_positions.unwrap_or_default()).map_err(core_err)?,
+        };
         Ok(PyActionSpec {
             core: sp::ActionSpec::new(
                 operation_type,
@@ -1582,7 +1700,7 @@ impl PyActionSpec {
                 providers.into_iter().map(|p| p.core).collect(),
                 anchor_pos,
                 split_delimiter,
-                key_positions.unwrap_or_default(),
+                key,
                 inherited,
             )
             .map_err(core_err)?,
@@ -1604,7 +1722,7 @@ impl PyActionSpec {
                 providers_from_args(providers, cardinality)?,
                 anchor_pos,
                 split_delimiter,
-                BTreeSet::new(),
+                sp::RecordKey::empty(),
                 false,
             )
             .map_err(core_err)?,
@@ -1637,42 +1755,38 @@ impl PyActionSpec {
                 vec![p],
                 None,
                 None,
-                BTreeSet::new(),
+                sp::RecordKey::empty(),
                 false,
             )
             .map_err(core_err)?,
         })
     }
 
+    /// `CONCAT(K)`: fold the provided records into the anchor's record. `key`
+    /// (or the legacy `key_positions`) is an int, a str, a `RecordKey` or an
+    /// iterable of positions and attribute names.
     #[staticmethod]
-    #[pyo3(signature = (*providers, key_positions=None, cardinality=1))]
-    fn join(
+    #[pyo3(signature = (*providers, key=None, key_positions=None, cardinality=1))]
+    fn concat(
         providers: &Bound<'_, PyTuple>,
+        key: Option<&Bound<'_, PyAny>>,
         key_positions: Option<&Bound<'_, PyAny>>,
         cardinality: i64,
     ) -> PyResult<Self> {
-        let keys: BTreeSet<i64> = match key_positions {
-            None => BTreeSet::new(),
-            Some(kp) => {
-                if let Ok(one) = kp.extract::<i64>() {
-                    BTreeSet::from([one])
-                } else {
-                    kp.extract::<BTreeSet<i64>>()?
-                }
-            }
-        };
-        Ok(PyActionSpec {
-            core: sp::ActionSpec::new(
-                sp::OperationType::Join,
-                None,
-                providers_from_args(providers, cardinality)?,
-                None,
-                None,
-                keys,
-                false,
-            )
-            .map_err(core_err)?,
-        })
+        Self::record_op(sp::OperationType::Concat, providers, key.or(key_positions), cardinality)
+    }
+
+    /// `JOIN(K)`: the record product — a cross product for K = ∅, an equi-join
+    /// on the key K otherwise.
+    #[staticmethod]
+    #[pyo3(signature = (*providers, key=None, key_positions=None, cardinality=1))]
+    fn join(
+        providers: &Bound<'_, PyTuple>,
+        key: Option<&Bound<'_, PyAny>>,
+        key_positions: Option<&Bound<'_, PyAny>>,
+        cardinality: i64,
+    ) -> PyResult<Self> {
+        Self::record_op(sp::OperationType::Join, providers, key.or(key_positions), cardinality)
     }
 
     #[staticmethod]
@@ -1711,12 +1825,42 @@ impl PyActionSpec {
     fn inherited(&self) -> bool {
         self.core.inherited
     }
+    /// The key K of a `CONCAT`/`JOIN` action (empty for other operations).
+    #[getter]
+    fn key(&self) -> PyRecordKey {
+        PyRecordKey { core: self.core.key.clone() }
+    }
+    /// The positional part of the key (kept for callers written against 0.5.x).
+    #[getter]
+    fn key_positions(&self) -> BTreeSet<i64> {
+        self.core.key.positions.clone()
+    }
     fn as_inherited(&self) -> Self {
         PyActionSpec { core: self.core.as_inherited() }
     }
 }
 
 impl PyActionSpec {
+    fn record_op(
+        op: sp::OperationType,
+        providers: &Bound<'_, PyTuple>,
+        key: Option<&Bound<'_, PyAny>>,
+        cardinality: i64,
+    ) -> PyResult<Self> {
+        Ok(PyActionSpec {
+            core: sp::ActionSpec::new(
+                op,
+                None,
+                providers_from_args(providers, cardinality)?,
+                None,
+                None,
+                extract_record_key(key)?,
+                false,
+            )
+            .map_err(core_err)?,
+        })
+    }
+
     fn str_op(
         op: sp::OperationType,
         delimiter: String,
@@ -1745,8 +1889,16 @@ impl PyActionSpec {
             }
         }
         Ok(PyActionSpec {
-            core: sp::ActionSpec::new(op, Some(delimiter), out, None, None, BTreeSet::new(), false)
-                .map_err(core_err)?,
+            core: sp::ActionSpec::new(
+                op,
+                Some(delimiter),
+                out,
+                None,
+                None,
+                sp::RecordKey::empty(),
+                false,
+            )
+            .map_err(core_err)?,
         })
     }
 }
@@ -2846,6 +2998,55 @@ impl PyAtpMatcher {
     }
 }
 
+/// A `CONCAT`/`JOIN` action that had no effect during working state
+/// completion: a violated precondition or a missing record (port of
+/// `ru.icc.regtab.itm.semantics.Diagnostic`).
+#[pyclass(name = "Diagnostic")]
+pub struct PyDiagnostic {
+    pub anchor: PyCellDerivedItem,
+    pub operation: String,
+    pub message: String,
+}
+
+#[pymethods]
+impl PyDiagnostic {
+    /// The anchor item of the action that was skipped.
+    #[getter]
+    fn anchor(&self, py: Python<'_>) -> PyCellDerivedItem {
+        PyCellDerivedItem {
+            s: self.anchor.s.clone(),
+            tags: self.anchor.tags.clone(),
+            index: self.anchor.index,
+            ty: self.anchor.ty,
+            row: self.anchor.row,
+            col: self.anchor.col,
+            span: self.anchor.span,
+            table: self.anchor.table.as_ref().map(|t| t.clone_ref(py)),
+        }
+    }
+    /// The operation name (`CONCAT`, `JOIN`, …).
+    #[getter]
+    fn operation(&self) -> String {
+        self.operation.clone()
+    }
+    /// What precondition was violated and why.
+    #[getter]
+    fn message(&self) -> String {
+        self.message.clone()
+    }
+    fn __str__(&self) -> String {
+        format!(
+            "{} skipped at {}: {}",
+            self.operation,
+            self.anchor.__repr__(),
+            self.message
+        )
+    }
+    fn __repr__(&self) -> String {
+        format!("Diagnostic({})", self.__str__())
+    }
+}
+
 #[pyclass(name = "TableInterpreter")]
 pub struct PyTableInterpreter {
     strategy: SchemaStrategy,
@@ -2853,6 +3054,10 @@ pub struct PyTableInterpreter {
     missing: Option<PyFunc>,
     transformations: Vec<sp::Transformation>,
     template: String,
+    strict_preconditions: bool,
+    /// Diagnostics of the most recent `interpret` call, with the table they
+    /// refer to (needed to materialize the anchor items).
+    last: Option<(Py<PyTableSyntax>, Arc<SemanticsCore>, Vec<crate::semantics::Diagnostic>)>,
 }
 
 #[pymethods]
@@ -2865,7 +3070,55 @@ impl PyTableInterpreter {
             missing: None,
             transformations: Vec::new(),
             template: "$a_%i".to_string(),
+            strict_preconditions: false,
+            last: None,
         }
+    }
+
+    /// Strict preconditions: a `CONCAT` / `JOIN` action whose precondition is
+    /// violated (e.g. a named attribute shared by two records being
+    /// concatenated, or a missing record) raises a `RuntimeError` instead of
+    /// having no effect. Default: `False` — by the formal model the operation
+    /// has no effect, and the violation is reported through `diagnostics()`.
+    fn with_strict_preconditions<'py>(
+        mut slf: PyRefMut<'py, Self>,
+        strict: bool,
+    ) -> PyRefMut<'py, Self> {
+        slf.strict_preconditions = strict;
+        slf
+    }
+
+    /// Diagnostics of the most recent `interpret(...)` call: every `CONCAT` /
+    /// `JOIN` action that had no effect — a violated precondition (key
+    /// mismatch, a named attribute shared by two concatenated records, an
+    /// empty record product), or, for actions written on the anchor's own
+    /// content spec (not inherited), an anchor without a record or provided
+    /// items none of which has a record (`REC` missing). Empty if nothing was
+    /// skipped (or before the first call).
+    fn diagnostics(&self, py: Python<'_>) -> Vec<PyDiagnostic> {
+        let Some((table, sem, diags)) = &self.last else {
+            return Vec::new();
+        };
+        diags
+            .iter()
+            .map(|d| {
+                let it = &sem.cell_items[d.anchor];
+                PyDiagnostic {
+                    anchor: PyCellDerivedItem {
+                        s: it.s.clone(),
+                        tags: it.tags.clone(),
+                        index: it.index,
+                        ty: it.ty,
+                        row: it.row,
+                        col: it.col,
+                        span: it.span,
+                        table: Some(table.clone_ref(py)),
+                    },
+                    operation: d.operation.clone(),
+                    message: d.message.clone(),
+                }
+            })
+            .collect()
     }
 
     fn with_strategy<'py>(
@@ -2913,28 +3166,30 @@ impl PyTableInterpreter {
         Ok(slf)
     }
 
-    fn interpret(&self, py: Python<'_>, table: &PyInterpretableTable) -> PyResult<PyRecordset> {
+    fn interpret(&mut self, py: Python<'_>, table: &PyInterpretableTable) -> PyResult<PyRecordset> {
         let cfg = InterpreterCfg {
             strategy: self.strategy,
             action_strategy: self.action_strategy,
             missing_value_handler: self.missing.clone(),
             transformations: self.transformations.clone(),
             anonymous_attribute_template: self.template.clone(),
+            strict_preconditions: self.strict_preconditions,
         };
-        if self.missing.is_none() && !table.sem.has_py_callbacks() {
+        self.last = None;
+        let out = if self.missing.is_none() && !table.sem.has_py_callbacks() {
             // Fast path: pure-native interpretation with the GIL released.
             let core = table.table.bind(py).borrow().core.clone();
             let sem = table.sem.clone();
-            let rs = py
-                .allow_threads(move || crate::interp::interpret(&cfg, &core, &sem, None))
-                .map_err(core_err)?;
-            return Ok(PyRecordset { core: rs });
-        }
-        let table_any: Py<PyAny> = table.table.clone_ref(py).into_any();
-        let s = table.table.bind(py).borrow();
-        let rs = crate::interp::interpret(&cfg, &s.core, &table.sem, Some(&table_any))
-            .map_err(core_err)?;
-        Ok(PyRecordset { core: rs })
+            py.allow_threads(move || crate::interp::interpret(&cfg, &core, &sem, None))
+                .map_err(core_err)?
+        } else {
+            let table_any: Py<PyAny> = table.table.clone_ref(py).into_any();
+            let s = table.table.bind(py).borrow();
+            crate::interp::interpret(&cfg, &s.core, &table.sem, Some(&table_any))
+                .map_err(core_err)?
+        };
+        self.last = Some((table.table.clone_ref(py), table.sem.clone(), out.diagnostics));
+        Ok(PyRecordset { core: out.recordset })
     }
 }
 

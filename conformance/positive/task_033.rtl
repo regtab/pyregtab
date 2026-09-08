@@ -1,1 +1,1 @@
-[ [VAL : SR*->REC, BW&STR*->JOIN(0)] [VAL]+ ]+
+[ [VAL : SR*->REC, BW&STR*->CONCAT(0)] [VAL]+ ]+

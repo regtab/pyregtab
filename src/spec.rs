@@ -53,7 +53,73 @@ pub enum OperationType {
     Suffix,
     Avp,
     Rec,
+    Concat,
     Join,
+}
+
+impl OperationType {
+    /// The RTL keyword of the operation.
+    pub fn rtl_name(self) -> &'static str {
+        match self {
+            OperationType::Fill => "FILL",
+            OperationType::Prefix => "PREFIX",
+            OperationType::Suffix => "SUFFIX",
+            OperationType::Avp => "AVP",
+            OperationType::Rec => "REC",
+            OperationType::Concat => "CONCAT",
+            OperationType::Join => "JOIN",
+        }
+    }
+}
+
+// ---------------------------------------------------------------- RecordKey
+
+/// The key K of `CONCAT(K)` / `JOIN(K)` (port of `RecordKey`): a set of 0-based
+/// *positions* in the item-based record (0 is the anchor, the following
+/// positions are the items in the order the `REC` providers supplied them)
+/// and/or a set of attribute *names*. A name is resolved to a position per
+/// record at apply time — the position of the item whose attribute-value pair
+/// carries that name — so the key does not depend on the order of the fields.
+///
+/// RTL: `CONCAT(0, 1, 'A', 'B')`, `JOIN('Year')`. The manuscript defines K over
+/// positions only; names are an extension of the implementation with the same
+/// semantics.
+#[derive(Clone, PartialEq, Eq, Debug, Default)]
+pub struct RecordKey {
+    pub positions: BTreeSet<i64>,
+    pub names: BTreeSet<String>,
+}
+
+impl RecordKey {
+    pub const fn empty() -> RecordKey {
+        RecordKey { positions: BTreeSet::new(), names: BTreeSet::new() }
+    }
+
+    pub fn new(positions: BTreeSet<i64>, names: BTreeSet<String>) -> CoreResult<RecordKey> {
+        for &k in &positions {
+            if k < 0 {
+                return Err(format!("key position must be non-negative: {k}").into());
+            }
+        }
+        for a in &names {
+            if java_is_blank(a) {
+                return Err("key attribute name must not be blank".into());
+            }
+        }
+        Ok(RecordKey { positions, names })
+    }
+
+    pub fn positions(positions: impl IntoIterator<Item = i64>) -> CoreResult<RecordKey> {
+        RecordKey::new(positions.into_iter().collect(), BTreeSet::new())
+    }
+
+    pub fn names(names: impl IntoIterator<Item = String>) -> CoreResult<RecordKey> {
+        RecordKey::new(BTreeSet::new(), names.into_iter().collect())
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.positions.is_empty() && self.names.is_empty()
+    }
 }
 
 #[cfg_attr(feature = "python", pyo3::pyclass(eq, eq_int, rename_all = "SCREAMING_SNAKE_CASE"))]
@@ -108,9 +174,11 @@ impl Quantifier {
     pub const ONE_OR_MORE: Quantifier = Quantifier { kind: QKind::OneOrMore, n: 0 };
     pub const ZERO_OR_MORE: Quantifier = Quantifier { kind: QKind::ZeroOrMore, n: 0 };
 
+    /// Exactly `n` occurrences, `n ≥ 0`: `{1}` is equivalent to no quantifier,
+    /// `{0}` to zero occurrences (an empty match); only a negative `n` is rejected.
     pub fn exactly(n: i64) -> CoreResult<Quantifier> {
-        if n < 2 {
-            return Err(format!("EXACTLY requires n >= 2, got: {n}").into());
+        if n < 0 {
+            return Err(format!("EXACTLY requires n >= 0, got: {n}").into());
         }
         Ok(Quantifier { kind: QKind::Exactly, n })
     }
@@ -646,7 +714,8 @@ pub struct ActionSpec {
     pub providers: Vec<ProviderSpec>,
     pub anchor_pos: Option<i64>,
     pub split_delimiter: Option<String>,
-    pub key_positions: BTreeSet<i64>,
+    /// The key K of a `CONCAT`/`JOIN` action (empty for the other operations).
+    pub key: RecordKey,
     pub inherited: bool,
 }
 
@@ -657,14 +726,22 @@ impl ActionSpec {
         providers: Vec<ProviderSpec>,
         anchor_pos: Option<i64>,
         split_delimiter: Option<String>,
-        key_positions: BTreeSet<i64>,
+        key: RecordKey,
         inherited: bool,
     ) -> CoreResult<Self> {
+        let is_record_op = matches!(
+            operation_type,
+            OperationType::Rec | OperationType::Concat | OperationType::Join
+        );
         for p in &providers {
             if let Some(ctx) = &p.context_literal {
                 let is_const_avp = ctx.const_value.is_some();
-                if operation_type == OperationType::Join {
-                    return Err("JOIN action does not allow context literals".into());
+                if matches!(operation_type, OperationType::Concat | OperationType::Join) {
+                    return Err(format!(
+                        "{} action does not allow context literals",
+                        operation_type.rtl_name()
+                    )
+                    .into());
                 }
                 if operation_type == OperationType::Rec && !is_const_avp && ctx.ty != ItemType::Value {
                     return Err(format!(
@@ -682,11 +759,10 @@ impl ActionSpec {
                 }
             } else {
                 let kind = p.target_item_kind.unwrap_or(CellKind::Unrestricted);
-                if (operation_type == OperationType::Rec || operation_type == OperationType::Join)
-                    && kind != CellKind::Val
-                {
+                if is_record_op && kind != CellKind::Val {
                     return Err(format!(
-                        "{operation_type:?} action requires a VAL provider, got {kind:?}"
+                        "{} action requires a VAL provider, got {kind:?}",
+                        operation_type.rtl_name()
                     )
                     .into());
                 }
@@ -703,9 +779,14 @@ impl ActionSpec {
             providers,
             anchor_pos,
             split_delimiter,
-            key_positions,
+            key,
             inherited,
         })
+    }
+
+    /// The positional part of the key (kept for callers written against 0.5.x).
+    pub fn key_positions(&self) -> &BTreeSet<i64> {
+        &self.key.positions
     }
 
     pub fn as_inherited(&self) -> ActionSpec {

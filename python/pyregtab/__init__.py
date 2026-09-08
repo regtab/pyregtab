@@ -42,6 +42,7 @@ from pyregtab._core import (
     ItemFilterConditionSpec,
     StringExtractor,
     ProviderSpec,
+    RecordKey,
     ActionSpec,
     AtomicContentSpec,
     DelimitedContentSpec,
@@ -55,6 +56,7 @@ from pyregtab._core import (
     # atp / interpret
     AtpMatcher,
     TableInterpreter,
+    Diagnostic,
     SchemaConstructionStrategy,
     ActionApplicationStrategy,
     WhitespaceNormalization,
@@ -73,7 +75,7 @@ from pyregtab._core import (
 
 from pyregtab import dsl
 
-__version__ = "0.5.1"
+__version__ = "0.7.1"
 
 __all__ = [
     "TableSyntax", "Cell", "Row", "Subrow", "Subtable", "GridPosition",
@@ -83,10 +85,12 @@ __all__ = [
     "ItemDerivationDirective", "OperationType", "TraversalOrder",
     "CellDerivedProviderKind", "ContextDerivedProviderKind", "Quantifier",
     "CellPredicate", "CellMatchCondition", "FilterTerm",
-    "ItemFilterConditionSpec", "StringExtractor", "ProviderSpec", "ActionSpec",
+    "ItemFilterConditionSpec", "StringExtractor", "ProviderSpec", "RecordKey",
+    "ActionSpec",
     "AtomicContentSpec", "DelimitedContentSpec", "CompoundContentSpec",
     "ConditionalContentSpec", "CellPattern", "SubrowPattern", "RowPattern",
     "SubtablePattern", "TablePattern", "AtpMatcher", "TableInterpreter",
+    "Diagnostic",
     "SchemaConstructionStrategy", "ActionApplicationStrategy",
     "WhitespaceNormalization", "AnchorAttributeAtPosition",
     "DelimitedFieldSplit", "FieldSplitting", "SchemaReordering", "Bindings",

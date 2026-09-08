@@ -295,18 +295,23 @@ fn serialize_op(a: &ActionSpec) -> CoreResult<String> {
                 "REC".to_string()
             }
         }
-        OperationType::Join => {
-            if a.key_positions.is_empty() {
-                "JOIN".to_string()
-            } else {
-                let args: Vec<String> = a.key_positions.iter().map(|k| k.to_string()).collect();
-                format!("JOIN({})", args.join(", "))
-            }
-        }
+        OperationType::Concat => op_with_key("CONCAT", &a.key),
+        OperationType::Join => op_with_key("JOIN", &a.key),
         OperationType::Fill => op_with_delim("FILL", a),
         OperationType::Prefix => op_with_delim("PREFIX", a),
         OperationType::Suffix => op_with_delim("SUFFIX", a),
     })
+}
+
+/// Canonical form of the key K: positions in ascending order, then names in
+/// lexicographic order, single-quoted (`CONCAT(0, 1, 'A', 'B')`).
+fn op_with_key(name: &str, key: &RecordKey) -> String {
+    if key.is_empty() {
+        return name.to_string();
+    }
+    let mut args: Vec<String> = key.positions.iter().map(|k| k.to_string()).collect();
+    args.extend(key.names.iter().map(|a| format!("'{}'", esc_sq(a))));
+    format!("{name}({})", args.join(", "))
 }
 
 fn op_with_delim(name: &str, a: &ActionSpec) -> String {

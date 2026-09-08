@@ -103,6 +103,29 @@ compound specification).
 > Changed in jRegTab 0.5.0. Earlier versions trimmed each substring and silently
 > dropped empty ones; patterns relying on that must add `=TRIM` to the delimited atom.
 
+## Zero-width subrows and `{n}` with n < 2
+
+An explicit subrow (or subtable) whose children are all optional may consume no cells at
+all, e.g. `{ [BLANK]* }` in a row without blank cells. It then matches the *empty sequence*,
+as `*` does in regular expressions:
+
+- the empty match is tried at the end of the row as well, so a trailing `{ [BLANK]* }`
+  does not make the row fail;
+- a repeated empty match (`{ [BLANK]* }+`, `{ [BLANK]* }*`, `{ [BLANK]* }{3}`) counts as a
+  single empty iteration — implementations must not loop;
+- an empty subrow covers no cells and must not appear in the interpretable table.
+
+The quantifier `{n}` accepts any `n ≥ 0`: `{1}` is equivalent to no quantifier, `{0}` to
+zero occurrences (an empty match). Only a negative `n` is a compile error. Positive case
+`quantifier_small_n` pins the canonical form; the executable checks are
+`semantic/subrow_zero_width_mid`, `semantic/subrow_zero_width_tail`,
+`semantic/subrow_zero_width_repeated` (`+`), `semantic/subrow_zero_width_repeated_star` (`*`),
+`semantic/quantifier_exactly_one`, `semantic/quantifier_exactly_zero` and the negative case
+`quantifier_exactly_negative`.
+
+> Changed in jRegTab after 0.7.0. Earlier versions raised an error for a zero-width subrow in the
+> middle of a row, silently failed on one at the end of a row, and rejected `{0}` / `{1}`.
+
 In jRegTab items 1–4 of the contract are executed by
 `ru.icc.regtab.conformance.RtlConformanceTest` and item 5 by
 `ru.icc.regtab.conformance.RtlSemanticConformanceTest`;

@@ -47,7 +47,7 @@ row pattern, its subtable pattern, and the top-level table pattern.
 |---|---|
 | `?` | zero or one occurrence |
 | `1` (default) | exactly one occurrence |
-| `{n}` | exactly `n` occurrences (`n ≥ 2`) |
+| `{n}` | exactly `n` occurrences (`n ≥ 0`; `{1}` ≡ no quantifier, `{0}` ≡ zero occurrences, i.e. an empty match) |
 | `+` | one or more occurrences |
 | `*` | zero or more occurrences |
 
@@ -322,8 +322,8 @@ S_act = (op, ⟨S_prov¹, …, S_provⁿ⟩)
 S_act = (op, s, ⟨S_prov¹, …, S_provⁿ⟩)
 ```
 
-In both forms, `op` is one of the six working-state update operations (`FILL`,
-`PREFIX`, `SUFFIX`, `AVP`, `REC`, `JOIN`) and `S_prov¹ … S_provⁿ` are item
+In both forms, `op` is one of the seven working-state update operations (`FILL`,
+`PREFIX`, `SUFFIX`, `AVP`, `REC`, `CONCAT`, `JOIN`) and `S_prov¹ … S_provⁿ` are item
 provider specifications whose types must satisfy the consistency constraints for the
 chosen operation (see [ITM — Interpretation actions](itm.md#interpretation-actions)).
 
@@ -335,8 +335,10 @@ chosen operation (see [ITM — Interpretation actions](itm.md#interpretation-act
     | `REC('s')` | `ActionSpec.rec(String delim, providers…)` | adds `DelimitedFieldSplit` post-step |
     | `AVP` | `ActionSpec.avp(provider)` | associates VAL anchor with ATTR item |
     | `AVP "name"` | `ActionSpec.avp("ATTR_NAME")` | context-derived ATTR constant |
-    | `JOIN` | `ActionSpec.join(providers…)` | joins records, dedup by named attribute |
-    | `JOIN(K)` | `ActionSpec.join(Set.of(k…), providers…)` | joins with key positions K dropped |
+    | `CONCAT` | `ActionSpec.concat(*providers)` | folds the provided records into the anchor's record |
+    | `CONCAT(K)` | `ActionSpec.concat(*providers, key=…)` — an int, a str, a tuple of both or a `RecordKey` | same, key K not repeated — positions and/or attribute names (was `JOIN(K)` up to 0.5.x) |
+    | `JOIN` | `ActionSpec.join(*providers)` | record product: one record per (anchor record × provided record) |
+    | `JOIN(K)` | `ActionSpec.join(*providers, key=…)` | equi-join on the key K (positions and/or attribute names) |
     | `FILL` | `ActionSpec.fill(delimiter, providers…)` | fills anchor value from providers |
     | `PREFIX` | `ActionSpec.prefix(delimiter, providers…)` | prepends provider values |
     | `SUFFIX` | `ActionSpec.suffix(delimiter, providers…)` | appends provider values |

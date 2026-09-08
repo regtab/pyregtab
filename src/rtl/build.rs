@@ -396,51 +396,46 @@ impl<'a> ATPBuilder<'a> {
         for p in &ast.providers {
             providers.push(self.build_prov_spec(p, &ast.op)?);
         }
-        let (op, delim, anchor_pos, split_delim, keys): (
+        let (op, delim, anchor_pos, split_delim, key): (
             OperationType,
             Option<String>,
             Option<i64>,
             Option<String>,
-            BTreeSet<i64>,
+            RecordKey,
         ) = match &ast.op {
-            POp::Avp => (OperationType::Avp, None, None, None, BTreeSet::new()),
+            POp::Avp => (OperationType::Avp, None, None, None, RecordKey::empty()),
             POp::Rec { anchor, split } => (
                 OperationType::Rec,
                 None,
                 *anchor,
                 split.clone(),
-                BTreeSet::new(),
+                RecordKey::empty(),
             ),
-            POp::Join(keys) => (
-                OperationType::Join,
-                None,
-                None,
-                None,
-                keys.iter().copied().collect(),
-            ),
+            POp::Concat(refs) => (OperationType::Concat, None, None, None, build_key(refs)?),
+            POp::Join(refs) => (OperationType::Join, None, None, None, build_key(refs)?),
             POp::Fill(d) => (
                 OperationType::Fill,
                 Some(d.clone().unwrap_or_default()),
                 None,
                 None,
-                BTreeSet::new(),
+                RecordKey::empty(),
             ),
             POp::Prefix(d) => (
                 OperationType::Prefix,
                 Some(d.clone().unwrap_or_default()),
                 None,
                 None,
-                BTreeSet::new(),
+                RecordKey::empty(),
             ),
             POp::Suffix(d) => (
                 OperationType::Suffix,
                 Some(d.clone().unwrap_or_default()),
                 None,
                 None,
-                BTreeSet::new(),
+                RecordKey::empty(),
             ),
         };
-        ActionSpec::new(op, delim, providers, anchor_pos, split_delim, keys, false)
+        ActionSpec::new(op, delim, providers, anchor_pos, split_delim, key, false)
             .map_err(RtlErr::from)
     }
 
@@ -451,7 +446,7 @@ impl<'a> ATPBuilder<'a> {
                 Ok(ProviderSpec::ctx_avp(name.clone(), value.clone()))
             }
             PProvSpec::Ctx(literal) => {
-                let ty = if matches!(op, POp::Rec { .. } | POp::Join(_)) {
+                let ty = if matches!(op, POp::Rec { .. } | POp::Concat(_) | POp::Join(_)) {
                     ItemType::Value
                 } else {
                     ItemType::Attribute
@@ -471,7 +466,7 @@ impl<'a> ATPBuilder<'a> {
         };
         let condition = self.build_provider_condition(&ast.body)?;
         let kind = match op {
-            POp::Rec { .. } | POp::Join(_) => CellKind::Val,
+            POp::Rec { .. } | POp::Concat(_) | POp::Join(_) => CellKind::Val,
             POp::Avp => CellKind::Attr,
             _ => CellKind::Unrestricted,
         };
@@ -756,6 +751,32 @@ impl<'a> ATPBuilder<'a> {
         all.extend(local);
         all
     }
+}
+
+/// `RecordKey` of a `CONCAT(...)` / `JOIN(...)`: `INT` → position, `STRING` →
+/// attribute name; an empty (blank) name is a compile error with its position
+/// (port of `ATPBuilder.buildKey`).
+fn build_key(refs: &[PKeyRef]) -> Result<RecordKey, RtlErr> {
+    let mut positions = BTreeSet::new();
+    let mut names = BTreeSet::new();
+    for r in refs {
+        match r {
+            PKeyRef::Pos(n) => {
+                positions.insert(*n);
+            }
+            PKeyRef::Name { name, line, col } => {
+                if name.trim().is_empty() {
+                    return Err(RtlErr::at(
+                        format!("Key attribute name must not be empty: '{name}'"),
+                        *line,
+                        *col,
+                    ));
+                }
+                names.insert(name.clone());
+            }
+        }
+    }
+    RecordKey::new(positions, names).map_err(RtlErr::from)
 }
 
 fn bound_value(b: &PBound) -> i64 {

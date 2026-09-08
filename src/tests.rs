@@ -131,7 +131,9 @@ fn end_to_end_match_and_interpret() {
         .unwrap();
     assert_eq!(atomic.span, (0, "IKT".len()));
 
-    let rs = interpret(&InterpreterCfg::default(), &syntax, &sem, None).unwrap();
+    let out = interpret(&InterpreterCfg::default(), &syntax, &sem, None).unwrap();
+    assert!(out.diagnostics.is_empty());
+    let rs = out.recordset;
 
     assert_eq!(rs.schema.attributes, vec!["ND", "AIRLINE", "AIRPORT", "MON"]);
     assert_eq!(rs.records.len(), 4);

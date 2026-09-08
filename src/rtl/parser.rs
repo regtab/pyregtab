@@ -745,17 +745,13 @@ impl Parser {
                 }
                 Ok(POp::Rec { anchor, split })
             }
+            Tok::KwConcat => {
+                self.bump();
+                Ok(POp::Concat(self.key_refs()?))
+            }
             Tok::KwJoin => {
                 self.bump();
-                let mut keys = Vec::new();
-                if self.eat(Tok::LParen) {
-                    keys.push(self.expect_int()?);
-                    while self.eat(Tok::Comma) {
-                        keys.push(self.expect_int()?);
-                    }
-                    self.expect(Tok::RParen, "')'")?;
-                }
-                Ok(POp::Join(keys))
+                Ok(POp::Join(self.key_refs()?))
             }
             Tok::KwFill => {
                 self.bump();
@@ -770,6 +766,35 @@ impl Parser {
                 Ok(POp::Suffix(self.op_string_arg()?))
             }
             other => self.err(format!("expected operation, found {other:?}")),
+        }
+    }
+
+    /// `(LPAREN keyRef (COMMA keyRef)* RPAREN)?` of `concatOp` / `joinOp`.
+    fn key_refs(&mut self) -> Result<Vec<PKeyRef>, RtlErr> {
+        let mut keys = Vec::new();
+        if self.eat(Tok::LParen) {
+            keys.push(self.key_ref()?);
+            while self.eat(Tok::Comma) {
+                keys.push(self.key_ref()?);
+            }
+            self.expect(Tok::RParen, "')'")?;
+        }
+        Ok(keys)
+    }
+
+    /// `keyRef : INT | STRING`.
+    fn key_ref(&mut self) -> Result<PKeyRef, RtlErr> {
+        let t = self.cur().clone();
+        match t.tok {
+            Tok::Int(n) => {
+                self.bump();
+                Ok(PKeyRef::Pos(n))
+            }
+            Tok::Str(s) => {
+                self.bump();
+                Ok(PKeyRef::Name { name: s, line: t.line, col: t.col })
+            }
+            other => self.err(format!("expected INT or STRING key reference, found {other:?}")),
         }
     }
 

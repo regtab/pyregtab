@@ -152,11 +152,10 @@ def run_task_variant(task_id: str, variant: int, pattern) -> None:
     itm = AtpMatcher.match(pattern, syntax)
     assert itm is not None, f"Task {task_id} pattern did not match variant {variant}"
 
-    actual = pattern.transform(
-        TableInterpreter()
-        .with_strategy(SchemaConstructionStrategy.RECORD_FIRST)
-        .interpret(itm)
-    )
+    interpreter = TableInterpreter().with_strategy(SchemaConstructionStrategy.RECORD_FIRST)
+    actual = pattern.transform(interpreter.interpret(itm))
+    # The task corpus must not skip a single CONCAT/JOIN action (RtlTaskBase).
+    assert interpreter.diagnostics() == [], [str(d) for d in interpreter.diagnostics()]
 
     opts = load_match_options(task_id)
     expected_path = task_dir / f"expected_{variant}.csv"

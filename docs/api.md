@@ -26,9 +26,17 @@ rs = (
     .with_action_application_strategy(ActionApplicationStrategy.ROW_FIRST)
     .with_missing_value_handler(lambda attr: "")                 # str -> str | None
     .with_anonymous_attribute_template("A%i")                    # default "$a_%i"
+    .with_strict_preconditions(False)                            # default: skipped CONCAT/JOIN actions are reported, not raised
     .interpret(itm)
 )
 ```
+
+After `interpret`, `TableInterpreter.diagnostics()` lists the `CONCAT`/`JOIN` actions that
+had no effect (as `Diagnostic` objects with `.anchor`, `.operation`, `.message`): a key
+mismatch, a named attribute shared by two concatenated records, an empty record product, and
+— for actions written on the anchor's own content spec, not inherited — an anchor without a
+record (`anchor has no record — REC missing?`) or provided items none of which has a record.
+With `with_strict_preconditions(True)` the first such case raises a `RuntimeError` instead.
 
 When the pattern contains no Python callbacks (no `EXT`/custom predicates),
 `AtpMatcher.match` and `TableInterpreter.interpret` release the GIL — batch
@@ -84,7 +92,9 @@ Actions and providers:
 |---|---|
 | `ActionSpec.rec(*providers, anchor_pos=None, split_delimiter=None)` | `…->REC`, `REC(n)`, `REC('/')` |
 | `ActionSpec.avp(provider_or_str)` | `…->AVP`, `'NAME'->AVP` |
-| `ActionSpec.join(*providers, key_positions=None)` | `…->JOIN(k…)` |
+| `ActionSpec.concat(*providers, key=None)` | `…->CONCAT`, `CONCAT(k…)`, `CONCAT('A')`, `CONCAT(0, 'A')` — fold the provided records into the anchor's record; `key` is an int, a str, an iterable of both, or a `RecordKey` (`key_positions=` is kept for 0.5.x callers) |
+| `ActionSpec.join(*providers, key=None)` | `…->JOIN`, `JOIN(k…)`, `JOIN('A')` — the record product (equi-join on `key`) |
+| `RecordKey(positions=(), names=())`, `RecordKey.of(…)`, `RecordKey.empty()`; `ActionSpec.key` / `.key_positions` | the key K of a `CONCAT`/`JOIN` action |
 | `ActionSpec.fill/prefix/suffix(delimiter, *providers)` | `…->FILL("d")` |
 | `ProviderSpec.val/attr/aux/any(condition, cardinality=1, traversal_order=None)` | `ST*`, `-AV`, `^COL{2}` |
 | `ProviderSpec.ctx_attr/ctx_val/ctx_aux(text)`, `ctx_avp(name, value)` | `'NAME'`, `@'A'='V'` |
@@ -97,7 +107,7 @@ Conditions and predicates:
 | `ItemFilterConditionSpec.bare(term)`, `.and_(*terms)`, `.or_(*groups)`, shorthands `same_subtable()` … `left_of()` | `(LT & !BLANK)` |
 | `FilterTerm.*` — spatial (`left_of` … `same_cell`, `col_exact`, `row_offset`, `pos_range`, …) and content (`regex_matched`, `contains`, `blank`, `tagged`, `same_str`, `external`, `custom`) | `spatConstr` / `contConstr` |
 | `StringExtractor.whitespace_normalized() / trimmed() / upper_case() / lower_case() / substring(b, e) / replaced(rx, rep) / chain(*steps) / custom(desc, fn)` | `=NORM`, `=TRIM`, … |
-| `Quantifier.one() / zero_or_one() / one_or_more() / zero_or_more() / exactly(n)` | `?`, `+`, `*`, `{n}` |
+| `Quantifier.one() / zero_or_one() / one_or_more() / zero_or_more() / exactly(n)` | `?`, `+`, `*`, `{n}` (`n ≥ 0`; `{1}` ≡ no quantifier, `{0}` ≡ empty match) |
 
 Custom (`custom`) and external (`EXT`) predicates take Python callables:
 cell predicates receive a `Cell`, item filters receive

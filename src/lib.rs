@@ -55,6 +55,7 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<py::PyFilterCond>()?;
     m.add_class::<py::PyExtractor>()?;
     m.add_class::<py::PyProviderSpec>()?;
+    m.add_class::<py::PyRecordKey>()?;
     m.add_class::<py::PyActionSpec>()?;
     m.add_class::<py::PyAtomicSpec>()?;
     m.add_class::<py::PyDelimitedSpec>()?;
@@ -70,6 +71,7 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<interp::ActionStrategy>()?;
     m.add_class::<py::PyAtpMatcher>()?;
     m.add_class::<py::PyTableInterpreter>()?;
+    m.add_class::<py::PyDiagnostic>()?;
     m.add_class::<py::PyWhitespaceNormalization>()?;
     m.add_class::<py::PyAnchorAttributeAtPosition>()?;
     m.add_class::<py::PyDelimitedFieldSplit>()?;

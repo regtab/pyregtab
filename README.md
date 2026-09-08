@@ -16,13 +16,26 @@ and interprets the match into a relational **recordset**:
 TableSyntax → RtlCompiler/TablePattern → AtpMatcher → TableInterpreter → Recordset
 ```
 
-**pyRegTab 0.5.1 ≙ jRegTab 0.5.1** (same API, same semantics, same test
+**pyRegTab 0.7.1 ≙ jRegTab 0.7.1** (same API, same semantics, same test
 corpus), including the
 embedded RTL DSL `pyregtab.dsl` — a port of jRegTab's `ru.icc.regtab.dsl`
 (added upstream in jRegTab 0.3.0). Python-side extras on top of the Java API:
 `AtpMatcher.match_many` (parallel batch matching), `Recordset.to_pandas()`,
-`Recordset.to_csv()`, `RtlCompileError.line`/`.col` attributes, and
-`CellDerivedItem.span` (the item's byte range within the raw cell text).
+`Recordset.to_csv()`, `RtlCompileError.line`/`.col` attributes,
+`CellDerivedItem.span` (the item's byte range within the raw cell text), and
+the CLI runner `python -m pyregtab.runner` (see below).
+
+Since 0.5.1 the language and the interpreter follow jRegTab 0.6.0–0.7.1:
+`JOIN(K)` is the **record product** (a cross product for `K = ∅`, an equi-join
+on the key `K` otherwise), the former folding operation is spelled
+`CONCAT(K)` — a pattern written for 0.5.x must replace `JOIN(K)` by
+`CONCAT(K)`; the key `K` may name attributes (`CONCAT(0, 1, 'A', 'B')`,
+`JOIN('Year')`); skipped `CONCAT`/`JOIN` actions (a key mismatch, a shared
+attribute, a forgotten `REC`) are reported through
+`TableInterpreter.diagnostics()`; zero-width subrows match the empty
+sequence and `{0}`/`{1}` are accepted; cell-derived providers use a spatial
+index, so interpretation is linear in the number of cells (a 1.19 M-cell
+table interprets in seconds).
 
 ## Installation
 
@@ -143,7 +156,7 @@ Rust (`pyregtab._core`, built with [PyO3](https://pyo3.rs) and
 
 ## Testing
 
-`pytest tests` runs (1 925 tests):
+`pytest tests` runs (1 981 tests):
 
 - the full benchmark suite — tasks 001–150 (Foofah, RegTab, Baikal),
   every fixture variant, **both** via RTL patterns and via ATP patterns
@@ -159,13 +172,20 @@ Rust (`pyregtab._core`, built with [PyO3](https://pyo3.rs) and
 - RTL↔ATP round-trip for tasks 001–050;
 - API unit tests (syntax layer, extractors, EXT bindings, custom
   predicates, transformations, interpreter options, GIL-released batch
-  matching from a thread pool and via `AtpMatcher.match_many`).
+  matching from a thread pool and via `AtpMatcher.match_many`);
+- `CONCAT`/`JOIN` semantics, named keys, diagnostics, strict preconditions,
+  zero-width subrows and `{0}`/`{1}` (`tests/test_join_concat.py`, a port of
+  jRegTab's `TableInterpreterMultiRecordTest`).
 
-`cargo test` additionally runs the conformance corpus and an end-to-end
-smoke test against the native core alone. Differential testing against the
-Java reference (`tools/differential.py` + `tools/RecordsetDumpMain.java`)
-compares recordsets cell-by-cell on all 750 task variants — zero
-mismatches against jRegTab v0.5.0.
+`cargo test` additionally runs the conformance corpus, an end-to-end smoke
+test against the native core alone, the working-state unit tests for
+`CONCAT`/`JOIN` (ports of `WorkingStateConcatTest`/`WorkingStateJoinTest`), the
+zero-width matcher cases, and a randomized equivalence test of the indexed
+provider against the reference definition Υ^{J,k}_{τ,κ} (full scan + sort).
+Differential testing against the Java reference (`tools/differential.py` +
+`tools/RecordsetDumpMain.java`) compares recordsets cell-by-cell on all 750
+task variants; the 244 ATBench solutions of regtab-eval-on-atbench are
+byte-identical between the jRegTab 0.7.1 runner and `python -m pyregtab.runner`.
 
 ## IDE support
 
@@ -179,6 +199,21 @@ IntelliJ/PyCharm and other TextMate editors is under [`ide/`](ide/README.md).
 
 RTL is also validated at compile time: `RtlCompiler.compile(...)` raises
 `RtlCompileError` with a `line:col` position on an invalid pattern.
+
+## Command-line runner
+
+`python -m pyregtab.runner <solution.rtl>` (or `python -m pyregtab <solution.rtl>`)
+reads `./input.csv`, applies the pattern (`RtlCompiler.compile` →
+`AtpMatcher.match` → `TableInterpreter` with `RECORD_FIRST` →
+`pattern.transform`) and writes `./output.csv` — the schema as the header row,
+every field double-quoted, a missing value as the empty string, UTF-8, LF. It
+is the drop-in counterpart of the `regtab-runner` jar used by
+[regtab-eval-on-atbench](https://github.com/regtab/regtab-eval-on-atbench):
+same I/O contract, same exit codes (0 — success, 1 — the pattern did not
+match, 2 — invalid usage), same CSV parsing (RFC 4180 with multi-line quoted
+cells, ragged rows padded); on the 244 ATBench solutions of that project the
+two runners produce byte-identical `output.csv`. `--input`/`--output` override
+the file names, `--strict` turns interpreter diagnostics into errors.
 
 ## Development
 

@@ -1,0 +1,2 @@
+[ [ATTR]+ ]
+[ [VAL: COL->AVP, ROW*->REC] { [BLANK]* }+ [VAL: COL->AVP] { [BLANK]* }+ ]+

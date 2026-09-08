@@ -76,11 +76,11 @@ def test_semantic_case(case):
     itm = AtpMatcher.match(pattern, syntax)
     assert itm is not None, f"pattern did not match {case.name}/{INPUT}"
 
-    actual = pattern.transform(
-        TableInterpreter()
-        .with_strategy(SchemaConstructionStrategy.RECORD_FIRST)
-        .interpret(itm)
-    )
+    interpreter = TableInterpreter().with_strategy(SchemaConstructionStrategy.RECORD_FIRST)
+    actual = pattern.transform(interpreter.interpret(itm))
+    # A semantic case must not skip a single CONCAT/JOIN action
+    # (RtlSemanticConformanceTest asserts empty diagnostics).
+    assert interpreter.diagnostics() == [], [str(d) for d in interpreter.diagnostics()]
 
     opts = load_case_options(case)
     expected_path = case / EXPECTED

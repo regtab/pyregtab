@@ -34,6 +34,17 @@ impl From<pyo3::PyErr> for CoreErr {
     }
 }
 
+impl CoreErr {
+    /// The error text (for `Py` errors, the Python exception's `str`).
+    pub fn text(&self) -> String {
+        match self {
+            CoreErr::Msg(m) => m.clone(),
+            #[cfg(feature = "python")]
+            CoreErr::Py(e) => e.to_string(),
+        }
+    }
+}
+
 pub type CoreResult<T> = Result<T, CoreErr>;
 
 fn cache() -> &'static Mutex<HashMap<String, Arc<Regex>>> {
