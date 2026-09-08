@@ -103,17 +103,20 @@ actSpecs : actSpec (COMMA actSpec)* ;
 
 // Interpretation action specification
 actSpec : provSpecs RIGHT_ARROW op ;
-op : fillOp | prefixOp | suffixOp | AVP | recOp | joinOp ;
+op : fillOp | prefixOp | suffixOp | AVP | recOp | concatOp | joinOp ;
 fillOp   : FILL   (LPAREN STRING RPAREN)? ;
 prefixOp : PREFIX (LPAREN STRING RPAREN)? ;
 suffixOp : SUFFIX (LPAREN STRING RPAREN)? ;
 recOp    : REC    (LPAREN (INT | STRING) RPAREN)? ;
-joinOp   : JOIN   (LPAREN INT (COMMA INT)* RPAREN)? ;
+concatOp : CONCAT (LPAREN keyRef (COMMA keyRef)* RPAREN)? ;
+joinOp   : JOIN   (LPAREN keyRef (COMMA keyRef)* RPAREN)? ;
+keyRef   : INT | STRING ;   // key position (0-based) or key attribute name
 FILL   : 'FILL'   ;
 PREFIX : 'PREFIX' ;
 SUFFIX : 'SUFFIX' ;
 AVP    : 'AVP'    ;
 REC    : 'REC'    ;
+CONCAT : 'CONCAT' ;
 JOIN   : 'JOIN'   ;
 
 provSpecs : provSpec | (LPAREN provSpec (COMMA provSpec)* RPAREN) | LPAREN RPAREN ;

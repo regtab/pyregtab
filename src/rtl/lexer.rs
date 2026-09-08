@@ -45,6 +45,7 @@ pub enum Tok {
     KwSuffix,
     KwAvp,
     KwRec,
+    KwConcat,
     KwJoin,
     KwLt,
     KwRt,
@@ -92,6 +93,7 @@ fn keyword(word: &str) -> Option<Tok> {
         "SUFFIX" => Tok::KwSuffix,
         "AVP" => Tok::KwAvp,
         "REC" => Tok::KwRec,
+        "CONCAT" => Tok::KwConcat,
         "JOIN" => Tok::KwJoin,
         "LT" => Tok::KwLt,
         "RT" => Tok::KwRt,
@@ -326,14 +328,26 @@ pub fn lex(src: &str) -> Result<Vec<Token>, RtlErr> {
                 Tok::FragmentId(name)
             }
             '0'..='9' => {
+                // INT : [0-9]+ — the value is kept as i64; a literal beyond the
+                // range of a Java int (the reference implementation's INT) is
+                // reported where it is used (quantifier, cardinality, position).
                 let mut n: i64 = 0;
+                let mut digits = String::new();
                 while let Some(c) = lx.peek() {
                     if let Some(d) = c.to_digit(10) {
-                        n = n * 10 + d as i64;
+                        n = n.saturating_mul(10).saturating_add(d as i64);
+                        digits.push(c);
                         lx.bump();
                     } else {
                         break;
                     }
+                }
+                if n > i32::MAX as i64 {
+                    return Err(RtlErr::at(
+                        format!("Invalid integer literal {digits}: out of int range"),
+                        line,
+                        col,
+                    ));
                 }
                 Tok::Int(n)
             }

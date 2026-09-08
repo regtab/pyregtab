@@ -87,8 +87,8 @@ If the pattern does not match, `AtpMatcher.match` returns `Optional.empty()`.
 | Phase | What happens |
 |---|---|
 | **1. Initialisation** | Each cell-derived and context-derived item of type VAL/ATTR is entered into the working state with its string value |
-| **2. Completion** | Interpretation actions are applied in operation-type order: FILL/PREFIX/SUFFIX → AVP → REC → JOIN; each action uses its providers to retrieve items relative to the anchor and updates the working state |
-| **3. Extraction** | The working state is traversed to build the schema (attribute list) and generate records |
+| **2. Completion** | Interpretation actions are applied in operation-type order: FILL/PREFIX/SUFFIX → AVP → REC → CONCAT → JOIN (records are folded before they are multiplied); each action uses its providers to retrieve items relative to the anchor and updates the working state. A violated CONCAT/JOIN precondition has no effect and is reported through `TableInterpreter.diagnostics()`. Cell-derived providers scan a spatial index over the items (row-major and column-major orderings with row/column offsets) restricted to a candidate scope derived statically from the filter specification — the anchor's row, column, cell, row range or subtable — so interpretation is linear in the number of cells |
+| **3. Extraction** | The live anchors of the working state (joined-away anchors excluded) are traversed to build the schema (attribute list) and generate records — one per item-based record, several per anchor after a JOIN |
 | **4. Transformation** | Optional post-processing steps are applied: `WhitespaceNormalization`, `FieldSplitting`, `SchemaReordering` |
 
 ---
@@ -139,7 +139,7 @@ The round-trip property — serialize then compile gives back the original patte
 | `RowPattern`, `SubrowPattern`, `CellPattern` | `[ ... ]q`, `{ ... }q`, `[ ... ]q` |
 | `AtomicContentSpec` with tags | `VAL #'tag'` |
 | `AtomicContentSpec` with extractor | `VAL = TRIM` |
-| `ActionSpec` (avp, rec, join, fill, prefix, suffix) | `'NAME'->AVP`, `(prov…)->REC`, etc. |
+| `ActionSpec` (avp, rec, concat, join, fill, prefix, suffix) | `'NAME'->AVP`, `(prov…)->REC`, etc. |
 | `ProviderSpec` with traversal order | leading `-` / `^` / `-^` |
 | `ProviderSpec` with cardinality | `{n}` / `*` |
 | `RecordsetTransformation` settings | `<NORM>`, `<ANCH(n)>`, `<SPLIT("d")>` |

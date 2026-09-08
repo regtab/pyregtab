@@ -42,6 +42,7 @@ class OperationType(Enum):
     SUFFIX = ...
     AVP = ...
     REC = ...
+    CONCAT = ...
     JOIN = ...
 
 class TraversalOrder(Enum):
@@ -212,6 +213,9 @@ class Recordset:
         *,
         sep: str = ",",
         missing: str = "",
+        quote_all: bool = False,
+        newline: str = "
+",
     ) -> Optional[str]: ...
 
 # ---------------------------------------------------------------- spec
@@ -424,9 +428,31 @@ class ProviderSpec:
     def ctx_avp(attr_name: str, value: str) -> ProviderSpec: ...
     def is_context_literal(self) -> bool: ...
 
+class RecordKey:
+    """The key K of CONCAT(K) / JOIN(K): 0-based positions in the item-based
+    record (0 is the anchor) and/or attribute names, resolved per record."""
+    positions: set[int]
+    names: set[str]
+    def __init__(
+        self, positions: Optional[Iterable[int]] = None, names: Optional[Iterable[str]] = None
+    ) -> None: ...
+    @staticmethod
+    def empty() -> RecordKey: ...
+    @staticmethod
+    def of(
+        positions: Optional[Iterable[int]] = None, names: Optional[Iterable[str]] = None
+    ) -> RecordKey: ...
+    def is_empty(self) -> bool: ...
+
+# A key reference: an int position, a str attribute name, a RecordKey, or an
+# iterable mixing positions and names.
+KeyRef = Union[int, str, RecordKey, Iterable[Union[int, str]], None]
+
 class ActionSpec:
     operation_type: OperationType
     inherited: bool
+    key: RecordKey
+    key_positions: set[int]
     def __init__(
         self,
         operation_type: OperationType,
@@ -436,6 +462,7 @@ class ActionSpec:
         split_delimiter: Optional[str] = None,
         key_positions: Optional[set[int]] = None,
         inherited: bool = False,
+        key: KeyRef = None,
     ) -> None: ...
     @staticmethod
     def rec(
@@ -449,9 +476,17 @@ class ActionSpec:
         provider: Union[ProviderSpec, ItemFilterConditionSpec, str]
     ) -> ActionSpec: ...
     @staticmethod
+    def concat(
+        *providers: Union[ProviderSpec, ItemFilterConditionSpec],
+        key: KeyRef = None,
+        key_positions: KeyRef = None,
+        cardinality: int = 1,
+    ) -> ActionSpec: ...
+    @staticmethod
     def join(
         *providers: Union[ProviderSpec, ItemFilterConditionSpec],
-        key_positions: Union[int, Iterable[int], None] = None,
+        key: KeyRef = None,
+        key_positions: KeyRef = None,
         cardinality: int = 1,
     ) -> ActionSpec: ...
     @staticmethod
@@ -687,7 +722,16 @@ class TableInterpreter:
         self, transformations: Sequence[RecordsetTransformation]
     ) -> TableInterpreter: ...
     def with_anonymous_attribute_template(self, template: str) -> TableInterpreter: ...
+    def with_strict_preconditions(self, strict: bool) -> TableInterpreter: ...
     def interpret(self, table: InterpretableTable) -> Recordset: ...
+    def diagnostics(self) -> list[Diagnostic]: ...
+
+class Diagnostic:
+    """A CONCAT/JOIN action that had no effect during the most recent
+    interpretation: a violated precondition or a missing record."""
+    anchor: CellDerivedItem
+    operation: str
+    message: str
 
 # ---------------------------------------------------------------- rtl
 

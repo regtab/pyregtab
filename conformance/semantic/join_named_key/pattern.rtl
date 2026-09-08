@@ -1,0 +1,2 @@
+[ [ATTR]+ ]
+[ [VAL: COL->AVP, RT->REC, C2*->JOIN('k')] [VAL: COL->AVP] [VAL: COL->AVP, RT->REC] [VAL: COL->AVP] ]+

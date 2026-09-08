@@ -1,7 +1,9 @@
 //! Port of `ru.icc.regtab.atp.match` + `AtpMatcher`:
 //! backtracking syntactic matching and semantic layer construction.
 
-use crate::semantics::{ActionInst, CellItem, CtxItem, ItemId, OpInst, ProviderInst, SemanticsCore};
+use crate::semantics::{
+    ActionInst, CandidateScope, CellItem, CtxItem, ItemId, OpInst, ProviderInst, SemanticsCore,
+};
 use crate::spec::*;
 use crate::syntax::SyntaxCore;
 use crate::util::{split_literal, CoreErr, CoreResult};
@@ -46,28 +48,36 @@ type Outcome = Option<usize>;
 /// Port of the generic `matchPatterns` (backtracking over a pattern list).
 fn match_patterns<P>(
     patterns: &[P],
-    n_elements: usize,
     element_index: usize,
     state: &mut MatchState,
     quantifier_of: &dyn Fn(&P) -> Quantifier,
     dispatch: &mut dyn FnMut(&P, usize, &mut MatchState) -> CoreResult<Outcome>,
 ) -> CoreResult<Outcome> {
     let mut i = element_index;
-    let n = n_elements;
 
     for j in 0..patterns.len() {
         let pattern = &patterns[j];
         let q = quantifier_of(pattern);
-        let min = q.min();
+        let mut min = q.min();
         let max = q.max();
         let mut stack: Vec<(usize, Snapshot)> = Vec::new();
 
-        while (stack.len() as i64) < max && i < n {
+        // No "i < n" guard: a pattern that can match empty (a subrow/subtable
+        // whose children are all optional) must be tried at the end of the
+        // sequence too; cell and row dispatchers fail on their own when i >= n.
+        while (stack.len() as i64) < max {
             let saved = state.snapshot();
             let dispatched = dispatch(pattern, i, state)?;
             match dispatched {
                 Some(next) => {
                     stack.push((i, saved));
+                    if next == i {
+                        // Empty iteration: as in regex engines, an empty match is
+                        // never repeated and satisfies any remaining lower bound
+                        // ((a*)+ and (a*){3} match "").
+                        min = 0;
+                        break;
+                    }
                     i = next;
                 }
                 None => {
@@ -85,7 +95,6 @@ fn match_patterns<P>(
             loop {
                 let next = match_patterns(
                     &patterns[j + 1..],
-                    n_elements,
                     i,
                     state,
                     quantifier_of,
@@ -220,7 +229,6 @@ fn dispatch_subrow(
     let saved = state.snapshot();
     let inner = match_patterns(
         &pattern.cell_patterns,
-        cells.len(),
         cell_index,
         state,
         &|p: &Arc<CellPattern>| p.quantifier,
@@ -234,11 +242,15 @@ fn dispatch_subrow(
         state.restore(saved);
         return Ok(None);
     }
-    state.subrows.push((
-        row_index,
-        cells[cell_index].1,
-        cells[next - 1].1,
-    ));
+    // A zero-width subrow (next == cell_index) matches the empty sequence: it
+    // covers no cells and is never materialized in the interpretable table.
+    if next > cell_index {
+        state.subrows.push((
+            row_index,
+            cells[cell_index].1,
+            cells[next - 1].1,
+        ));
+    }
     Ok(Some(next))
 }
 
@@ -259,7 +271,6 @@ fn dispatch_row(
     let saved = state.snapshot();
     let inner = match_patterns(
         &pattern.subrow_patterns,
-        cells.len(),
         0,
         state,
         &|p: &Arc<SubrowPattern>| p.quantifier,
@@ -284,7 +295,6 @@ fn dispatch_subtable(
     let saved = state.snapshot();
     let inner = match_patterns(
         &pattern.row_patterns,
-        syntax.num_rows,
         row_index,
         state,
         &|p: &Arc<RowPattern>| p.quantifier,
@@ -298,7 +308,11 @@ fn dispatch_subtable(
         state.restore(saved);
         return Ok(None);
     }
-    state.subtables.push((row_index, next - 1));
+    // A zero-height subtable (all row patterns optional) matches the empty
+    // sequence and introduces no subtable boundary.
+    if next > row_index {
+        state.subtables.push((row_index, next - 1));
+    }
     Ok(Some(next))
 }
 
@@ -321,7 +335,6 @@ pub fn syntax_match(
     let mut state = MatchState::default();
     let outcome = match_patterns(
         &atp.subtable_patterns,
-        syntax.num_rows,
         0,
         &mut state,
         &|p: &Arc<SubtablePattern>| p.quantifier,
@@ -548,16 +561,19 @@ fn to_provider_inst(
             kind: lit.kind(),
         });
     }
+    let cond = spec
+        .filter_condition
+        .clone()
+        .ok_or_else(|| SemErr::Other("filterCondition".into()))?;
+    let scope = CandidateScope::of_cond(&cond);
     Ok(ProviderInst::Cell {
-        cond: spec
-            .filter_condition
-            .clone()
-            .ok_or_else(|| SemErr::Other("filterCondition".into()))?,
+        cond,
         order: spec.traversal_order,
         cardinality: spec.cardinality,
         kind: spec.target_item_kind.unwrap_or(CellKind::Unrestricted),
         exclude_anchor: true,
         lenient,
+        scope,
     })
 }
 
@@ -573,13 +589,14 @@ fn instantiate_action(
         OperationType::Suffix => OpInst::Suffix(delim),
         OperationType::Avp => OpInst::Avp,
         OperationType::Rec => OpInst::Rec,
-        OperationType::Join => OpInst::Join(action_spec.key_positions.clone()),
+        OperationType::Concat => OpInst::Concat(action_spec.key.clone()),
+        OperationType::Join => OpInst::Join(action_spec.key.clone()),
     };
     let mut providers = Vec::with_capacity(action_spec.providers.len());
     for ps in &action_spec.providers {
         providers.push(to_provider_inst(ps, sem, action_spec.inherited)?);
     }
-    Ok(ActionInst { anchor, providers, op })
+    Ok(ActionInst { anchor, providers, op, inherited: action_spec.inherited })
 }
 
 pub fn construct_semantics(
@@ -806,5 +823,94 @@ mod tests {
         for (s, (from, to), _) in items {
             assert_eq!(cell[from..to], s);
         }
+    }
+}
+
+/// Zero-width subrows and subtables (port of the `SyntaxMatcherTest` cases
+/// added in jRegTab 0.7.1): a subrow whose cell patterns all matched zero
+/// cells matches the empty sequence, is tried at the end of the row too, is
+/// never repeated by `+`/`*`/`{n}` and does not appear in the syntax layer.
+#[cfg(test)]
+mod zero_width_tests {
+    use super::*;
+    use crate::rtl::{compile, BindingsCore};
+
+    fn syntax() -> SyntaxCore {
+        let mut s = SyntaxCore::new(3, 2).unwrap();
+        for (r, c, t) in [(0, 0, "A"), (0, 1, "B"), (1, 0, "x"), (1, 1, "1"), (2, 0, "y"), (2, 1, "2")] {
+            s.cell_mut(r, c).set_text(t.to_string());
+        }
+        s
+    }
+
+    fn matches(rtl: &str) -> (bool, SyntaxCore) {
+        let mut s = syntax();
+        let pattern = compile(rtl, &BindingsCore::default()).expect("compile");
+        let sem = match_atp(&pattern, &mut s, Vec::new()).expect("match");
+        (sem.is_some(), s)
+    }
+
+    #[test]
+    fn empty_subrow_mid_row_and_tail() {
+        for body in [
+            "[VAL] { [BLANK]* } [VAL]",
+            "[VAL] [VAL] { [BLANK]* }",
+            "{ [BLANK]* } [VAL] [VAL]",
+        ] {
+            let (ok, s) = matches(&format!("[ [ATTR]+ ]\n[ {body} ]+"));
+            assert!(ok, "{body}");
+            // the empty subrow covers no cells: the non-empty subrows still
+            // partition every row without gaps or overlaps
+            for row in &s.rows {
+                let mut next = 0;
+                for sr in &row.subrows {
+                    assert_eq!(sr.col_start, next, "{body}");
+                    assert!(sr.col_end >= sr.col_start, "{body}");
+                    next = sr.col_end + 1;
+                }
+                assert_eq!(next, s.num_cols, "{body}");
+            }
+        }
+        // the explicit empty subrow splits the implicit cells into two subrows…
+        let (_, s) = matches("[ [ATTR]+ ]\n[ [VAL] { [BLANK]* } [VAL] ]+");
+        assert_eq!(s.rows[1].subrows.len(), 2);
+        // …while a trailing one leaves the single implicit subrow alone
+        let (_, s) = matches("[ [ATTR]+ ]\n[ [VAL] [VAL] { [BLANK]* } ]+");
+        assert_eq!(s.rows[1].subrows.len(), 1);
+    }
+
+    #[test]
+    fn empty_subrow_repeated_does_not_loop_and_satisfies_the_lower_bound() {
+        for q in ["+", "*", "{1}", "{0}", "{3}"] {
+            let (ok, _) = matches(&format!("[ [ATTR]+ ]\n[ [VAL] {{ [BLANK]* }}{q} [VAL] {{ [BLANK]* }}{q} ]+"));
+            assert!(ok, "quantifier {q}");
+        }
+    }
+
+    #[test]
+    fn non_empty_subrows_still_partition_the_row() {
+        let (ok, s) = matches("[ [ATTR]+ ]\n[ { [VAL] } { [VAL] } ]+");
+        assert!(ok);
+        assert_eq!(s.rows[1].subrows.len(), 2);
+    }
+
+    #[test]
+    fn empty_subtable_all_rows_optional() {
+        let (ok, s) = matches("{ [ [BLANK]+ ]* } [ [ATTR]+ ] [ [VAL] [VAL] ]+");
+        assert!(ok);
+        // the empty subtable adds no boundary: only the implicit subtable
+        // holding the header and data row patterns remains
+        assert_eq!(s.subtables.len(), 1);
+        assert_eq!((s.subtables[0].row_start, s.subtables[0].row_end), (0, 2));
+    }
+
+    #[test]
+    fn exactly_zero_consumes_nothing() {
+        let (ok, _) = matches("[ [ATTR]+ ]\n[ [VAL]{0} [VAL] [VAL] ]+");
+        assert!(ok);
+        let (ok, _) = matches("[ [ATTR]+ ]\n[ [VAL]{1} [VAL]{1} ]+");
+        assert!(ok);
+        let (ok, _) = matches("[ [ATTR]+ ]\n[ [VAL]{0} ]+");
+        assert!(!ok, "{{0}} matches nothing, so the row is not covered");
     }
 }

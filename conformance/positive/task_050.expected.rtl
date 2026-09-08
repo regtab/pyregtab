@@ -1,1 +1,1 @@
-[ [ !BLANK? VAL : ''->AVP, SR*->REC, (BW & STR)*->JOIN(0) ] [ !BLANK? ATTR ] [ !BLANK? VAL : SR->AVP ] ]+
+[ [ !BLANK? VAL : ''->AVP, SR*->REC, (BW & STR)*->CONCAT(0) ] [ !BLANK? ATTR ] [ !BLANK? VAL : SR->AVP ] ]+

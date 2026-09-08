@@ -1,3 +1,3 @@
 SR->AVP
-[ BW*->REC { [ATTR] [VAL#'1': ROW&#'1'*->JOIN][VAL#'2': ROW&#'2'*->JOIN] }* ]
+[ BW*->REC { [ATTR] [VAL#'1': ROW&#'1'*->CONCAT][VAL#'2': ROW&#'2'*->CONCAT] }* ]
 [          { [ATTR] [VAL]{2} }* ]*

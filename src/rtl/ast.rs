@@ -120,11 +120,19 @@ pub enum PProvSpec {
     CtxAvp(String, String),
 }
 
+/// `keyRef : INT | STRING` — a key position (0-based) or a key attribute name.
+#[derive(Clone, Debug)]
+pub enum PKeyRef {
+    Pos(i64),
+    Name { name: String, line: i64, col: i64 },
+}
+
 #[derive(Clone, Debug)]
 pub enum POp {
     Avp,
     Rec { anchor: Option<i64>, split: Option<String> },
-    Join(Vec<i64>),
+    Concat(Vec<PKeyRef>),
+    Join(Vec<PKeyRef>),
     Fill(Option<String>),
     Prefix(Option<String>),
     Suffix(Option<String>),

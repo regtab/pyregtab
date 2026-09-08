@@ -44,6 +44,7 @@ from pyregtab._core import (
     ItemFilterConditionSpec,
     ProviderSpec,
     Quantifier,
+    RecordKey,
     RowPattern,
     StringExtractor,
     SubrowPattern,
@@ -81,7 +82,8 @@ __all__ = [
     # context providers
     "lit", "ctx_avp",
     # actions
-    "rec", "rec_split", "avp", "join", "fill", "prefix", "suffix",
+    "rec", "rec_split", "avp", "concat", "join", "fill", "prefix", "suffix",
+    "RecordKey",
     # builder / helper types
     "Prov", "Acts",
 ]
@@ -818,7 +820,7 @@ class _CtxAvp:
 
 
 def lit(text: str) -> _Ctx:
-    """Context literal (RTL ``'EUR'``): VALUE under REC/JOIN, ATTRIBUTE otherwise."""
+    """Context literal (RTL ``'EUR'``): VALUE under REC/CONCAT/JOIN, ATTRIBUTE otherwise."""
     return _Ctx(text)
 
 
@@ -833,7 +835,7 @@ _ProvArg = Union[Prov, _Ctx, _CtxAvp]
 
 
 def _kind_for(op: str) -> str:
-    if op in ("rec", "join"):
+    if op in ("rec", "concat", "join"):
         return "val"
     if op == "avp":
         return "attr"
@@ -848,7 +850,7 @@ def _resolve(providers: tuple, op: str) -> list:
             out.append(arg._spec(kind))
         elif isinstance(arg, _Ctx):
             out.append(
-                ProviderSpec.ctx_val(arg.text) if op in ("rec", "join")
+                ProviderSpec.ctx_val(arg.text) if op in ("rec", "concat", "join")
                 else ProviderSpec.ctx_attr(arg.text)
             )
         elif isinstance(arg, _CtxAvp):
@@ -879,13 +881,31 @@ def avp(provider: Union[Prov, str]) -> ActionSpec:
     return ActionSpec.avp(provider._spec("attr"))
 
 
-def join(*args: Union[int, set, _ProvArg]) -> ActionSpec:
-    """RTL ``(...)->JOIN``; a leading int or set is the key position(s) ``JOIN(k)``."""
-    key_positions = None
-    if args and isinstance(args[0], (int, set)):
-        key_positions = args[0]
-        args = args[1:]
-    return ActionSpec.join(*_resolve(args, "join"), key_positions=key_positions)
+_KeyArg = Union[int, str, set, frozenset, tuple, list, RecordKey]
+
+
+def _split_key(args):
+    """A leading key reference — int position, str attribute name, set/tuple/list
+    of both, or ``RecordKey`` — is the key K of ``CONCAT(K)`` / ``JOIN(K)``."""
+    if args and isinstance(args[0], (int, str, set, frozenset, tuple, list, RecordKey)):
+        return args[0], args[1:]
+    return None, args
+
+
+def concat(*args: Union[_KeyArg, _ProvArg]) -> ActionSpec:
+    """RTL ``(...)->CONCAT`` — fold the provided records into the anchor's record;
+    a leading int/str/set/``RecordKey`` is the key ``CONCAT(k)`` / ``CONCAT('A')`` /
+    ``CONCAT(0, 'A')``."""
+    key, args = _split_key(args)
+    return ActionSpec.concat(*_resolve(args, "concat"), key=key)
+
+
+def join(*args: Union[_KeyArg, _ProvArg]) -> ActionSpec:
+    """RTL ``(...)->JOIN`` — the record product (cross product with the provided
+    records); a leading int/str/set/``RecordKey`` is the equi-join key ``JOIN(k)`` /
+    ``JOIN('A')``."""
+    key, args = _split_key(args)
+    return ActionSpec.join(*_resolve(args, "join"), key=key)
 
 
 def fill(*args: Union[str, _ProvArg]) -> ActionSpec:

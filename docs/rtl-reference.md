@@ -106,10 +106,17 @@ cell patterns:
 | `?` | 0 or 1 |
 | `*` | 0 or more |
 | `+` | 1 or more |
-| `{n}` | exactly *n* |
+| `{n}` | exactly *n* (*n* ≥ 0; `{1}` is the same as no quantifier, `{0}` matches nothing, i.e. an empty match) |
 
 The `+` on the outer row pattern above means "one or more data rows"; the `{2}` means "exactly
 two value cells".
+
+**Empty matches.** An explicit subrow (or subtable) whose children are all optional may
+match zero cells (rows) — for instance `{ [BLANK]* }` in a row without blank cells. Such a
+subrow matches the empty sequence, exactly like `*` in a regular expression: it never fails
+the row, it is tried at the end of the row as well, and a repeated empty match (`{ [BLANK]* }+`,
+`{ [BLANK]* }*`, `{ [BLANK]* }{3}`) counts as a single empty iteration rather than looping.
+An empty subrow covers no cells and therefore never appears in the interpretable table.
 
 **Inherited action specs** — `[acts]` placed at the table, subtable, row, or subrow level are
 inherited by all descendant cells. Inherited actions are merged with any local actions on the
@@ -414,11 +421,52 @@ provSpecs -> op
 | `REC(n)` | `prov->REC(n)` | Same + move the anchor attribute (name with its values) to position *n* |
 | `REC('s')` | `prov->REC('s')` | Same + split field values by delimiter *s* |
 | `AVP` | `prov->AVP` | Associate anchor (VAL) with an attribute from the provider (ATTR) |
-| `JOIN` | `prov->JOIN` | Join item-based records: all items included, then dedup by named attribute (K=∅) |
-| `JOIN(K)` | `prov->JOIN(0)` | Join with key positions K dropped from each joined record before dedup (e.g. `JOIN(0)` drops the anchor position) |
+| `CONCAT` | `prov->CONCAT` | Concatenate the provided records to the anchor's record — one wide record, the provided anchors are removed (K=∅: all items included) |
+| `CONCAT(K)` | `prov->CONCAT(0)`, `prov->CONCAT(0, 'A')` | Same, with the key K not repeated: dropped from each concatenated record, and all records must agree there (e.g. `CONCAT(0)` drops the anchor of each concatenated record). K lists key **positions** (0-based) and/or key **attribute names** (string literals, resolved per record). A named attribute shared by two records (apart from the key) is an error: the action has no effect and a diagnostic is reported |
+| `JOIN` | `prov->JOIN` | Record product: every record of the anchor is combined with every provided record (cross product); the provided anchors are joined-away. A named attribute shared by two records acts as a natural-join condition |
+| `JOIN(K)` | `prov->JOIN(0)`, `prov->JOIN('Year')` | Equi-join on the key K (positions and/or attribute names): a record pair is combined only if it agrees at K, the key of the joined record is not repeated |
 | `FILL('s')` | `prov->FILL('/')` | Fill anchor value forward from provider, separated by *s* |
 | `PREFIX('s')` | `prov->PREFIX(' ')` | Prepend provider value to anchor, separated by *s* |
 | `SUFFIX('s')` | `prov->SUFFIX(' ')` | Append provider value to anchor, separated by *s* |
+
+`CONCAT` folds, `JOIN` multiplies: with a single provided record the two coincide, with two or more
+they diverge — `CONCAT` yields one wider record, `JOIN` yields one record per provided record.
+Up to pyRegTab 0.5.x (jRegTab 0.5.x) the folding operation was spelled `JOIN(K)`; a pattern
+written for 0.5.x must replace `JOIN(K)` by `CONCAT(K)`.
+
+Both operate on *records*: a `CONCAT`/`JOIN` on an anchor that has no `REC` has no effect — the
+anchor simply does not reach the recordset — and is reported through
+`TableInterpreter.diagnostics()` (`anchor has no record — REC missing?`), as is an explicit
+`CONCAT`/`JOIN` none of whose provided items has a record. Add `()->REC` when the anchor's own
+value is the whole record (`[(VAL: COL->AVP, ()->REC, RT*->JOIN){';'}]`). Only actions written
+on the anchor's own content spec are reported; actions inherited from a row/subrow/subtable/table
+level are applied to every cell and skip such anchors silently.
+
+**Choosing the key positions `K`.** `K` is any number of 0-based positions in the item-based
+record — `0` is the anchor, the following positions are the items in the order the `REC`
+providers supplied them. At every position in `K` all records being concatenated must agree, and
+the item is not repeated in the result; every other position is carried over as is, so a named
+attribute that occurs at such a position in two records is a conflict. Put into `K` **every**
+position that repeats in each row of a group — the anchor plus all fields that are identical
+across the group. With rows `k1 | k11 | a1:A | b1:B | c1` and `k1 | k11 | a1:A | b1:B | c2`, the key
+is four positions, `CONCAT(0,1,2,3)`, not two: `A` and `B` repeat exactly like `k1` and `k11`
+(`CONCAT(0,1)` would report the shared attribute `A` and leave both rows unfolded). A row whose
+`A` differs within the group is then rejected with a diagnostic instead of being folded silently.
+`K = ∅` is right only when the records share nothing, not even the anchor (task 069).
+
+**Naming the key.** A key field that carries a named attribute may be listed by that name
+instead of its position: `CONCAT(0,1,'A','B')` is the same key as `CONCAT(0,1,2,3)` for the rows
+above. The name is resolved to a position **per record** — the item whose attribute is `A`, wherever
+it sits — so the pattern no longer depends on the order of the fields: if the repeated fields sit to
+the right of the varying one (`k1 | k11 | c1 | a1:A | b1:B`), the positional key becomes
+`CONCAT(0,1,3,4)` while the named key stays `CONCAT(0,1,'A','B')`. Positions and names may be
+mixed; a name missing from one of the records, or carried with a different value, is a key
+mismatch (no effect, diagnostic). Names are compared exactly (case-sensitive). For `JOIN` a shared
+named attribute is already a natural-join condition, so `JOIN('A')` differs from the bare `JOIN`
+only in dropping the pairs where one side lacks `A`; the named key matters mostly for `CONCAT`,
+where a shared attribute outside the key is a conflict rather than a condition. The canonical
+form (serializer) lists positions in ascending order, then names in lexicographic order,
+single-quoted: `CONCAT(0, 1, 'A', 'B')`.
 
 Examples by operation:
 
@@ -426,6 +474,9 @@ Examples by operation:
 [VAL : ST*->REC]                        // REC, collect whole subtable (Task 01)
 [VAL : SR->REC(1)]{2}                   // REC(1), name the record by attribute at position 1 (Task 03)
 [VAL: 'AIRLINE'->AVP]                   // AVP with a literal attribute (Illustrative example)
+[VAL : RT->REC, BW&STR*->CONCAT(0)]     // CONCAT(0): fold the rows below with the same key into one record (Task 16)
+[VAL : RT*->REC, BW&STR*->CONCAT(0,'A')] // CONCAT(0,'A'): the same, with the field named A as part of the key (concat_named_key)
+[(VAL: COL->AVP, ()->REC, RT*->JOIN){';'}] // JOIN: one record per token × per cell to the right (join_product)
 [VAL: -AV->PREFIX(', ')]                // PREFIX: prepend the value above, separator ", " (Task 116)
 [BLANK ? VAL#'H': -LT&!BLANK->FILL | …] // FILL: copy the nearest non-blank cell to the left (Task 107)
 ```
@@ -541,7 +592,7 @@ A quoted string literal supplies a fixed string as an attribute or value:
 ('AIRLINE')->AVP
 ```
 
-The item type is inferred from the action: `->AVP` → ATTR, `->REC` → VAL.
+The item type is inferred from the action: `->AVP` → ATTR, `->REC` / `->CONCAT` / `->JOIN` → VAL.
 
 ---
 
@@ -554,7 +605,9 @@ The item type is inferred from the action: `->AVP` → ATTR, `->REC` → VAL.
 | `^COL->AVP` | Associate with an attribute from the same column (column-major) |
 | `('LABEL')->AVP` | Associate with a fixed string attribute |
 | `(ST*)->REC` (in parentheses) | Same as `ST*->REC` but explicit grouping |
-| `CL->JOIN(0)` | Join (drop anchor) another item from the same cell |
+| `CL->CONCAT(0)` | Concatenate (drop anchor) the record of another item from the same cell |
+| `BW&STR*->CONCAT(0)` | Fold the rows below with the same key into the anchor's record (group by key) |
+| `RT*->JOIN` | One record per cell to the right (record product, e.g. explode × stack) |
 | `(COL)->FILL('/')` | Fill forward from same-column values, delimiter `/` |
 | `-AV->PREFIX(', ')` | Prepend the nearest value above, separator ", " |
 

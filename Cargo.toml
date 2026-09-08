@@ -1,6 +1,6 @@
 [package]
 name = "pyregtab"
-version = "0.5.1"
+version = "0.7.1"
 edition = "2021"
 description = "Native core of pyRegTab: RTL compiler, ATP matcher and table interpreter"
 license = "MIT"
@@ -20,6 +20,7 @@ python = ["dep:pyo3"]
 pyo3 = { version = "0.23", features = ["abi3-py310"], optional = true }
 regex = "1"
 indexmap = "2"
+rustc-hash = "2"
 
 [profile.release]
 lto = true
