@@ -223,6 +223,46 @@ impl PyTableSyntax {
         })
     }
 
+    /// Builds the table from ready rows of cell texts in one call (`num_cols`
+    /// defaults to the widest row; shorter rows are padded with empty cells).
+    #[staticmethod]
+    #[pyo3(signature = (rows, *, num_cols=None))]
+    fn from_rows(rows: Vec<Vec<String>>, num_cols: Option<usize>) -> PyResult<Self> {
+        Ok(PyTableSyntax {
+            core: SyntaxCore::from_rows(rows, num_cols).map_err(core_err)?,
+        })
+    }
+
+    /// Reads a CSV file (UTF-8, universal newlines as `Path.read_text`) and
+    /// builds the table with the CLI runner's parsing rules (`parse_csv`):
+    /// RFC 4180, empty lines skipped, ragged rows padded with empty cells.
+    #[staticmethod]
+    fn from_csv(py: Python<'_>, path: std::path::PathBuf) -> PyResult<Self> {
+        let bytes = std::fs::read(&path).map_err(|e| {
+            PyErr::new::<pyo3::exceptions::PyOSError, _>(format!("cannot read {}: {e}", path.display()))
+        })?;
+        let text = match String::from_utf8(bytes) {
+            Ok(t) => t,
+            Err(e) => {
+                let err = e.utf8_error();
+                let bytes = e.into_bytes();
+                return Err(pyo3::exceptions::PyUnicodeDecodeError::new_utf8(py, &bytes, err)?.into());
+            }
+        };
+        let core = py.allow_threads(|| {
+            let text = crate::csv::universal_newlines(&text);
+            SyntaxCore::from_rows(crate::csv::parse_csv(&text), None)
+        });
+        Ok(PyTableSyntax { core: core.map_err(core_err)? })
+    }
+
+    /// `from_csv` for CSV text already in memory (no newline translation).
+    #[staticmethod]
+    fn from_csv_text(py: Python<'_>, text: &str) -> PyResult<Self> {
+        let core = py.allow_threads(|| SyntaxCore::from_rows(crate::csv::parse_csv(text), None));
+        Ok(PyTableSyntax { core: core.map_err(core_err)? })
+    }
+
     #[getter]
     fn num_rows(&self) -> usize {
         self.core.num_rows
@@ -3263,6 +3303,14 @@ impl PyAtpToRtlSerializer {
 }
 
 /// Module-level alias: `pyregtab.compile(rtl, bindings=None)`.
+/// RFC 4180 parser of the CLI runner (`RtlRunner.parseCsv`): ragged rows of
+/// fields; quoted fields may hold commas, doubled quotes and line breaks;
+/// CRLF/CR/LF end a row; empty lines are skipped.
+#[pyfunction]
+pub fn parse_csv(py: Python<'_>, text: &str) -> Vec<Vec<String>> {
+    py.allow_threads(|| crate::csv::parse_csv(text))
+}
+
 #[pyfunction]
 #[pyo3(signature = (rtl, bindings=None))]
 pub fn compile(rtl: &str, bindings: Option<PyBindings>) -> PyResult<PyTablePattern> {

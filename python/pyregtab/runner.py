@@ -33,62 +33,24 @@ from pyregtab import (
     TableInterpreter,
     TableSyntax,
 )
+from pyregtab._core import parse_csv as _parse_csv
 
 
 def parse_csv(text: str) -> list[list[str]]:
     """RFC 4180 parser mirroring ``RtlRunner.parseCsv``: a quoted field may
     contain commas, doubled quotes and line breaks; CRLF, CR and LF all end a
     row; empty lines are skipped (a line holding only ``""`` is a row with one
-    empty field)."""
-    rows: list[list[str]] = []
-    fields: list[str] = []
-    cur: list[str] = []
-    in_quotes = False
-    quoted = False  # a quote was seen on this line: "" is a field, not an empty line
-    i, n = 0, len(text)
-    while i < n:
-        ch = text[i]
-        if in_quotes:
-            if ch != '"':
-                cur.append(ch)
-            elif i + 1 < n and text[i + 1] == '"':
-                cur.append('"')
-                i += 1
-            else:
-                in_quotes = False
-        elif ch == '"':
-            in_quotes = True
-            quoted = True
-        elif ch == ",":
-            fields.append("".join(cur))
-            cur = []
-        elif ch in "\r\n":
-            if ch == "\r" and i + 1 < n and text[i + 1] == "\n":
-                i += 1  # CRLF is one line break
-            if fields or cur or quoted:
-                fields.append("".join(cur))
-                rows.append(fields)
-                fields = []
-            cur = []
-            quoted = False
-        else:
-            cur.append(ch)
-        i += 1
-    if fields or cur or quoted:
-        fields.append("".join(cur))
-        rows.append(fields)
-    return rows
+    empty field). Rows are returned as parsed (ragged). Implemented in the
+    native core (``pyregtab._core.parse_csv``)."""
+    return _parse_csv(text)
 
 
 def load_table(path: Path) -> TableSyntax:
-    rows = parse_csv(path.read_text(encoding="utf-8"))
-    num_rows = len(rows)
-    num_cols = max((len(r) for r in rows), default=0)
-    syntax = TableSyntax(num_rows, num_cols)
-    for r, row in enumerate(rows):
-        for c in range(num_cols):
-            syntax.cell(r, c).set_text(row[c] if c < len(row) else "")
-    return syntax
+    """CSV file (UTF-8) → ``TableSyntax`` with the runner's rules: the rows of
+    ``parse_csv``, ragged rows padded with empty cells to the widest row. One
+    native call (``TableSyntax.from_csv``); equivalent to
+    ``TableSyntax.from_rows(parse_csv(path.read_text(encoding="utf-8")))``."""
+    return TableSyntax.from_csv(path)
 
 
 def write_csv(path: Path, rs: Recordset) -> None:

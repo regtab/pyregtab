@@ -182,6 +182,60 @@ impl SyntaxCore {
         })
     }
 
+    /// Builds a table from ready rows of cell texts in one pass: `num_rows`
+    /// is the number of rows, `num_cols` the given width or the widest row;
+    /// shorter rows are padded with empty cells (the CLI runner contract).
+    pub fn from_rows(rows: Vec<Vec<String>>, num_cols: Option<usize>) -> CoreResult<Self> {
+        let num_rows = rows.len();
+        let widest = rows.iter().map(Vec::len).max().unwrap_or(0);
+        let num_cols = match num_cols {
+            Some(n) => {
+                if widest > n {
+                    return Err(format!("a row has {widest} fields, numCols is {n}").into());
+                }
+                n
+            }
+            None => widest,
+        };
+        if num_rows == 0 {
+            return Err(format!("numRows must be positive: {num_rows}").into());
+        }
+        if num_cols == 0 {
+            return Err(format!("numCols must be positive: {num_cols}").into());
+        }
+        let mut cells = Vec::with_capacity(num_rows * num_cols);
+        let mut table_rows = Vec::with_capacity(num_rows);
+        for (r, row) in rows.into_iter().enumerate() {
+            let mut c = 0;
+            for text in row {
+                let mut cell = CellData::new(r, c);
+                cell.set_text(text);
+                cells.push(cell);
+                c += 1;
+            }
+            while c < num_cols {
+                cells.push(CellData::new(r, c));
+                c += 1;
+            }
+            table_rows.push(RowData {
+                subrows: vec![SubrowData {
+                    col_start: 0,
+                    col_end: num_cols - 1,
+                }],
+            });
+        }
+        Ok(SyntaxCore {
+            num_rows,
+            num_cols,
+            cells,
+            rows: table_rows,
+            subtables: vec![SubtableData {
+                row_start: 0,
+                row_end: num_rows - 1,
+            }],
+        })
+    }
+
     #[inline]
     pub fn cell(&self, row: usize, col: usize) -> &CellData {
         &self.cells[row * self.num_cols + col]
