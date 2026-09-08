@@ -106,24 +106,24 @@ impl CellFormat {
     }
 }
 
+/// One cell: 32 bytes — the text (shared with the item derived from it),
+/// the text flags and an optional box of geometry/formatting. The position
+/// is not stored: a cell is always reached by `(row, col)` through
+/// [`SyntaxCore::cell`].
 #[derive(Clone, Debug)]
 pub struct CellData {
-    pub row: usize,
-    pub col: usize,
     // content
     pub text: Text,
     pub text_blank: bool,
     pub text_multiline: bool,
-    pub text_indent: usize,
+    pub text_indent: u32,
     /// Geometry and formatting; `None` means all defaults.
     format: Option<Box<CellFormat>>,
 }
 
 impl CellData {
-    fn new(row: usize, col: usize) -> Self {
+    fn new() -> Self {
         CellData {
-            row,
-            col,
             text: Text::from(""),
             text_blank: true,
             text_multiline: false,
@@ -136,21 +136,21 @@ impl CellData {
         let text: Text = text.into();
         self.text_blank = java_is_blank(&text);
         self.text_multiline = text.contains('\n');
-        self.text_indent = text.chars().take_while(|&c| c == ' ').count();
+        self.text_indent = text.chars().take_while(|&c| c == ' ').count() as u32;
         self.text = text;
     }
 
-    /// The cell's geometry and formatting (defaults when nothing was set).
-    pub fn format(&self) -> CellFormat {
+    /// The cell's geometry and formatting (defaults for its position when
+    /// nothing was set).
+    pub fn format(&self, row: usize, col: usize) -> CellFormat {
         match &self.format {
             Some(f) => **f,
-            None => CellFormat::default_for(self.row, self.col),
+            None => CellFormat::default_for(row, col),
         }
     }
 
     /// Mutable geometry and formatting, materialized on first use.
-    pub fn format_mut(&mut self) -> &mut CellFormat {
-        let (row, col) = (self.row, self.col);
+    pub fn format_mut(&mut self, row: usize, col: usize) -> &mut CellFormat {
         self.format
             .get_or_insert_with(|| Box::new(CellFormat::default_for(row, col)))
     }
@@ -193,9 +193,9 @@ impl SyntaxCore {
         }
         let mut cells = Vec::with_capacity(num_rows * num_cols);
         let mut rows = Vec::with_capacity(num_rows);
-        for r in 0..num_rows {
-            for c in 0..num_cols {
-                cells.push(CellData::new(r, c));
+        for _ in 0..num_rows {
+            for _ in 0..num_cols {
+                cells.push(CellData::new());
             }
             rows.push(RowData {
                 subrows: vec![SubrowData {
@@ -239,16 +239,16 @@ impl SyntaxCore {
         }
         let mut cells = Vec::with_capacity(num_rows * num_cols);
         let mut table_rows = Vec::with_capacity(num_rows);
-        for (r, row) in rows.into_iter().enumerate() {
+        for row in rows {
             let mut c = 0;
             for text in row {
-                let mut cell = CellData::new(r, c);
+                let mut cell = CellData::new();
                 cell.set_text(text);
                 cells.push(cell);
                 c += 1;
             }
             while c < num_cols {
-                cells.push(CellData::new(r, c));
+                cells.push(CellData::new());
                 c += 1;
             }
             table_rows.push(RowData {

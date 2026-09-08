@@ -208,19 +208,46 @@ pub enum ItemId {
     Ctx(usize),
 }
 
+impl ItemId {
+    /// Packed form (4 bytes): the index with the high bit set for a context
+    /// item — for the structures that hold millions of ids.
+    #[inline]
+    pub fn pack(self) -> u32 {
+        match self {
+            ItemId::Cell(i) => {
+                debug_assert!(i < 0x8000_0000);
+                i as u32
+            }
+            ItemId::Ctx(i) => {
+                debug_assert!(i < 0x8000_0000);
+                i as u32 | 0x8000_0000
+            }
+        }
+    }
+
+    #[inline]
+    pub fn unpack(packed: u32) -> ItemId {
+        if packed & 0x8000_0000 == 0 {
+            ItemId::Cell(packed as usize)
+        } else {
+            ItemId::Ctx((packed & 0x7fff_ffff) as usize)
+        }
+    }
+}
+
 /// Cell-derived item (s, tags, index) bound to its source cell (row, col).
 #[derive(Clone, Debug)]
 pub struct CellItem {
     pub s: Text,
     pub tags: Vec<String>,
-    pub index: usize,
+    pub index: u32,
     pub row: usize,
     pub col: usize,
     pub ty: ItemType,
     /// Byte range of the item's source segment within the raw cell text
     /// (before extractors): atomic content spans the whole text, delimited
     /// and compound content spans the segment the item was derived from.
-    pub span: (usize, usize),
+    pub span: (u32, u32),
 }
 
 impl CellItem {
@@ -247,11 +274,18 @@ pub struct CtxItem {
 /// of a handful of specs).
 #[derive(Clone, Debug)]
 pub struct ActionInst {
-    pub anchor: ItemId,
+    anchor: u32,
     pub template: std::sync::Arc<ActionTemplate>,
 }
 
 impl ActionInst {
+    pub fn new(anchor: ItemId, template: std::sync::Arc<ActionTemplate>) -> Self {
+        ActionInst { anchor: anchor.pack(), template }
+    }
+    #[inline]
+    pub fn anchor(&self) -> ItemId {
+        ItemId::unpack(self.anchor)
+    }
     #[inline]
     pub fn providers(&self) -> &[ProviderInst] {
         &self.template.providers
@@ -607,14 +641,14 @@ pub struct ItemIndex {
     num_rows: usize,
     num_cols: usize,
     /// Item indices sorted by (row, col, index), stable.
-    row_major: Vec<usize>,
+    row_major: Vec<u32>,
     row_start: Vec<usize>,
     /// Item indices sorted by (col, row, index), stable.
-    col_major: Vec<usize>,
+    col_major: Vec<u32>,
     col_start: Vec<usize>,
     /// Column-major ordering of the items of each subtable (by subtable index),
     /// built only when some provider needs it.
-    subtable_col_major: Vec<Vec<usize>>,
+    subtable_col_major: Vec<Vec<u32>>,
 }
 
 /// A contiguous slice of an ordered array, to be traversed forward or, when
@@ -622,7 +656,7 @@ pub struct ItemIndex {
 /// order inside each cell (this is exactly the order of Ω_τ for the reverse
 /// traversal orders).
 pub struct Range<'a> {
-    pub items: &'a [usize],
+    pub items: &'a [u32],
     pub backward: bool,
 }
 
@@ -635,16 +669,16 @@ impl ItemIndex {
         let num_rows = items.iter().map(|it| it.row + 1).max().unwrap_or(0);
         let num_cols = items.iter().map(|it| it.col + 1).max().unwrap_or(0);
 
-        let mut row_major: Vec<usize> = (0..n).collect();
-        row_major.sort_by_key(|&i| (items[i].row, items[i].col, items[i].index));
-        let mut col_major: Vec<usize> = (0..n).collect();
-        col_major.sort_by_key(|&i| (items[i].col, items[i].row, items[i].index));
+        let mut row_major: Vec<u32> = (0..n as u32).collect();
+        row_major.sort_by_key(|&i| (items[i as usize].row, items[i as usize].col, items[i as usize].index));
+        let mut col_major: Vec<u32> = (0..n as u32).collect();
+        col_major.sort_by_key(|&i| (items[i as usize].col, items[i as usize].row, items[i as usize].index));
 
         let mut row_start = vec![0usize; num_rows + 1];
         let mut idx = 0;
         for (r, start) in row_start.iter_mut().enumerate().take(num_rows) {
             *start = idx;
-            while idx < n && items[row_major[idx]].row == r {
+            while idx < n && items[row_major[idx] as usize].row == r {
                 idx += 1;
             }
         }
@@ -654,7 +688,7 @@ impl ItemIndex {
         idx = 0;
         for (c, start) in col_start.iter_mut().enumerate().take(num_cols) {
             *start = idx;
-            while idx < n && items[col_major[idx]].col == c {
+            while idx < n && items[col_major[idx] as usize].col == c {
                 idx += 1;
             }
         }
@@ -677,12 +711,12 @@ impl ItemIndex {
             for st in &syntax.subtables {
                 let lo = st.row_start.min(num_rows);
                 let hi = (st.row_end + 1).min(num_rows);
-                let mut a: Vec<usize> = if lo < hi {
+                let mut a: Vec<u32> = if lo < hi {
                     row_major[row_start[lo]..row_start[hi]].to_vec()
                 } else {
                     Vec::new()
                 };
-                a.sort_by_key(|&i| (items[i].col, items[i].row, items[i].index));
+                a.sort_by_key(|&i| (items[i as usize].col, items[i as usize].row, items[i as usize].index));
                 subtable_col_major.push(a);
             }
         }
@@ -773,11 +807,11 @@ impl ItemIndex {
 
 /// First position in `a[from..to)` for which `less` is false (the array is
 /// partitioned by `less`).
-fn lower_bound(a: &[usize], from: usize, to: usize, less: impl Fn(usize) -> bool) -> usize {
+fn lower_bound(a: &[u32], from: usize, to: usize, less: impl Fn(usize) -> bool) -> usize {
     let (mut lo, mut hi) = (from, to);
     while lo < hi {
         let mid = (lo + hi) / 2;
-        if less(a[mid]) {
+        if less(a[mid] as usize) {
             lo = mid + 1;
         } else {
             hi = mid;
@@ -865,7 +899,7 @@ impl ProviderInst {
                 };
                 if !range.backward {
                     for &i in a {
-                        if accept(i, result)? {
+                        if accept(i as usize, result)? {
                             return Ok(());
                         }
                     }
@@ -876,16 +910,16 @@ impl ProviderInst {
                 let mut i = a.len();
                 while i > 0 {
                     let last = i - 1;
-                    let (r, c) = (sem.cell_items[a[last]].row, sem.cell_items[a[last]].col);
+                    let (r, c) = (sem.cell_items[a[last] as usize].row, sem.cell_items[a[last] as usize].col);
                     let mut j = last;
                     while j > 0
-                        && sem.cell_items[a[j - 1]].row == r
-                        && sem.cell_items[a[j - 1]].col == c
+                        && sem.cell_items[a[j - 1] as usize].row == r
+                        && sem.cell_items[a[j - 1] as usize].col == c
                     {
                         j -= 1;
                     }
                     for &k in &a[j..=last] {
-                        if accept(k, result)? {
+                        if accept(k as usize, result)? {
                             return Ok(());
                         }
                     }
@@ -982,22 +1016,34 @@ impl Diagnostic {
 #[derive(Clone, Debug, PartialEq)]
 pub enum RecEntry {
     One { start: u32, len: u32 },
-    Many(Box<[(u32, u32)]>),
+    /// `count` ranges starting at `first` in the working state's range table.
+    Many { first: u32, count: u32 },
 }
 
 /// The records of an anchor: a view over the arena.
 #[derive(Clone, Copy)]
 pub struct RecordsRef<'a> {
     arena: &'a [ItemId],
+    ranges: &'a [(u32, u32)],
     entry: &'a RecEntry,
 }
 
 impl<'a> RecordsRef<'a> {
+    /// The `(start, len)` ranges of the records.
+    fn spans(&self) -> &'a [(u32, u32)] {
+        match self.entry {
+            RecEntry::One { .. } => &[],
+            RecEntry::Many { first, count } => {
+                &self.ranges[*first as usize..(*first + *count) as usize]
+            }
+        }
+    }
+
     /// Number of records.
     pub fn len(&self) -> usize {
         match self.entry {
             RecEntry::One { .. } => 1,
-            RecEntry::Many(ranges) => ranges.len(),
+            RecEntry::Many { count, .. } => *count as usize,
         }
     }
 
@@ -1014,24 +1060,20 @@ impl<'a> RecordsRef<'a> {
                 }
                 (*start, *len)
             }
-            RecEntry::Many(ranges) => *ranges.get(i)?,
+            RecEntry::Many { .. } => *self.spans().get(i)?,
         };
         Some(&self.arena[start as usize..(start + len) as usize])
     }
 
     /// The records in sequence order.
     pub fn iter(&self) -> impl Iterator<Item = &'a [ItemId]> + 'a {
-        let (arena, entry) = (self.arena, self.entry);
-        let ranges: &'a [(u32, u32)] = match entry {
-            RecEntry::One { .. } => &[],
-            RecEntry::Many(ranges) => ranges,
-        };
-        let one = match entry {
+        let arena = self.arena;
+        let one = match self.entry {
             RecEntry::One { start, len } => Some((*start, *len)),
-            RecEntry::Many(_) => None,
+            RecEntry::Many { .. } => None,
         };
         one.into_iter()
-            .chain(ranges.iter().copied())
+            .chain(self.spans().iter().copied())
             .map(move |(s, l)| &arena[s as usize..(s + l) as usize])
     }
 
@@ -1079,6 +1121,8 @@ pub struct WorkingState {
     rec: AnchorMap<RecEntry>,
     /// The record arena: every record is a contiguous range of it.
     items: Vec<ItemId>,
+    /// Ranges of the records of joined anchors (`RecEntry::Many`).
+    ranges: Vec<(u32, u32)>,
     /// J: joined-away anchors.
     joined: AnchorSet,
     /// C: concatenated-away anchors (removed from `dom(rec)`).
@@ -1215,7 +1259,9 @@ impl WorkingState {
         if self.concatenated.contains(&anchor) {
             return None;
         }
-        self.rec.get(&anchor).map(|entry| RecordsRef { arena: &self.items, entry })
+        self.rec
+            .get(&anchor)
+            .map(|entry| RecordsRef { arena: &self.items, ranges: &self.ranges, entry })
     }
 
     /// Appends one record to the arena.
@@ -1545,8 +1591,12 @@ impl WorkingState {
                 ),
             )?;
         } else {
-            let ranges: Vec<(u32, u32)> = result.iter().map(|r| self.push_record(r)).collect();
-            self.rec.insert(anchor_idx, RecEntry::Many(ranges.into_boxed_slice()));
+            let first = self.ranges.len() as u32;
+            for r in &result {
+                let range = self.push_record(r);
+                self.ranges.push(range);
+            }
+            self.rec.insert(anchor_idx, RecEntry::Many { first, count: result.len() as u32 });
         }
         self.joined.extend(others);
         Ok(())
@@ -1742,7 +1792,7 @@ impl WorkingState {
             if self.joined.contains(anchor_idx) || self.concatenated.contains(anchor_idx) {
                 continue;
             }
-            let records = RecordsRef { arena: &self.items, entry };
+            let records = RecordsRef { arena: &self.items, ranges: &self.ranges, entry };
             for sequence in records.iter() {
                 if self.duplicate_attribute_in(sequence, &mut seen).is_some() {
                     return false;
@@ -1775,11 +1825,11 @@ mod tests {
                 .map(|&(s, r, c, i)| CellItem {
                     s: Text::from(s),
                     tags: Vec::new(),
-                    index: i,
+                    index: i as u32,
                     row: r,
                     col: c,
                     ty: ItemType::Value,
-                    span: (0, s.len()),
+                    span: (0, s.len() as u32),
                 })
                 .collect(),
             ctx_items: Vec::new(),
@@ -2354,11 +2404,11 @@ mod tests {
                         sem.cell_items.push(CellItem {
                             s: Text::from(t),
                             tags: if rng.below(3) == 0 { vec!["#t".into()] } else { Vec::new() },
-                            index: i,
+                            index: i as u32,
                             row: r,
                             col: c,
                             ty: [ItemType::Value, ItemType::Attribute, ItemType::Auxiliary][rng.below(3)],
-                            span: (0, t.len()),
+                            span: (0, t.len() as u32),
                         });
                     }
                 }
@@ -2368,9 +2418,9 @@ mod tests {
             }
             let env = EvalEnv { syntax: &syntax, py_table: None };
             // the index must serve subtable-scoped column-major providers too
-            sem.actions.push(ActionInst {
-                anchor: ItemId::Cell(0),
-                template: std::sync::Arc::new(ActionTemplate {
+            sem.actions.push(ActionInst::new(
+                ItemId::Cell(0),
+                std::sync::Arc::new(ActionTemplate {
                     providers: vec![ProviderInst::Cell {
                         cond: FilterCond::Bare(FilterTerm::SameSubtable),
                         order: TraversalOrder::ColumnMajor,
@@ -2383,7 +2433,7 @@ mod tests {
                     op: OpInst::Rec,
                     inherited: false,
                 }),
-            });
+            ));
             let index = ItemIndex::build(&sem, &syntax);
             for _ in 0..60 {
                 let cond = random_cond(&mut rng);

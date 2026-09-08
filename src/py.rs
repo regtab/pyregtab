@@ -82,11 +82,11 @@ pub fn call_item_filter(
         let mk = |it: &crate::semantics::CellItem| PyCellDerivedItem {
             s: it.s.to_string(),
             tags: it.tags.clone(),
-            index: it.index,
+            index: it.index as usize,
             ty: it.ty,
             row: it.row,
             col: it.col,
-            span: it.span,
+            span: (it.span.0 as usize, it.span.1 as usize),
             table: table.as_ref().map(|t| t.clone_ref(py)),
         };
         let res = func
@@ -359,13 +359,13 @@ macro_rules! cell_get {
 macro_rules! fmt_get {
     ($self:ident, $py:ident, $field:ident) => {{
         let t = $self.table.bind($py).borrow();
-        t.core.cell($self.row, $self.col).format().$field
+        t.core.cell($self.row, $self.col).format($self.row, $self.col).$field
     }};
 }
 macro_rules! cell_set {
     ($self:ident, $py:ident, $field:ident, $value:expr) => {{
         let mut t = $self.table.bind($py).borrow_mut();
-        t.core.cell_mut($self.row, $self.col).format_mut().$field = $value;
+        t.core.cell_mut($self.row, $self.col).format_mut($self.row, $self.col).$field = $value;
     }};
 }
 
@@ -386,7 +386,7 @@ impl PyCell0 {
     #[getter]
     fn bbox(&self, py: Python<'_>) -> PyBoundingBox {
         let t = self.table.bind(py).borrow();
-        let b = t.core.cell(self.row, self.col).format().bbox;
+        let b = t.core.cell(self.row, self.col).format(self.row, self.col).bbox;
         PyBoundingBox {
             top_row: b.top_row,
             left_col: b.left_col,
@@ -423,7 +423,8 @@ impl PyCell0 {
     }
     #[getter]
     fn text_indent(&self, py: Python<'_>) -> usize {
-        cell_get!(self, py, text_indent)
+        let t = self.table.bind(py).borrow();
+        t.core.cell(self.row, self.col).text_indent as usize
     }
 
     // --- formatting ---
@@ -1124,7 +1125,7 @@ impl PyCellPredicate {
         let any: Py<PyAny> = cell.table.clone_ref(py).into_any();
         let env = EvalEnv { syntax: &table.core, py_table: Some(&any) };
         self.core
-            .test(table.core.cell(cell.row, cell.col), &env)
+            .test(table.core.cell(cell.row, cell.col), (cell.row, cell.col), &env)
             .map_err(core_err)
     }
 }
@@ -2796,11 +2797,11 @@ impl PyTableSemantics {
             .map(|it| PyCellDerivedItem {
                 s: it.s.to_string(),
                 tags: it.tags.clone(),
-                index: it.index,
+                index: it.index as usize,
                 ty: it.ty,
                 row: it.row,
                 col: it.col,
-                span: it.span,
+                span: (it.span.0 as usize, it.span.1 as usize),
                 table: Some(self.table.clone_ref(py)),
             })
             .collect()
@@ -3137,11 +3138,11 @@ impl PyTableInterpreter {
                     anchor: PyCellDerivedItem {
                         s: it.s.to_string(),
                         tags: it.tags.clone(),
-                        index: it.index,
+                        index: it.index as usize,
                         ty: it.ty,
                         row: it.row,
                         col: it.col,
-                        span: it.span,
+                        span: (it.span.0 as usize, it.span.1 as usize),
                         table: Some(table.clone_ref(py)),
                     },
                     operation: d.operation.clone(),

@@ -129,7 +129,7 @@ fn end_to_end_match_and_interpret() {
         .iter()
         .find(|it| it.row == 1 && it.col == 0)
         .unwrap();
-    assert_eq!(atomic.span, (0, "IKT".len()));
+    assert_eq!(atomic.span, (0, "IKT".len() as u32));
 
     let out = interpret(&InterpreterCfg::default(), &syntax, &sem, None).unwrap();
     assert!(out.diagnostics.is_empty());

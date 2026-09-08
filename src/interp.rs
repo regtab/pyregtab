@@ -110,7 +110,7 @@ pub fn interpret_timed(
 }
 
 fn anchor_pos(sem: &SemanticsCore, action: &ActionInst) -> Option<(usize, usize)> {
-    match action.anchor {
+    match action.anchor() {
         ItemId::Cell(i) => {
             let it = &sem.cell_items[i];
             Some((it.row, it.col))
@@ -178,7 +178,7 @@ fn apply_action(
     action: &ActionInst,
     items: &mut Vec<ItemId>,
 ) -> CoreResult<()> {
-    let anchor = action.anchor;
+    let anchor = action.anchor();
     items.clear();
     for provider in action.providers() {
         provider.provide_into(anchor, sem, env, index, items)?;
@@ -231,7 +231,7 @@ fn check_records(
     if action.inherited() {
         return Ok(());
     }
-    let ItemId::Cell(anchor) = action.anchor else {
+    let ItemId::Cell(anchor) = action.anchor() else {
         return Ok(());
     };
     if !ws.has_rec(anchor) {

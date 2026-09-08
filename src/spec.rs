@@ -250,7 +250,9 @@ pub enum CellPredicate {
 }
 
 impl CellPredicate {
-    pub fn test(&self, cell: &CellData, env: &EvalEnv) -> CoreResult<bool> {
+    /// Tests the cell at `(row, col)` (the position is needed by external
+    /// and custom predicates, which receive the cell handle).
+    pub fn test(&self, cell: &CellData, (row, col): (usize, usize), env: &EvalEnv) -> CoreResult<bool> {
         match self {
             CellPredicate::Blank => Ok(cell.text_blank),
             CellPredicate::NotBlank => Ok(!cell.text_blank),
@@ -260,7 +262,7 @@ impl CellPredicate {
             CellPredicate::NotContains(s) => Ok(!cell.text.contains(s.as_str())),
             #[cfg(feature = "python")]
             CellPredicate::External { func, .. } | CellPredicate::Custom { func, .. } => {
-                crate::py::call_cell_predicate(func, env, cell.row, cell.col)
+                crate::py::call_cell_predicate(func, env, row, col)
             }
             #[cfg(not(feature = "python"))]
             CellPredicate::External { func, .. } | CellPredicate::Custom { func, .. } => {
