@@ -16,7 +16,7 @@ and interprets the match into a relational **recordset**:
 TableSyntax → RtlCompiler/TablePattern → AtpMatcher → TableInterpreter → Recordset
 ```
 
-**pyRegTab 0.7.2 ≙ jRegTab 0.7.1** (same API, same semantics, same test
+**pyRegTab 0.7.3 ≙ jRegTab 0.7.1** (same API, same semantics, same test
 corpus), including the
 embedded RTL DSL `pyregtab.dsl` — a port of jRegTab's `ru.icc.regtab.dsl`
 (added upstream in jRegTab 0.3.0). Python-side extras on top of the Java API:
