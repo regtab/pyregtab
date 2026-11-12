@@ -216,6 +216,12 @@ match, 2 — invalid usage), same CSV parsing (RFC 4180 with multi-line quoted
 cells, ragged rows padded); on the 244 ATBench solutions of that project the
 two runners produce byte-identical `output.csv`. `--input`/`--output` override
 the file names, `--strict` turns interpreter diagnostics into errors.
+The header row is included by default; `--no-header` omits it, and `--header`
+explicitly enables it:
+
+```bash
+python -m pyregtab.runner solution.rtl --no-header
+```
 
 The runner loads the table in one native call (`TableSyntax.from_csv(path)`;
 `TableSyntax.from_rows(rows)` and `TableSyntax.from_csv_text(text)` do the same
@@ -223,6 +229,9 @@ for rows or text already in memory, `pyregtab.runner.parse_csv` exposes the
 RFC 4180 parser) and writes the recordset record by record
 (`Recordset.to_csv(path)` streams through a buffered file instead of building
 one string).
+In Python, use `rs.to_csv("output.csv", header=False)` or
+`rs.to_csv(header=False)` to export only data rows to a file or string.
+With no records, `header=False` produces an empty file or string.
 
 ### Performance on large tables
 

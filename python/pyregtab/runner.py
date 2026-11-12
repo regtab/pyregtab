@@ -9,14 +9,15 @@ quotes and line breaks; empty lines are skipped; ragged rows are padded with
 empty cells to the widest row), applies the RTL pattern (``RtlCompiler.compile``
 → ``AtpMatcher.match`` → ``TableInterpreter`` with ``RECORD_FIRST`` →
 ``pattern.transform``) and writes ``./output.csv``: the schema as the header
-row (always), one row per record, every field double-quoted, a missing value
+row (by default), one row per record, every field double-quoted, a missing value
 as the empty string, UTF-8, LF line endings.
 
 Exit codes: 0 — success, 1 — the pattern did not match, 2 — invalid usage;
 an RTL compile error raises (non-zero exit, message on stderr). Interpreter
 diagnostics (skipped CONCAT/JOIN actions) are printed to stderr and do not
 change the exit code. ``--input`` / ``--output`` override the file names;
-``--strict`` turns diagnostics into errors.
+``--strict`` turns diagnostics into errors. ``--no-header`` omits the schema
+row; ``--header`` explicitly includes it.
 """
 
 from __future__ import annotations
@@ -53,11 +54,11 @@ def load_table(path: Path) -> TableSyntax:
     return TableSyntax.from_csv(path)
 
 
-def write_csv(path: Path, rs: Recordset) -> None:
-    """The regtab-runner output format: the schema as the header row, every
+def write_csv(path: Path, rs: Recordset, *, header: bool = True) -> None:
+    """The regtab-runner output format: the schema as the header row by default, every
     field double-quoted (quotes doubled), a missing value as the empty
-    string, UTF-8, LF line endings."""
-    rs.to_csv(path, quote_all=True, newline="\n")
+    string, UTF-8, LF line endings. Set ``header=False`` to omit the schema row."""
+    rs.to_csv(path, quote_all=True, newline="\n", header=header)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -68,6 +69,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("pattern", help="path to the .rtl solution")
     ap.add_argument("--input", default="input.csv", help="input table (default: ./input.csv)")
     ap.add_argument("--output", default="output.csv", help="output recordset (default: ./output.csv)")
+    ap.add_argument("--header", action=argparse.BooleanOptionalAction, default=True,
+                    help="include the schema as the output CSV header row (default: enabled)")
     ap.add_argument("--strict", action="store_true",
                     help="fail on a skipped CONCAT/JOIN action instead of reporting it")
     try:
@@ -90,7 +93,7 @@ def main(argv: list[str] | None = None) -> int:
     rs = pattern.transform(interpreter.interpret(itm))
     for d in interpreter.diagnostics():
         print(f"diagnostic: {d}", file=sys.stderr)
-    write_csv(Path(args.output), rs)
+    write_csv(Path(args.output), rs, header=args.header)
     return 0
 
 

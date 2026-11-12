@@ -19,7 +19,7 @@ use std::time::Instant;
 fn write_csv(path: &str, rs: &RecordsetCore) {
     let mut out = std::io::BufWriter::with_capacity(1 << 20, std::fs::File::create(path).unwrap());
     rs.write_csv(&mut out, ",", "", true, "
-").unwrap();
+", true).unwrap();
     out.flush().unwrap();
 }
 

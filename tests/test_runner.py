@@ -185,14 +185,19 @@ def test_runner_exit_codes(tmp_path: Path) -> None:
     assert main([]) == 2  # usage
 
 
-def test_runner_as_module(tmp_path: Path) -> None:
+@pytest.mark.parametrize("header_args, prefix", [
+    ([], b'"a","b"\n'),
+    (["--header"], b'"a","b"\n'),
+    (["--no-header"], b""),
+])
+def test_runner_as_module(tmp_path: Path, header_args: list[str], prefix: bytes) -> None:
     (tmp_path / "input.csv").write_text("a,b\n1,2\n", encoding="utf-8")
     rtl = tmp_path / "p.rtl"
     rtl.write_text(RTL, encoding="utf-8")
-    proc = subprocess.run([sys.executable, "-m", "pyregtab.runner", str(rtl)], cwd=tmp_path,
+    proc = subprocess.run([sys.executable, "-m", "pyregtab.runner", str(rtl), *header_args], cwd=tmp_path,
                           capture_output=True, text=True)
     assert proc.returncode == 0, proc.stderr
-    assert (tmp_path / "output.csv").read_bytes() == b'"a","b"\n"1","2"\n'
+    assert (tmp_path / "output.csv").read_bytes() == prefix + b'"1","2"\n'
 
 
 def test_write_csv_format(tmp_path: Path) -> None:
@@ -204,7 +209,8 @@ def test_write_csv_format(tmp_path: Path) -> None:
     assert p.read_bytes() == b'"a","b"\n"x",""\n"q""","y\nz"\n'
 
 
-def test_to_csv_file_equals_string(tmp_path: Path) -> None:
+@pytest.mark.parametrize("header", [True, False])
+def test_to_csv_file_equals_string(tmp_path: Path, header: bool) -> None:
     """The streamed file output is byte for byte the string output."""
     from pyregtab import Recordset, Schema
 
@@ -214,9 +220,9 @@ def test_to_csv_file_equals_string(tmp_path: Path) -> None:
         {"a": "", "b,c": "\r\nend"},
     ])
     for kwargs in ({}, {"quote_all": True, "newline": "\n"}, {"sep": ";", "missing": "NULL"}):
-        text = rs.to_csv(**kwargs)
+        text = rs.to_csv(header=header, **kwargs)
         p = tmp_path / "o.csv"
-        assert rs.to_csv(p, **kwargs) is None
+        assert rs.to_csv(p, header=header, **kwargs) is None
         assert p.read_bytes() == text.encode("utf-8"), kwargs
     with pytest.raises(OSError):
         rs.to_csv(tmp_path / "no_such_dir" / "o.csv")

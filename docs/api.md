@@ -64,7 +64,7 @@ sequentially under the GIL, like `match`.
 | `TableSemantics` | `cell_derived_items()`, `context_derived_items()` |
 | `CellDerivedItem` | `.str`, `.tags`, `.index`, `.cell`, `.span` (byte range of the item's source segment within the raw cell text, before extractors); passed to filter callbacks |
 | `ContextDerivedItem(s, ItemType, const_value=None)` | external context items for `AtpMatcher.match` |
-| `Recordset` | `.schema`, `.records`, `len(rs)`, `rs[i]`, `to_pandas()`, `to_csv(path=None, sep=",", missing="", quote_all=False, newline="\r\n")` (RFC 4180; returns the CSV text when `path` is None, otherwise streams the records into the file) |
+| `Recordset` | `.schema`, `.records`, `len(rs)`, `rs[i]`, `to_pandas()`, `to_csv(path=None, *, sep=",", missing="", quote_all=False, newline="\r\n", header=True)` (RFC 4180; returns the CSV text when `path` is None, otherwise streams the records into the file; `header=False` omits the schema row; an empty recordset then produces empty output) |
 | `Record` | `rec[attr]`, `rec[i]`, `.get(...)`, `.values()`; missing value → `None` |
 | `Schema` | `.attributes`, `index_of`, `contains` |
 

@@ -246,3 +246,29 @@ def test_recordset_to_csv(tmp_path):
     out = tmp_path / "rs.csv"
     assert rs.to_csv(out) is None
     assert out.read_bytes().decode("utf-8") == csv
+
+
+def test_recordset_to_csv_header_modes(tmp_path):
+    rs = Recordset(
+        Schema(["A", "B"]),
+        [{"A": "first\nline", "B": 'say "hi"'}, {"A": None, "B": "x;y"}],
+    )
+    data = '"first\nline";"say ""hi"""\nNULL;"x;y"\n'
+    for header in (True, False):
+        expected = ('A;B\n' if header else '') + data
+        options = dict(sep=";", missing="NULL", newline="\n", header=header)
+        assert rs.to_csv(**options) == expected
+        out = tmp_path / "rs.csv"
+        assert rs.to_csv(out, **options) is None
+        assert out.read_bytes() == expected.encode("utf-8")
+
+
+def test_empty_recordset_to_csv_header_modes(tmp_path):
+    rs = Recordset(Schema(["A", "B"]), [])
+    assert rs.to_csv() == "A,B\r\n"
+    for header, expected in ((True, "A,B\r\n"), (False, "")):
+        assert rs.to_csv(header=header) == expected
+        out = tmp_path / "empty.csv"
+        out.write_bytes(b"previous contents")
+        assert rs.to_csv(out, header=header) is None
+        assert out.read_bytes() == expected.encode("utf-8")

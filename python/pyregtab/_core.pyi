@@ -220,8 +220,8 @@ class Recordset:
         sep: str = ",",
         missing: str = "",
         quote_all: bool = False,
-        newline: str = "
-",
+        newline: str = "\r\n",
+        header: bool = True,
     ) -> Optional[str]: ...
 
 # ---------------------------------------------------------------- spec

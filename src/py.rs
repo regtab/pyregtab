@@ -884,7 +884,9 @@ impl PyRecordset {
     /// Missing values are rendered as `missing` (default: empty field).
     /// `quote_all` double-quotes every field (the regtab-runner format);
     /// `newline` is the line terminator (default CRLF, as `csv.writer`).
-    #[pyo3(signature = (path=None, *, sep=",", missing="", quote_all=false, newline="\r\n"))]
+    /// `header` includes the schema as the first row (default true).
+    #[pyo3(signature = (path=None, *, sep=",", missing="", quote_all=false, newline="\r\n", header=true))]
+    #[allow(clippy::too_many_arguments)]
     fn to_csv(
         &self,
         py: Python<'_>,
@@ -893,9 +895,10 @@ impl PyRecordset {
         missing: &str,
         quote_all: bool,
         newline: &str,
+        header: bool,
     ) -> PyResult<Option<String>> {
         match path {
-            None => Ok(Some(self.core.to_csv_string(sep, missing, quote_all, newline))),
+            None => Ok(Some(self.core.to_csv_string(sep, missing, quote_all, newline, header))),
             Some(p) => {
                 let err = |e: std::io::Error| {
                     PyErr::new::<pyo3::exceptions::PyOSError, _>(format!(
@@ -906,7 +909,7 @@ impl PyRecordset {
                 let file = std::fs::File::create(&p).map_err(err)?;
                 let mut w = std::io::BufWriter::with_capacity(1 << 20, file);
                 py.allow_threads(|| {
-                    self.core.write_csv(&mut w, sep, missing, quote_all, newline)?;
+                    self.core.write_csv(&mut w, sep, missing, quote_all, newline, header)?;
                     w.flush()
                 })
                 .map_err(err)?;
