@@ -3089,6 +3089,7 @@ pub struct PyTableInterpreter {
     transformations: Vec<sp::Transformation>,
     template: String,
     strict_preconditions: bool,
+    num_threads: usize,
     /// Diagnostics of the most recent `interpret` call, with the table they
     /// refer to (needed to materialize the anchor items).
     last: Option<(Py<PyTableSyntax>, Arc<SemanticsCore>, Vec<crate::semantics::Diagnostic>)>,
@@ -3105,8 +3106,19 @@ impl PyTableInterpreter {
             transformations: Vec::new(),
             template: "$a_%i".to_string(),
             strict_preconditions: false,
+            num_threads: 1,
             last: None,
         }
+    }
+
+    /// Number of native worker threads for large independent interpretation
+    /// phases. The default of one preserves the sequential execution path.
+    fn with_num_threads<'py>(mut slf: PyRefMut<'py, Self>, num_threads: usize) -> PyResult<PyRefMut<'py, Self>> {
+        if num_threads == 0 {
+            return Err(PyValueError::new_err("num_threads must be positive"));
+        }
+        slf.num_threads = num_threads;
+        Ok(slf)
     }
 
     /// Strict preconditions: a `CONCAT` / `JOIN` action whose precondition is
@@ -3208,6 +3220,8 @@ impl PyTableInterpreter {
             transformations: self.transformations.clone(),
             anonymous_attribute_template: self.template.clone(),
             strict_preconditions: self.strict_preconditions,
+            num_threads: self.num_threads,
+            ..InterpreterCfg::default()
         };
         self.last = None;
         let out = if self.missing.is_none() && !table.sem.has_py_callbacks() {

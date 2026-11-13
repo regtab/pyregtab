@@ -87,8 +87,8 @@ If the pattern does not match, `AtpMatcher.match` returns `Optional.empty()`.
 | Phase | What happens |
 |---|---|
 | **1. Initialisation** | Each cell-derived and context-derived item of type VAL/ATTR is entered into the working state with its string value |
-| **2. Completion** | Interpretation actions are applied in operation-type order: FILL/PREFIX/SUFFIX → AVP → REC → CONCAT → JOIN (records are folded before they are multiplied); each action uses its providers to retrieve items relative to the anchor and updates the working state. A violated CONCAT/JOIN precondition has no effect and is reported through `TableInterpreter.diagnostics()`. Cell-derived providers scan a spatial index over the items (row-major and column-major orderings with row/column offsets) restricted to a candidate scope derived statically from the filter specification — the anchor's row, column, cell, row range or subtable — so interpretation is linear in the number of cells |
-| **3. Extraction** | The live anchors of the working state (joined-away anchors excluded) are traversed to build the schema (attribute list) and generate records — one per item-based record, several per anchor after a JOIN |
+| **2. Completion** | Interpretation actions are applied in operation-type order: FILL/PREFIX/SUFFIX → AVP → REC → CONCAT → JOIN (records are folded before they are multiplied); each action uses its providers to retrieve items relative to the anchor and updates the working state. With `num_threads > 1`, row/column indexes and action groups may be sorted in parallel, but provider evaluation and every working-state update remain sequential in the configured order. A violated CONCAT/JOIN precondition has no effect and is reported through `TableInterpreter.diagnostics()`. Cell-derived providers scan a spatial index over the items restricted to a statically derived candidate scope |
+| **3. Extraction** | The live anchors of the working state (joined-away anchors excluded) are traversed to build the schema (attribute list) and generate records — one per item-based record, several per anchor after a JOIN. With `num_threads > 1`, consistency checks and record generation may run in parallel over disjoint read-only ranges; schema construction and record order remain deterministic |
 | **4. Transformation** | Optional post-processing steps are applied: `WhitespaceNormalization`, `FieldSplitting`, `SchemaReordering` |
 
 ---
@@ -168,6 +168,7 @@ one `abi3` wheel per platform):
   shared corpus in `conformance/`;
 - `AtpMatcher.match` and `TableInterpreter.interpret` release the GIL when the
   pattern contains no Python callbacks, so batch workloads can use thread
-  pools;
+  pools; `TableInterpreter.with_num_threads(n)` additionally enables a scoped
+  native pool for large independent interpretation phases;
 - regular expressions are executed by the Rust `regex` crate (linear-time);
   the reference corpus uses no lookaround/backreferences.

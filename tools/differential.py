@@ -2,7 +2,7 @@
 produced by pyRegTab with a JSONL dump produced by the reference Java
 implementation (see RecordsetDumpMain.java) on the full fixture corpus.
 
-Usage: python tools/differential.py <java_dump.jsonl>
+Usage: python tools/differential.py <java_dump.jsonl> [threads]
 """
 
 import json
@@ -20,7 +20,7 @@ from task_runner import (  # noqa: E402
 from pyregtab import AtpMatcher, SchemaConstructionStrategy, TableInterpreter  # noqa: E402
 
 
-def py_result(task_id: str, variant: int):
+def py_result(task_id: str, variant: int, threads: int = 1):
     pattern = compile_task(task_id)
     syntax = load_table(TASKS_ROOT / f"task_{task_id}" / f"input_{variant}.csv")
     itm = AtpMatcher.match(pattern, syntax)
@@ -29,6 +29,7 @@ def py_result(task_id: str, variant: int):
     rs = pattern.transform(
         TableInterpreter()
         .with_strategy(SchemaConstructionStrategy.RECORD_FIRST)
+        .with_num_threads(threads)
         .interpret(itm)
     )
     attrs = rs.schema.attributes
@@ -41,6 +42,7 @@ def py_result(task_id: str, variant: int):
 
 def main():
     dump = Path(sys.argv[1])
+    threads = int(sys.argv[2]) if len(sys.argv) > 2 else 1
     mismatches = []
     total = 0
     for line in dump.read_text(encoding="utf-8").splitlines():
@@ -49,7 +51,7 @@ def main():
         j = json.loads(line)
         total += 1
         task, variant = j["task"], j["variant"]
-        p = py_result(task, variant)
+        p = py_result(task, variant, threads)
         expected = {k: j[k] for k in ("match", "schema", "records") if k in j}
         if p != expected:
             mismatches.append((task, variant))

@@ -49,6 +49,15 @@ impl RecordsetCore {
         RecordsetCore { schema, width, len: 0, values: Vec::new() }
     }
 
+    pub(crate) fn from_flat_values(schema: Schema, len: usize, values: Vec<Option<Text>>) -> CoreResult<Self> {
+        let width = schema.attributes.len();
+        let expected = len.checked_mul(width).ok_or("Recordset size overflow")?;
+        if values.len() != expected {
+            return Err(format!("Recordset has {} values, expected {expected}", values.len()).into());
+        }
+        Ok(RecordsetCore { schema, width, len, values })
+    }
+
     /// An empty recordset with room for `records` records.
     pub fn with_capacity(schema: Schema, records: usize) -> Self {
         let mut rs = Self::new(schema);

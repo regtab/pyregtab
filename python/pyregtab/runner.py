@@ -17,7 +17,8 @@ an RTL compile error raises (non-zero exit, message on stderr). Interpreter
 diagnostics (skipped CONCAT/JOIN actions) are printed to stderr and do not
 change the exit code. ``--input`` / ``--output`` override the file names;
 ``--strict`` turns diagnostics into errors. ``--no-header`` omits the schema
-row; ``--header`` explicitly includes it.
+row; ``--header`` explicitly includes it. ``--threads N`` enables the native
+worker pool for large independent interpretation phases (default: 1).
 """
 
 from __future__ import annotations
@@ -73,10 +74,15 @@ def main(argv: list[str] | None = None) -> int:
                     help="include the schema as the output CSV header row (default: enabled)")
     ap.add_argument("--strict", action="store_true",
                     help="fail on a skipped CONCAT/JOIN action instead of reporting it")
+    ap.add_argument("--threads", type=int, default=1,
+                    help="native worker threads for large independent interpretation phases (default: 1)")
     try:
         args = ap.parse_args(argv)
     except SystemExit as e:
         return 2 if e.code else 0
+    if args.threads < 1:
+        print("--threads must be positive", file=sys.stderr)
+        return 2
 
     rtl = Path(args.pattern).read_bytes().decode("utf-8")
     syntax = load_table(Path(args.input))
@@ -89,6 +95,7 @@ def main(argv: list[str] | None = None) -> int:
         TableInterpreter()
         .with_strategy(SchemaConstructionStrategy.RECORD_FIRST)
         .with_strict_preconditions(args.strict)
+        .with_num_threads(args.threads)
     )
     rs = pattern.transform(interpreter.interpret(itm))
     for d in interpreter.diagnostics():

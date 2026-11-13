@@ -1,4 +1,4 @@
-//! Java-compatible string helpers and a process-wide regex cache.
+//! Java-compatible string helpers and lazily populated thread-local regex caches.
 //!
 //! jRegTab relies on `java.util.regex` and Java string semantics
 //! (`String.trim`, `String.strip`, `String.isBlank`, `\s` = ASCII whitespace).
@@ -6,8 +6,8 @@
 //! identical on the reference fixtures.
 
 use regex::Regex;
+use std::cell::RefCell;
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex, OnceLock};
 
 /// Errors surfaced by the native core (message + optional source position).
 #[derive(Debug)]
@@ -54,35 +54,44 @@ pub type CoreResult<T> = Result<T, CoreErr>;
 /// Python objects, which must be `Send`.
 pub type Text = std::sync::Arc<str>;
 
-fn cache() -> &'static Mutex<HashMap<String, Arc<Regex>>> {
-    static CACHE: OnceLock<Mutex<HashMap<String, Arc<Regex>>>> = OnceLock::new();
-    CACHE.get_or_init(|| Mutex::new(HashMap::new()))
+#[derive(Default)]
+struct RegexCaches {
+    full: HashMap<String, Regex>,
+    raw: HashMap<String, Regex>,
 }
 
-pub fn cached_regex(pattern: &str) -> CoreResult<Arc<Regex>> {
-    let mut map = cache().lock().unwrap();
-    if let Some(re) = map.get(pattern) {
-        return Ok(re.clone());
-    }
-    let re = Regex::new(pattern).map_err(|e| format!("Invalid regex '{pattern}': {e}"))?;
-    let re = Arc::new(re);
-    map.insert(pattern.to_string(), re.clone());
-    Ok(re)
+thread_local! {
+    static REGEX_CACHES: RefCell<RegexCaches> = RefCell::new(RegexCaches::default());
+}
+
+fn with_cached_regex<R>(pattern: &str, full: bool, f: impl FnOnce(&Regex) -> R) -> CoreResult<R> {
+    REGEX_CACHES.with(|slot| {
+        {
+            let mut caches = slot.borrow_mut();
+            let cache = if full { &mut caches.full } else { &mut caches.raw };
+            if !cache.contains_key(pattern) {
+                let expression = if full { format!("^(?:{pattern})$") } else { pattern.to_string() };
+                let re = Regex::new(&expression)
+                    .map_err(|e| format!("Invalid regex '{expression}': {e}"))?;
+                cache.insert(pattern.to_string(), re);
+            }
+        }
+        let caches = slot.borrow();
+        let cache = if full { &caches.full } else { &caches.raw };
+        Ok(f(cache.get(pattern).expect("regex inserted above")))
+    })
 }
 
 /// Java `String.matches(pattern)`: the whole string must match.
 pub fn full_match(pattern: &str, text: &str) -> CoreResult<bool> {
-    let anchored = format!("^(?:{pattern})$");
-    let re = cached_regex(&anchored)?;
-    Ok(re.is_match(text))
+    with_cached_regex(pattern, true, |re| re.is_match(text))
 }
 
 /// Java `String.replaceAll(regex, replacement)`.
 /// Java's `$1` group references are converted to Rust's `${1}` form.
 pub fn replace_all(pattern: &str, replacement: &str, text: &str) -> CoreResult<String> {
-    let re = cached_regex(pattern)?;
     let repl = convert_java_replacement(replacement);
-    Ok(re.replace_all(text, repl.as_str()).into_owned())
+    with_cached_regex(pattern, false, |re| re.replace_all(text, repl.as_str()).into_owned())
 }
 
 /// Converts Java replacement syntax (`$1`, `\$`, `\\`) to the regex crate's
@@ -133,8 +142,7 @@ fn convert_java_replacement(repl: &str) -> String {
 
 /// Java `String.split(regex, -1)`: split on regex keeping trailing empties.
 pub fn split_regex(pattern: &str, text: &str) -> CoreResult<Vec<String>> {
-    let re = cached_regex(pattern)?;
-    Ok(re.split(text).map(|s| s.to_string()).collect())
+    with_cached_regex(pattern, false, |re| re.split(text).map(|s| s.to_string()).collect())
 }
 
 /// `Character.isWhitespace(c)` — NOT the same as Unicode White_Space:

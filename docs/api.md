@@ -27,9 +27,16 @@ rs = (
     .with_missing_value_handler(lambda attr: "")                 # str -> str | None
     .with_anonymous_attribute_template("A%i")                    # default "$a_%i"
     .with_strict_preconditions(False)                            # default: skipped CONCAT/JOIN actions are reported, not raised
+    .with_num_threads(4)                                         # default: 1 (sequential)
     .interpret(itm)
 )
 ```
+
+`with_num_threads(n)` enables a scoped native worker pool for sufficiently large independent
+work: action/index sorting, consistency checks, and record generation. Provider evaluation and
+all working-state mutations remain sequential. Output record order, diagnostics, and errors are
+identical to the sequential mode. Small inputs and providers that call Python remain sequential. The pool is joined before `interpret` returns. When using an
+outer `ThreadPoolExecutor`, account for possible oversubscription from nested pools.
 
 After `interpret`, `TableInterpreter.diagnostics()` lists the `CONCAT`/`JOIN` actions that
 had no effect (as `Diagnostic` objects with `.anchor`, `.operation`, `.message`): a key

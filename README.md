@@ -20,8 +20,8 @@ TableSyntax → RtlCompiler/TablePattern → AtpMatcher → TableInterpreter →
 corpus), including the
 embedded RTL DSL `pyregtab.dsl` — a port of jRegTab's `ru.icc.regtab.dsl`
 (added upstream in jRegTab 0.3.0). Python-side extras on top of the Java API:
-`AtpMatcher.match_many` (parallel batch matching), `Recordset.to_pandas()`,
-`Recordset.to_csv()`, `RtlCompileError.line`/`.col` attributes,
+`AtpMatcher.match_many` (parallel batch matching), `TableInterpreter.with_num_threads`
+(opt-in parallel interpretation), `Recordset.to_pandas()`, `Recordset.to_csv()`, `RtlCompileError.line`/`.col` attributes,
 `CellDerivedItem.span` (the item's byte range within the raw cell text), and
 the CLI runner `python -m pyregtab.runner` (see below).
 
@@ -215,7 +215,9 @@ same I/O contract, same exit codes (0 — success, 1 — the pattern did not
 match, 2 — invalid usage), same CSV parsing (RFC 4180 with multi-line quoted
 cells, ragged rows padded); on the 244 ATBench solutions of that project the
 two runners produce byte-identical `output.csv`. `--input`/`--output` override
-the file names, `--strict` turns interpreter diagnostics into errors.
+the file names, `--strict` turns interpreter diagnostics into errors, and
+`--threads N` enables a scoped native pool for large independent interpretation
+phases (the default is one thread).
 The header row is included by default; `--no-header` omits it, and `--header`
 explicitly enables it:
 

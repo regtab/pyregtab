@@ -9,7 +9,7 @@ The Java outputs do not change between pyRegTab builds, so they are cached in
 to re-run Java.
 
 Usage: python tools/atbench_bytecmp.py [--repo <regtab-eval-on-atbench>]
-                                        [--cache <dir>] [--case <id> ...]
+                                        [--cache <dir>] [--case <id> ...] [--threads N]
 Exit code 0 when all solutions agree, 1 otherwise.
 """
 
@@ -42,6 +42,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--cache", default=None)
     ap.add_argument("--case", action="append")
     ap.add_argument("--timeout", type=int, default=600)
+    ap.add_argument("--threads", type=int, default=1)
     args = ap.parse_args(argv)
 
     repo = Path(args.repo).resolve()
@@ -52,7 +53,8 @@ def main(argv: list[str] | None = None) -> int:
     cache = Path(args.cache) if args.cache else repo / ".bytecmp-java"
     cache.mkdir(parents=True, exist_ok=True)
     ids = args.case or [c for c in all_case_ids() if Case(c).solution.is_file()]
-    java_cmd, py_cmd = runner_cmd("java"), runner_cmd("pyregtab")
+    java_cmd = runner_cmd("java")
+    py_cmd = [*runner_cmd("pyregtab"), "--threads", str(args.threads)]
 
     mismatches: list[str] = []
     started = time.perf_counter()

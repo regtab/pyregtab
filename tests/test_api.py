@@ -272,3 +272,79 @@ def test_empty_recordset_to_csv_header_modes(tmp_path):
         out.write_bytes(b"previous contents")
         assert rs.to_csv(out, header=header) is None
         assert out.read_bytes() == expected.encode("utf-8")
+
+
+def test_interpreter_num_threads_callbacks_and_missing_handler():
+    import threading
+
+    callback_threads = []
+    handler_threads = []
+
+    def same(_anchor, _candidate):
+        callback_threads.append(threading.get_ident())
+        return True
+
+    def missing(_attribute):
+        handler_threads.append(threading.get_ident())
+        return "missing"
+
+    bindings = Bindings.of().filter("same", same)
+    rtl = "[ [VAL: 'v1'->AVP, (ROW & EXT('same'))->REC] [VAL: 'v2'->AVP] ]+"
+    pattern = RtlCompiler.compile(rtl, bindings)
+
+    def run(threads):
+        table = make_table([["a", "1"], ["b", "2"], ["c", "3"]])
+        itm = AtpMatcher.match(pattern, table)
+        return (
+            TableInterpreter()
+            .with_num_threads(threads)
+            .with_missing_value_handler(missing)
+            .interpret(itm)
+            .to_csv()
+        )
+
+    assert run(1) == run(4)
+    assert callback_threads and handler_threads
+    assert set(callback_threads) == {threading.get_ident()}
+    assert set(handler_threads) == {threading.get_ident()}
+    with pytest.raises(ValueError, match="positive"):
+        TableInterpreter().with_num_threads(0)
+
+
+def test_interpreter_num_threads_large_missing_values_match():
+    rtl = (
+        "[ [VAL: 'key'->AVP, ROW->REC] [VAL: 'a'->AVP] ]+\n"
+        "[ [VAL: 'key'->AVP, ROW->REC] [VAL: 'b'->AVP] ]+"
+    )
+    pattern = RtlCompiler.compile(rtl)
+    rows = [[f"key{i}", f"a{i}"] for i in range(35_000)] + [[f"key{i}", f"b{i}"] for i in range(35_000)]
+
+    def run(threads):
+        table = make_table(rows)
+        itm = AtpMatcher.match(pattern, table)
+        rs = (
+            TableInterpreter()
+            .with_num_threads(threads)
+            .with_missing_value_handler(lambda _attr: "missing")
+            .interpret(itm)
+        )
+        return rs.to_csv()
+
+    assert run(1) == run(4)
+
+
+def test_interpreter_num_threads_concurrent_scoped_pools():
+    from concurrent.futures import ThreadPoolExecutor
+
+    pattern = rtl_compile("[ [VAL: 'v'->AVP, ()->REC] ]+")
+    rows = [[f"v{i}"] for i in range(70_000)]
+
+    def run(threads):
+        table = make_table(rows)
+        itm = AtpMatcher.match(pattern, table)
+        return TableInterpreter().with_num_threads(threads).interpret(itm).to_csv()
+
+    expected = run(1)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        outputs = list(pool.map(run, [2, 2]))
+    assert outputs == [expected, expected]

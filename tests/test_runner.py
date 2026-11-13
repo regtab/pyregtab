@@ -226,3 +226,15 @@ def test_to_csv_file_equals_string(tmp_path: Path, header: bool) -> None:
         assert p.read_bytes() == text.encode("utf-8"), kwargs
     with pytest.raises(OSError):
         rs.to_csv(tmp_path / "no_such_dir" / "o.csv")
+
+
+def test_runner_threads_contract(tmp_path: Path) -> None:
+    (tmp_path / "input.csv").write_text('a,b\n1,"x,y"\n2,z\n', encoding="utf-8")
+    (tmp_path / "p.rtl").write_text(RTL, encoding="utf-8")
+    inp, out = tmp_path / "input.csv", tmp_path / "output.csv"
+    args = [str(tmp_path / "p.rtl"), "--input", str(inp), "--output", str(out)]
+    assert main([*args, "--threads", "1"]) == 0
+    expected = out.read_bytes()
+    assert main([*args, "--threads", "4"]) == 0
+    assert out.read_bytes() == expected
+    assert main([*args, "--threads", "0"]) == 2

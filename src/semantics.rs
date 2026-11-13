@@ -664,35 +664,62 @@ impl ItemIndex {
     /// Builds the index; `syntax` supplies the subtable partition used by
     /// subtable-scoped column-major providers.
     pub fn build(sem: &SemanticsCore, syntax: &crate::syntax::SyntaxCore) -> ItemIndex {
+        Self::build_impl(sem, syntax, false)
+    }
+
+    pub fn build_parallel(sem: &SemanticsCore, syntax: &crate::syntax::SyntaxCore) -> ItemIndex {
+        Self::build_impl(sem, syntax, true)
+    }
+
+    fn build_impl(sem: &SemanticsCore, syntax: &crate::syntax::SyntaxCore, parallel: bool) -> ItemIndex {
         let items = &sem.cell_items;
         let n = items.len();
         let num_rows = items.iter().map(|it| it.row + 1).max().unwrap_or(0);
         let num_cols = items.iter().map(|it| it.col + 1).max().unwrap_or(0);
 
-        let mut row_major: Vec<u32> = (0..n as u32).collect();
-        row_major.sort_by_key(|&i| (items[i as usize].row, items[i as usize].col, items[i as usize].index));
-        let mut col_major: Vec<u32> = (0..n as u32).collect();
-        col_major.sort_by_key(|&i| (items[i as usize].col, items[i as usize].row, items[i as usize].index));
-
-        let mut row_start = vec![0usize; num_rows + 1];
-        let mut idx = 0;
-        for (r, start) in row_start.iter_mut().enumerate().take(num_rows) {
-            *start = idx;
-            while idx < n && items[row_major[idx] as usize].row == r {
-                idx += 1;
+        let build_rows = || {
+            let mut row_major: Vec<u32> = (0..n as u32).collect();
+            if parallel {
+                use rayon::prelude::*;
+                row_major.par_sort_by_key(|&i| (items[i as usize].row, items[i as usize].col, items[i as usize].index));
+            } else {
+                row_major.sort_by_key(|&i| (items[i as usize].row, items[i as usize].col, items[i as usize].index));
             }
-        }
-        row_start[num_rows] = n;
-
-        let mut col_start = vec![0usize; num_cols + 1];
-        idx = 0;
-        for (c, start) in col_start.iter_mut().enumerate().take(num_cols) {
-            *start = idx;
-            while idx < n && items[col_major[idx] as usize].col == c {
-                idx += 1;
+            let mut row_start = vec![0usize; num_rows + 1];
+            let mut idx = 0;
+            for (r, start) in row_start.iter_mut().enumerate().take(num_rows) {
+                *start = idx;
+                while idx < n && items[row_major[idx] as usize].row == r {
+                    idx += 1;
+                }
             }
-        }
-        col_start[num_cols] = n;
+            row_start[num_rows] = n;
+            (row_major, row_start)
+        };
+        let build_cols = || {
+            let mut col_major: Vec<u32> = (0..n as u32).collect();
+            if parallel {
+                use rayon::prelude::*;
+                col_major.par_sort_by_key(|&i| (items[i as usize].col, items[i as usize].row, items[i as usize].index));
+            } else {
+                col_major.sort_by_key(|&i| (items[i as usize].col, items[i as usize].row, items[i as usize].index));
+            }
+            let mut col_start = vec![0usize; num_cols + 1];
+            let mut idx = 0;
+            for (c, start) in col_start.iter_mut().enumerate().take(num_cols) {
+                *start = idx;
+                while idx < n && items[col_major[idx] as usize].col == c {
+                    idx += 1;
+                }
+            }
+            col_start[num_cols] = n;
+            (col_major, col_start)
+        };
+        let ((row_major, row_start), (col_major, col_start)) = if parallel {
+            rayon::join(build_rows, build_cols)
+        } else {
+            (build_rows(), build_cols())
+        };
 
         let needs_subtable_col_major = sem.actions.iter().any(|a| {
             a.providers().iter().any(|p| match p {
@@ -847,10 +874,7 @@ impl ProviderInst {
         result: &mut Vec<ItemId>,
     ) -> CoreResult<()> {
         match self {
-            ProviderInst::Ctx { items, kind } => {
-                result.extend(self.provide_ctx(anchor, sem, items, *kind)?);
-                Ok(())
-            }
+            ProviderInst::Ctx { items, kind } => self.provide_ctx_into(anchor, sem, items, *kind, result),
             ProviderInst::Cell { cond, order, cardinality, kind, exclude_anchor, lenient, scope } => {
                 let ItemId::Cell(anchor_idx) = anchor else {
                     return Err("CellDerivedItemProvider requires a cell-derived anchor".into());
@@ -930,14 +954,14 @@ impl ProviderInst {
         }
     }
 
-    fn provide_ctx(
+    fn provide_ctx_into(
         &self,
         anchor: ItemId,
         sem: &SemanticsCore,
         items: &[usize],
         kind: CtxKind,
-    ) -> CoreResult<Vec<ItemId>> {
-        let result: Vec<ItemId> = items.iter().map(|&i| ItemId::Ctx(i)).collect();
+        result: &mut Vec<ItemId>,
+    ) -> CoreResult<()> {
         match kind {
             CtxKind::Unrestricted => {}
             CtxKind::Val => {
@@ -977,7 +1001,8 @@ impl ProviderInst {
                 }
             }
         }
-        Ok(result)
+        result.extend(items.iter().map(|&i| ItemId::Ctx(i)));
+        Ok(())
     }
 }
 

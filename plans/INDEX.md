@@ -3,6 +3,10 @@
 Указатель по каталогу `plans/`: один план — одна крупная работа, самый свежий сверху.
 Статус и результат каждой работы — в шапке и в разделе «Результат» самого плана.
 
+- [PERF_PARALLEL_INTERPRETATION.md](PERF_PARALLEL_INTERPRETATION.md) — opt-in scoped пул,
+  параллельные `ItemIndex`, сортировка, consistency и генерация recordset; thread-local regex;
+  провайдеры после отрицательного A/B удалены. Windows: `stack_test11` k=4 −22% wall,
+  `explode_test22` k=8 −26%, память около baseline. **РЕАЛИЗОВАН** (2026-11-13).
 - [PERF_MEMORY_LAYOUT.md](PERF_MEMORY_LAYOUT.md) — второй раунд по памяти (0.7.2): mimalloc,
   арена записей и `avp` по id, плоский recordset, упаковка структур; `stack_test11`
   531 → 335 МБ и 1,12 → 0,76 с. **РЕАЛИЗОВАН** (2026-09-08).
