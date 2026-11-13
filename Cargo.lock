@@ -232,7 +232,7 @@ dependencies = [
 
 [[package]]
 name = "pyregtab"
-version = "0.7.3"
+version = "0.7.4"
 dependencies = [
  "indexmap",
  "mimalloc",
